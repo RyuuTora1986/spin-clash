@@ -1,0 +1,33 @@
+{
+  "name": "spin-clash",
+  "version": "1.0.0",
+  "description": "Static single-player spinning-top arena battle prototype refactor.",
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "build:static": "node scripts/build-static-release.js",
+    "check:static": "node scripts/check-static-package.js",
+    "check:syntax": "node -e \"const fs=require('fs'); const path=require('path'); const cp=require('child_process'); for (const name of fs.readdirSync('src')) { if (!name.endsWith('.js')) continue; cp.execFileSync(process.execPath, ['--check', path.join('src', name)], { stdio: 'inherit' }); }\"",
+    "check:repo": "node scripts/check-repo.js",
+    "check:docs": "node scripts/check-doc-links.js",
+    "check:dom": "node scripts/check-dom-contract.js",
+    "check:config": "node scripts/check-config.js",
+    "check:analytics": "node scripts/check-analytics-events.js",
+    "check:ui": "node scripts/check-ui-actions.js",
+    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:dom && npm run check:config && npm run check:analytics && npm run check:ui",
+    "verify:release": "npm run preflight && npm run build:static && npm run check:static"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RyuuTora1986/spin-clash.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RyuuTora1986/spin-clash/issues"
+  },
+  "homepage": "https://github.com/RyuuTora1986/spin-clash#readme",
+  "devDependencies": {
+    "playwright": "^1.59.1"
+  }
+}

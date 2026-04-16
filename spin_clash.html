@@ -1,0 +1,2119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>陀螺对战 · SPIN CLASH</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────
+   全局基础
+───────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:'Share Tech Mono',monospace;
+  color:#aaa;user-select:none;-webkit-user-select:none}
+#gc{position:fixed;inset:0;cursor:crosshair}
+
+/* ─────────────────────────────────────────
+   色彩语义变量（cyan=玩家 red=敌方）
+───────────────────────────────────────── */
+:root{
+  --p:#00ffcc;   --p2:rgba(0,255,200,.12);  --p3:rgba(0,255,200,.22);
+  --e:#ff3322;   --e2:rgba(255,50,30,.12);  --e3:rgba(255,50,30,.22);
+  --glass:rgba(6,8,20,.72);
+  --border:rgba(255,255,255,.07);
+}
+
+/* ─────────────────────────────────────────
+   HUD 容器
+───────────────────────────────────────── */
+#hud{position:fixed;inset:0;pointer-events:none;z-index:20}
+
+/* ─────────────────────────────────────────
+   面板：毛玻璃 + 彩色顶边线
+───────────────────────────────────────── */
+.hud-panel{
+  position:absolute;
+  bottom:max(16px,env(safe-area-inset-bottom,16px));
+  width:178px;
+  background:var(--glass);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:0;
+  overflow:hidden;
+}
+#p-panel{left:14px}
+#e-panel{right:14px}
+
+/* 顶部彩色身份条 */
+.hud-panel .id-bar{
+  height:3px;width:100%;
+}
+#p-panel .id-bar{background:linear-gradient(90deg,var(--p),transparent)}
+#e-panel .id-bar{background:linear-gradient(270deg,var(--e),transparent)}
+
+/* 面板内容区 */
+.hud-inner{padding:9px 10px 10px}
+
+/* 身份标签行 */
+.hud-who{
+  display:flex;align-items:center;gap:6px;
+  margin-bottom:8px;
+}
+#e-panel .hud-who{flex-direction:row-reverse}
+
+.hud-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+#p-panel .hud-dot{background:var(--p);box-shadow:0 0 6px var(--p)}
+#e-panel .hud-dot{background:var(--e);box-shadow:0 0 6px var(--e)}
+
+.hud-who-labels{display:flex;flex-direction:column}
+#e-panel .hud-who-labels{align-items:flex-end}
+
+.hud-top-name{
+  font-family:'Orbitron',monospace;font-size:10px;font-weight:700;
+  letter-spacing:1.5px;line-height:1;
+}
+#p-panel .hud-top-name{color:var(--p)}
+#e-panel .hud-top-name{color:var(--e)}
+
+.hud-role{
+  font-size:8px;letter-spacing:2px;
+  margin-top:1px;line-height:1;
+}
+#p-panel .hud-role{color:var(--p);opacity:.5}
+#e-panel .hud-role{color:var(--e);opacity:.5}
+
+/* ── 耐久条（最重要，最大）── */
+.hud-hp-section{margin-bottom:7px}
+.hud-hp-header{
+  display:flex;justify-content:space-between;align-items:baseline;
+  margin-bottom:3px;
+}
+.hud-hp-lbl{font-size:8px;letter-spacing:1.5px;opacity:.4}
+.hud-hp-num{font-size:9px;font-weight:700;font-family:'Orbitron',monospace}
+#p-panel .hud-hp-num{color:var(--p)}
+#e-panel .hud-hp-num{color:var(--e)}
+
+.hud-hp-track{
+  height:12px;
+  background:rgba(255,255,255,.04);
+  border-radius:3px;overflow:hidden;
+  border:1px solid rgba(255,255,255,.07);
+  position:relative;
+}
+.hud-hp-fill{
+  height:100%;border-radius:2px;
+  transition:width .1s linear,background .5s;
+}
+
+/* ── 转速 / 爆发（细条）── */
+.hud-sub-bars{display:flex;flex-direction:column;gap:5px}
+.hud-sub-row{display:flex;align-items:center;gap:6px}
+#e-panel .hud-sub-row{flex-direction:row-reverse}
+.hud-sub-lbl{font-size:7px;opacity:.3;letter-spacing:1px;width:20px;flex-shrink:0;line-height:1}
+#e-panel .hud-sub-lbl{text-align:right}
+.hud-sub-track{flex:1;height:4px;background:rgba(255,255,255,.04);border-radius:2px;overflow:hidden}
+.hud-sub-fill{height:100%;border-radius:2px;transition:width .08s linear}
+.sp-fill{background:linear-gradient(90deg,#0077dd,#00aaff)}
+.bu-fill{background:linear-gradient(90deg,#cc6600,#ffaa00)}
+
+/* ─────────────────────────────────────────
+   技能面板（紧贴玩家面板右侧）
+───────────────────────────────────────── */
+#skill-panel{
+  position:absolute;
+  left:calc(14px + 178px + 8px);
+  bottom:max(16px,env(safe-area-inset-bottom,16px));
+  display:flex;flex-direction:column;gap:6px;
+  pointer-events:auto;z-index:30;
+}
+
+.sk-btn{
+  width:56px;height:56px;border-radius:10px;
+  position:relative;cursor:pointer;
+  pointer-events:auto;-webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  overflow:hidden;
+  background:var(--glass);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1.5px solid rgba(255,255,255,.1);
+  transition:transform .1s;
+}
+.sk-btn:active{transform:scale(.88)}
+.sk-btn .sk-icon{font-size:17px;line-height:1;z-index:2;position:relative}
+.sk-btn .sk-name{font-size:6.5px;letter-spacing:.5px;opacity:.6;margin-top:2px;
+  z-index:2;position:relative;font-family:'Orbitron',monospace}
+.sk-btn .sk-key{font-size:7px;opacity:.28;z-index:2;position:relative;margin-top:1px}
+.sk-btn .sk-cd-mask{position:absolute;bottom:0;left:0;width:100%;
+  background:rgba(0,0,0,.78);pointer-events:none;z-index:3;transition:height .08s linear}
+.sk-btn .sk-cd-txt{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+  color:#fff;z-index:4;opacity:0;pointer-events:none}
+.sk-btn .sk-burst-ring{position:absolute;inset:0;z-index:1;pointer-events:none}
+
+/* 冲刺就绪 */
+.sk-btn.dash-ready{border-color:rgba(0,220,200,.7);
+  box-shadow:0 0 10px rgba(0,200,180,.4),inset 0 0 8px rgba(0,200,180,.08)}
+/* 冲刺冷却 */
+.sk-btn.dash-cooldown{border-color:rgba(0,80,70,.5);color:#224444}
+.sk-btn.dash-cooldown .sk-cd-txt{opacity:1}
+/* 技能就绪 */
+.sk-btn.state-ready{
+  border-color:rgba(255,200,0,.9);
+  box-shadow:0 0 20px rgba(255,170,0,.7),inset 0 0 14px rgba(255,150,0,.14);
+  animation:skPulse 1.1s ease-in-out infinite;
+}
+@keyframes skPulse{
+  0%,100%{box-shadow:0 0 12px rgba(255,170,0,.5),inset 0 0 8px rgba(255,150,0,.08)}
+  50%{box-shadow:0 0 26px rgba(255,200,0,.9),inset 0 0 18px rgba(255,180,0,.2)}
+}
+/* 等待能量 */
+.sk-btn.state-need-energy{border-color:rgba(255,200,0,.18);color:#665500}
+/* 冷却 */
+.sk-btn.state-cooldown{border-color:rgba(80,80,80,.4);color:#444}
+.sk-btn.state-cooldown .sk-cd-txt{opacity:1}
+
+/* ─────────────────────────────────────────
+   顶部比分 + 计时
+───────────────────────────────────────── */
+#score-area{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  text-align:center;
+}
+.score-label-txt{font-size:8px;letter-spacing:4px;opacity:.28;margin-bottom:4px}
+.pips-row{display:flex;align-items:center;gap:4px;justify-content:center}
+.pip{width:11px;height:11px;border-radius:50%;border:1.5px solid rgba(255,255,255,.15);transition:all .3s}
+.pip.p-won{background:var(--p);border-color:var(--p);box-shadow:0 0 8px var(--p)}
+.pip.e-won{background:var(--e);border-color:var(--e);box-shadow:0 0 8px var(--e)}
+.vs-txt{font-size:8px;opacity:.2;padding:0 3px}
+#round-lbl{font-size:8px;opacity:.22;margin-top:3px;letter-spacing:2px}
+
+#timer-txt{
+  position:absolute;top:62px;left:50%;transform:translateX(-50%);
+  font-family:'Orbitron',monospace;font-size:24px;font-weight:900;
+  color:rgba(255,255,255,.55);letter-spacing:4px;text-align:center;
+}
+#timer-txt.urgent{color:#ff4444!important;text-shadow:0 0 16px rgba(255,50,50,.6)}
+
+/* ─────────────────────────────────────────
+   消息 / 提示
+───────────────────────────────────────── */
+#msg-txt{
+  position:absolute;top:36%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Orbitron',monospace;font-size:18px;font-weight:700;
+  color:#fff;text-shadow:0 0 24px rgba(0,200,255,.8);
+  opacity:0;transition:opacity .22s;letter-spacing:2px;
+  pointer-events:none;text-align:center;white-space:nowrap;
+}
+#hint-bar{
+  position:absolute;
+  bottom:max(88px,calc(env(safe-area-inset-bottom,16px)+72px));
+  left:50%;transform:translateX(-50%);
+  font-size:10px;opacity:.28;letter-spacing:1px;text-align:center;pointer-events:none;
+}
+
+/* ─────────────────────────────────────────
+   技能全屏闪光
+───────────────────────────────────────── */
+#skill-flash{
+  position:fixed;inset:0;pointer-events:none;z-index:19;opacity:0;
+  border:3px solid transparent;transition:opacity .07s;
+}
+#skill-flash.instant{border-color:#ff6600;box-shadow:inset 0 0 50px rgba(255,80,0,.3)}
+#skill-flash.sustained{border-color:#00aaff;box-shadow:inset 0 0 50px rgba(0,160,255,.2)}
+
+/* ─────────────────────────────────────────
+   换陀螺按钮
+───────────────────────────────────────── */
+#act-swap{
+  display:none;position:absolute;right:14px;top:14px;
+  width:40px;height:40px;border-radius:8px;
+  border:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.35);font-family:'Orbitron',monospace;
+  align-items:center;justify-content:center;flex-direction:column;
+  cursor:pointer;pointer-events:auto;z-index:30;touch-action:manipulation;
+  background:var(--glass);backdrop-filter:blur(8px);
+  -webkit-tap-highlight-color:transparent;transition:border-color .2s,color .2s;
+}
+#act-swap:hover,#act-swap:active{border-color:var(--p);color:var(--p)}
+#act-swap.visible{display:flex}
+#act-swap span{font-size:15px;line-height:1}
+#act-swap small{font-size:5.5px;opacity:.45;letter-spacing:.5px;margin-top:1px}
+
+/* ─────────────────────────────────────────
+   Overlay 基础
+───────────────────────────────────────── */
+.ov{
+  position:fixed;inset:0;z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(2,3,14,.96);
+  transition:opacity .3s;
+}
+.ov.hide{opacity:0;pointer-events:none}
+
+/* 标题 */
+#ov-title h1{
+  font-family:'Orbitron',monospace;font-size:clamp(28px,8vw,52px);
+  font-weight:900;letter-spacing:8px;color:var(--p);
+  text-shadow:0 0 40px rgba(0,255,200,.4);margin-bottom:4px;
+}
+#ov-title .sub{font-size:10px;letter-spacing:10px;opacity:.28;color:#aaa;margin-bottom:20px}
+#ov-title .tagline{font-size:11px;opacity:.4;margin-bottom:48px;letter-spacing:1px;
+  max-width:380px;text-align:center;line-height:1.8}
+.deco-line{width:160px;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(0,255,200,.25),transparent);margin-bottom:48px}
+
+/* 选陀螺 */
+#ov-loadout h2{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;
+  letter-spacing:5px;color:var(--p);margin-bottom:2px}
+#ov-loadout .sub2{font-size:9px;letter-spacing:4px;opacity:.25;margin-bottom:18px}
+
+.arena-sel{display:flex;gap:6px;margin-bottom:18px}
+.arena-opt{
+  padding:6px 16px;
+  border:1px solid rgba(255,255,255,.1);font-size:9px;letter-spacing:2px;
+  cursor:pointer;color:rgba(255,255,255,.3);
+  transition:all .2s;font-family:'Orbitron',monospace;border-radius:4px;
+}
+.arena-opt.sel,.arena-opt:hover{border-color:var(--p);color:var(--p);background:rgba(0,255,200,.03)}
+
+.cards{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.card{
+  width:138px;padding:16px 12px 12px;
+  border:1px solid rgba(255,255,255,.08);
+  cursor:pointer;transition:all .22s;text-align:center;
+  position:relative;background:rgba(255,255,255,.01);border-radius:8px;
+}
+.card:hover{border-color:rgba(0,255,200,.3);background:rgba(0,255,200,.02)}
+.card.sel{border-color:var(--p);background:rgba(0,255,200,.04);
+  box-shadow:0 0 20px rgba(0,255,200,.1)}
+.card-icon{width:48px;height:48px;border-radius:50%;margin:0 auto 10px;
+  display:flex;align-items:center;justify-content:center;font-size:18px}
+.card h3{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;
+  margin-bottom:1px;letter-spacing:1px;color:#ddd}
+.card-type{font-size:8px;letter-spacing:3px;opacity:.3;margin-bottom:9px}
+.card-stats{font-size:8.5px;line-height:1.85;opacity:.45;text-align:left;padding:0 2px}
+.card-skill-tag{font-size:8px;margin-top:9px;padding:4px 7px;
+  background:rgba(255,200,0,.06);color:rgba(255,200,0,.75);
+  letter-spacing:.5px;border:1px solid rgba(255,200,0,.15);border-radius:3px}
+.card.sel::after{content:'✓';position:absolute;top:8px;right:10px;
+  color:var(--p);font-size:10px}
+
+.big-btn{
+  font-family:'Orbitron',monospace;font-size:12px;letter-spacing:4px;
+  padding:13px 44px;background:transparent;
+  border:1.5px solid var(--p);color:var(--p);
+  cursor:pointer;transition:all .22s;margin-top:24px;border-radius:4px;
+}
+.big-btn:hover{background:var(--p);color:#000;box-shadow:0 0 30px rgba(0,255,200,.3)}
+
+/* 回合/局结果 */
+#ov-round h2{font-family:'Orbitron',monospace;font-size:34px;font-weight:900;
+  letter-spacing:4px;text-shadow:0 0 30px rgba(255,255,255,.2)}
+#ov-round .rd-detail{font-size:10px;letter-spacing:3px;opacity:.4;margin-top:10px}
+#ov-round .rd-next{font-size:9px;opacity:.2;margin-top:36px;letter-spacing:2px}
+
+#ov-match h2{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;letter-spacing:4px}
+#ov-match .mt-sub{font-family:'Orbitron',monospace;font-size:20px;font-weight:400;
+  opacity:.4;margin-top:10px;margin-bottom:44px;letter-spacing:5px}
+
+.sec-btn{
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;
+  padding:10px 28px;background:transparent;
+  border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.4);
+  cursor:pointer;transition:all .2s;border-radius:4px;
+}
+.sec-btn:hover{border-color:rgba(255,255,255,.6);color:#ddd}
+
+/* ─────────────────────────────────────────
+   动画
+───────────────────────────────────────── */
+@keyframes hpBeat{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ─────────────────────────────────────────
+   响应式 — 竖屏手机
+───────────────────────────────────────── */
+@media(max-width:540px) and (orientation:portrait){
+  .hud-panel{width:calc(47vw - 60px);min-width:114px}
+  #skill-panel{left:calc(47vw - 46px);bottom:max(14px,env(safe-area-inset-bottom,14px))}
+  .sk-btn{width:44px;height:44px}
+  .sk-btn .sk-key{display:none}
+  .hud-hp-track{height:10px}
+
+  .ov{justify-content:flex-start;padding:14px 14px 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #ov-loadout h2{font-size:14px;margin-top:4px}
+  .arena-sel{margin-bottom:10px;gap:5px}
+  .arena-opt{padding:5px 11px;font-size:8.5px}
+
+  .cards{flex-direction:column;gap:7px;width:100%}
+  .card{
+    width:100%;border-radius:7px;
+    display:grid;
+    grid-template-columns:46px 1fr auto;
+    grid-template-rows:auto auto;
+    align-items:center;column-gap:10px;row-gap:2px;
+    padding:10px 12px;text-align:left;
+  }
+  .card-icon{width:46px;height:46px;margin:0;grid-row:1/3;font-size:17px}
+  .card h3{font-size:11px;grid-column:2;grid-row:1;margin-bottom:0}
+  .card-type{font-size:8px;grid-column:2;grid-row:2;margin-bottom:0}
+  .card-stats{display:none}
+  .card-skill-tag{grid-column:3;grid-row:1/3;font-size:8px;padding:3px 7px;
+    white-space:nowrap;margin-top:0;align-self:center}
+  .card.sel::after{top:6px;right:7px}
+
+  .big-btn{padding:12px 32px;font-size:11px;margin-top:16px;margin-bottom:max(20px,env(safe-area-inset-bottom,20px))}
+}
+
+/* ─────────────────────────────────────────
+   响应式 — 横屏手机
+───────────────────────────────────────── */
+@media(max-height:500px) and (orientation:landscape){
+  .hud-panel{bottom:max(5px,env(safe-area-inset-bottom,5px));width:138px}
+  .hud-inner{padding:6px 8px 7px}
+  #skill-panel{
+    left:calc(14px + 138px + 7px);
+    bottom:max(5px,env(safe-area-inset-bottom,5px));gap:5px;
+  }
+  .sk-btn{width:40px;height:40px}
+  .sk-btn .sk-key,.sk-btn .sk-name{display:none}
+  .hud-hp-track{height:9px}
+  #score-area{top:4px}
+  #timer-txt{top:40px;font-size:19px}
+
+  .ov{
+    flex-direction:row;flex-wrap:wrap;gap:6px;
+    justify-content:center;align-content:flex-start;
+    padding:8px max(10px,env(safe-area-inset-right,10px))
+             max(8px,env(safe-area-inset-bottom,8px))
+             max(10px,env(safe-area-inset-left,10px));
+    overflow-y:auto;-webkit-overflow-scrolling:touch;
+  }
+  #ov-loadout h2{font-size:13px;width:100%;text-align:center;margin-bottom:2px;margin-top:0}
+  #ov-loadout .sub2{width:100%;text-align:center;margin-bottom:6px}
+  .arena-sel{margin-bottom:4px;gap:5px}
+  .arena-opt{padding:4px 10px;font-size:8px}
+  .cards{flex-direction:row;flex-wrap:nowrap;gap:7px}
+  .card{width:108px;padding:9px 8px}
+  .card-icon{width:34px;height:34px;font-size:14px;margin-bottom:6px}
+  .card h3{font-size:9px}
+  .card-type{font-size:7px;margin-bottom:6px}
+  .card-stats{font-size:7.5px;line-height:1.65}
+  .card-skill-tag{font-size:7px;padding:3px 5px;margin-top:6px}
+  .big-btn{
+    padding:9px 22px;font-size:10px;margin-top:4px;
+    margin-bottom:max(5px,env(safe-area-inset-bottom,5px));width:100%;
+  }
+}
+</style>
+/* ── Overlay ── */
+.ov{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(1,1,12,.95);transition:opacity .35s}
+.ov.hide{opacity:0;pointer-events:none}
+#ov-title h1{font-family:'Orbitron',monospace;font-size:clamp(28px,8vw,50px);font-weight:900;letter-spacing:8px;color:#00ffcc;text-shadow:0 0 50px rgba(0,255,200,.45);margin-bottom:4px}
+#ov-title .sub{font-size:11px;letter-spacing:9px;opacity:.35;color:#aaa;margin-bottom:24px}
+#ov-title .tagline{font-size:12px;opacity:.5;margin-bottom:56px;letter-spacing:1px;max-width:400px;text-align:center;line-height:1.7}
+.deco-line{width:180px;height:1px;background:linear-gradient(90deg,transparent,rgba(0,255,200,.3),transparent);margin-bottom:56px}
+#ov-loadout h2{font-family:'Orbitron',monospace;font-size:19px;font-weight:700;letter-spacing:5px;color:#00ffcc;margin-bottom:3px}
+#ov-loadout .sub2{font-size:10px;letter-spacing:4px;opacity:.3;margin-bottom:16px}
+.arena-sel{display:flex;gap:8px;margin-bottom:16px}
+.arena-opt{padding:7px 18px;border:1px solid rgba(255,255,255,.13);font-size:10px;letter-spacing:2px;cursor:pointer;color:#666;transition:all .2s;font-family:'Orbitron',monospace}
+.arena-opt.sel,.arena-opt:hover{border-color:#00ffcc;color:#00ffcc;background:rgba(0,255,200,.04)}
+.cards{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.card{width:140px;padding:14px 10px;border:2px solid rgba(255,255,255,.09);cursor:pointer;transition:all .22s;text-align:center;position:relative;background:rgba(255,255,255,.01)}
+.card:hover,.card.sel{border-color:#00ffcc;background:rgba(0,255,200,.03);box-shadow:0 0 22px rgba(0,255,200,.13)}
+.card-icon{width:50px;height:50px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.card h3{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;margin-bottom:2px;letter-spacing:1px}
+.card-type{font-size:9px;letter-spacing:3px;opacity:.35;margin-bottom:8px}
+.card-stats{font-size:9px;line-height:1.8;opacity:.55;text-align:left;padding:0 2px}
+.card-skill-tag{font-size:9px;margin-top:8px;padding:4px 6px;background:rgba(255,200,0,.07);color:#ffcc00;letter-spacing:.5px;border:1px solid rgba(255,200,0,.18)}
+.card.sel::after{content:'✓';position:absolute;top:7px;right:9px;color:#00ffcc;font-size:11px}
+.big-btn{font-family:'Orbitron',monospace;font-size:13px;letter-spacing:4px;padding:12px 42px;background:transparent;border:2px solid #00ffcc;color:#00ffcc;cursor:pointer;transition:all .22s;margin-top:22px}
+.big-btn:hover{background:#00ffcc;color:#000;box-shadow:0 0 36px rgba(0,255,200,.35)}
+#ov-round h2{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;letter-spacing:4px;text-shadow:0 0 35px rgba(255,255,255,.25)}
+#ov-round .rd-detail{font-size:11px;letter-spacing:3px;opacity:.45;margin-top:11px}
+#ov-round .rd-next{font-size:10px;opacity:.25;margin-top:38px;letter-spacing:2px}
+#ov-match h2{font-family:'Orbitron',monospace;font-size:34px;font-weight:900;letter-spacing:4px}
+#ov-match .mt-sub{font-family:'Orbitron',monospace;font-size:22px;font-weight:400;opacity:.45;margin-top:12px;margin-bottom:48px;letter-spacing:5px}
+.sec-btn{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;padding:10px 30px;background:transparent;border:2px solid rgba(255,255,255,.28);color:#999;cursor:pointer;transition:all .2s}
+.sec-btn:hover{border-color:#fff;color:#fff}
+@keyframes hpBeat{0%,100%{opacity:1}50%{opacity:.45}}
+</style>
+</head>
+<body>
+<div id="gc"></div>
+<div id="skill-flash"></div>
+<div id="hud" style="display:none">
+  <!-- ● 玩家面板：左下，青色 = YOU -->
+  <div class="hud-panel" id="p-panel">
+    <div class="id-bar"></div>
+    <div class="hud-inner">
+      <div class="hud-who">
+        <div class="hud-dot"></div>
+        <div class="hud-who-labels">
+          <div class="hud-top-name" id="p-name">冲击型</div>
+          <div class="hud-role">● YOU</div>
+        </div>
+      </div>
+      <div class="hud-hp-section">
+        <div class="hud-hp-header">
+          <span class="hud-hp-lbl">耐久</span>
+          <span class="hud-hp-num" id="p-hp-val">140</span>
+        </div>
+        <div class="hud-hp-track">
+          <div class="hud-hp-fill" id="p-hp" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="hud-sub-bars">
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl">转速</div>
+          <div class="hud-sub-track"><div class="hud-sub-fill sp-fill" id="p-sp" style="width:100%"></div></div>
+        </div>
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl">爆发</div>
+          <div class="hud-sub-track"><div class="hud-sub-fill bu-fill" id="p-bu" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 技能按钮区 -->
+  <div id="skill-panel">
+    <div class="sk-btn state-cooldown" id="act-dash">
+      <div class="sk-icon">⚡</div>
+      <div class="sk-name">冲刺</div>
+      <div class="sk-key">SPC</div>
+      <div class="sk-cd-mask" id="dash-cd" style="height:0%"></div>
+      <div class="sk-cd-txt" id="dash-cd-txt"></div>
+    </div>
+    <div class="sk-btn state-cooldown" id="act-skill">
+      <div class="sk-icon" id="sk-icon">🔥</div>
+      <div class="sk-name" id="sn">技能</div>
+      <div class="sk-key">Q</div>
+      <div class="sk-cd-mask" id="skill-cd" style="height:0%"></div>
+      <div class="sk-cd-txt" id="skill-cd-txt"></div>
+      <svg class="sk-burst-ring" id="burst-ring" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="25" fill="none" stroke="rgba(255,180,0,0.45)"
+          stroke-width="2.5" stroke-dasharray="157" stroke-dashoffset="157"
+          stroke-linecap="round" transform="rotate(-90 28 28)"
+          style="transition:stroke-dashoffset .08s linear"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ● 敌方面板：右下，红色 = CPU -->
+  <div class="hud-panel" id="e-panel">
+    <div class="id-bar"></div>
+    <div class="hud-inner">
+      <div class="hud-who">
+        <div class="hud-dot"></div>
+        <div class="hud-who-labels">
+          <div class="hud-top-name" id="e-name">稳定型</div>
+          <div class="hud-role">● CPU</div>
+        </div>
+      </div>
+      <div class="hud-hp-section">
+        <div class="hud-hp-header">
+          <span class="hud-hp-lbl">耐久</span>
+          <span class="hud-hp-num" id="e-hp-val">200</span>
+        </div>
+        <div class="hud-hp-track">
+          <div class="hud-hp-fill" id="e-hp" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="hud-sub-bars">
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl">转速</div>
+          <div class="hud-sub-track"><div class="hud-sub-fill sp-fill" id="e-sp" style="width:100%"></div></div>
+        </div>
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl">爆发</div>
+          <div class="hud-sub-track"><div class="hud-sub-fill bu-fill" id="e-bu" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 换陀螺 -->
+  <div id="act-swap"><span>↺</span><small>换陀螺</small></div>
+  <!-- 顶部比分 -->
+  <div id="score-area">
+    <div class="score-label-txt">ROUND</div>
+    <div class="pips-row">
+      <div class="pip" id="pp1"></div><div class="pip" id="pp2"></div>
+      <div class="vs-txt">VS</div>
+      <div class="pip" id="ep1"></div><div class="pip" id="ep2"></div>
+    </div>
+    <div id="round-lbl">第 1 回合</div>
+  </div>
+  <div id="timer-txt">30</div>
+  <div id="msg-txt"></div>
+  <div id="hint-bar">拖拽鼠标瞄准并松开发射</div>
+</div>
+<div class="ov" id="ov-title">
+  <h1>陀螺对战</h1>
+  <div class="sub">SPIN CLASH</div>
+  <div class="tagline">在地下竞技场中，用技术而非运气证明你的实力</div>
+  <div class="deco-line"></div>
+  <button class="big-btn" id="btn-enter">进入对战</button>
+</div>
+<div class="ov hide" id="ov-loadout">
+  <h2>选择陀螺</h2>
+  <div class="sub2">SELECT YOUR TOP</div>
+  <div class="arena-sel">
+    <div class="arena-opt sel" data-arena="0">⭕ 圆形竞技场</div>
+    <div class="arena-opt" data-arena="1">♥ 心形竞技场</div>
+  </div>
+  <div class="cards">
+    <div class="card sel" data-id="0">
+      <div class="card-icon" style="background:radial-gradient(circle,#cc6622,#ccff12)">⚡</div>
+      <h3>冲击型</h3><div class="card-type">IMPACT</div>
+      <div class="card-stats">耐久 ████░ 85<br>转速 ████░ 95<br>速度 ████░ 14<br>重量 ████░ 1.2</div>
+      <div class="card-skill-tag">⚡ 飞冲 — 强冲向目标</div>
+    </div>
+    <div class="card" data-id="1">
+      <div class="card-icon" style="background:radial-gradient(circle,#4499ff,#2255cc)">🛡</div>
+      <h3>稳定型</h3><div class="card-type">ARMOR</div>
+      <div class="card-stats">耐久 █████ 120<br>转速 ███░░ 75<br>速度 ██░░░ 10<br>重量 █████ 1.5</div>
+      <div class="card-skill-tag">🛡 护盾 — 短暂护甲</div>
+    </div>
+    <div class="card" data-id="2">
+      <div class="card-icon" style="background:radial-gradient(circle,#cc44ff,#8800cc)">👻</div>
+      <h3>技巧型</h3><div class="card-type">TRICK</div>
+      <div class="card-stats">耐久 ███░░ 70<br>转速 █████ 100<br>速度 █████ 16<br>重量 ██░░░ 0.9</div>
+      <div class="card-skill-tag">👻 残影 — 幻影突袭</div>
+    </div>
+  </div>
+  <button class="big-btn" id="btn-fight">开始对战</button>
+</div>
+<div class="ov hide" id="ov-round">
+  <h2 id="rd-txt">玩家胜利</h2>
+  <div class="rd-detail" id="rd-detail">第 1 回合 · 击飞</div>
+  <div class="rd-next">下一回合即将开始…</div>
+</div>
+<div class="ov hide" id="ov-match">
+  <h2 id="mt-txt" style="color:#00ffcc">你赢了！</h2>
+  <div class="mt-sub" id="mt-sub">2 - 0</div>
+  <button class="sec-btn" id="btn-replay">再来一局</button>
+  <button class="sec-btn" id="btn-swap-rematch" style="margin-top:10px;border-color:rgba(0,255,200,.3);color:#00cc99">↺ 换陀螺再战</button>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+// ================================================================
+//  AUDIO ENGINE  —  Web Audio API  v2  (金属碰撞 + 激烈电子乐)
+// ================================================================
+let AC=null,mGain=null,_beatTimer=null,_nextBeat=0,_beatStep=0;
+const BPM=174, S16=60/BPM/4; // 174BPM，16分音符≈0.086s
+
+function initAudio(){
+  if(AC) return;
+  AC=new(window.AudioContext||window.webkitAudioContext)();
+  mGain=AC.createGain(); mGain.gain.value=0.54; mGain.connect(AC.destination);
+}
+
+// ── 基础工具 ──────────────────────────────────────────────────────
+function _osc(freq,type,t,dur,vol,dest){
+  const g=AC.createGain();
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  g.connect(dest||mGain);
+  const o=AC.createOscillator(); o.type=type; o.frequency.setValueAtTime(freq,t);
+  o.connect(g); o.start(t); o.stop(t+dur+0.02);
+}
+function _noise(t,dur,vol,flo=800,fhi=null,dest){
+  const sr=AC.sampleRate, n=Math.ceil(sr*(dur+0.02));
+  const b=AC.createBuffer(1,n,sr), d=b.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=Math.random()*2-1;
+  const s=AC.createBufferSource(); s.buffer=b;
+  const f1=AC.createBiquadFilter(); f1.type='highpass'; f1.frequency.value=flo;
+  const g=AC.createGain(); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  let chain=f1;
+  if(fhi){const f2=AC.createBiquadFilter();f2.type='lowpass';f2.frequency.value=fhi;f1.connect(f2);chain=f2;}
+  s.connect(f1); chain.connect(g); g.connect(dest||mGain); s.start(t); s.stop(t+dur+0.02);
+}
+// 失真波形
+function _distCurve(amt){
+  const n=512,c=new Float32Array(n);
+  for(let i=0;i<n;i++){const x=i*2/n-1;c[i]=(Math.PI+amt)*x/(Math.PI+amt*Math.abs(x));}
+  return c;
+}
+
+// ── 背景音乐：重型电子战斗乐 ──────────────────────────────────────
+function _kick(t){
+  // 底鼓：下行pitch sweep + 次低频 + 瞬态噪声
+  const g=AC.createGain(); g.gain.setValueAtTime(1.3,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.48); g.connect(mGain);
+  const o=AC.createOscillator(); o.frequency.setValueAtTime(200,t); o.frequency.exponentialRampToValueAtTime(36,t+0.38);
+  o.connect(g); o.start(t); o.stop(t+0.5);
+  // sub punch
+  const sg=AC.createGain(); sg.gain.setValueAtTime(0.7,t); sg.gain.exponentialRampToValueAtTime(0.0001,t+0.18); sg.connect(mGain);
+  const so=AC.createOscillator(); so.type='sine'; so.frequency.setValueAtTime(55,t); so.frequency.exponentialRampToValueAtTime(28,t+0.12);
+  so.connect(sg); so.start(t); so.stop(t+0.2);
+  _noise(t,0.028,0.25,2000,16000);
+}
+function _snare(t,ghost=false){
+  const v=ghost?0.08:0.22;
+  _noise(t,ghost?0.1:0.17,v,1800,12000);
+  if(!ghost) _osc(240,'triangle',t,0.09,0.18,null);
+}
+function _hat(t,open){
+  _noise(t,open?0.25:0.042,open?0.13:0.16,8000,22000);
+}
+function _bass(t,hz){
+  // 失真锯齿低音
+  const ws=AC.createWaveShaper(); ws.curve=_distCurve(120);
+  const flt=AC.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=620; flt.Q.value=3;
+  const g=AC.createGain(); g.gain.setValueAtTime(0.48,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.19); g.connect(mGain);
+  const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=hz;
+  o.connect(ws); ws.connect(flt); flt.connect(g); o.start(t); o.stop(t+0.22);
+}
+function _stab(t,hz){
+  // 失真power chord泛音叠加
+  [hz,hz*1.5,hz*2,hz*3].forEach((f,i)=>{
+    const ws=AC.createWaveShaper(); ws.curve=_distCurve(180+i*40);
+    const flt=AC.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=2200-i*200;
+    const g=AC.createGain(); g.gain.setValueAtTime(0.16/(i+1),t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.1); g.connect(mGain);
+    const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=f;
+    o.connect(ws); ws.connect(flt); flt.connect(g); o.start(t); o.stop(t+0.12);
+  });
+  _noise(t,0.02,0.12,4000,18000);
+}
+function _lead(t,hz,dur){
+  // 高亢失真lead synth
+  const ws=AC.createWaveShaper(); ws.curve=_distCurve(60);
+  const flt=AC.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=3200; flt.Q.value=5;
+  const g=AC.createGain(); g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); g.connect(mGain);
+  const o=AC.createOscillator(); o.type='square'; o.frequency.value=hz;
+  // detuned second voice
+  const g2=AC.createGain(); g2.gain.setValueAtTime(0.08,t); g2.gain.exponentialRampToValueAtTime(0.0001,t+dur); g2.connect(mGain);
+  const o2=AC.createOscillator(); o2.type='sawtooth'; o2.frequency.value=hz*1.005;
+  o.connect(ws); ws.connect(flt); flt.connect(g); o.start(t); o.stop(t+dur+0.02);
+  o2.connect(g2); o2.start(t); o2.stop(t+dur+0.02);
+}
+
+// ── 节拍模式 ─────────────────────────────────────────────────────
+// kick: 双踩加强版（四四拍 + 后半拍补充）
+const _K= [1,0,0,0, 1,0,1,0, 1,0,0,0, 1,0,1,0];
+// snare: 2拍4拍 + ghost note
+const _SN=[0,0,0,0, 1,0,0,1, 0,0,0,0, 1,0,0,1]; // index 7,15是ghost
+const _GH=[0,0,0,0, 0,0,0,1, 0,0,0,0, 0,0,0,1]; // ghost snare
+// hat: 每16分音符全踩
+const _HH=[1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1];
+const _OH=[0,0,0,0, 0,0,1,0, 0,0,0,0, 0,0,1,0];
+// bass: 32步，两小节
+const _BN=[110,0,0,0, 0,0,110,0, 82,0,0,0, 92,0,0,82,
+           110,0,0,0, 0,0,82,0,  73,0,82,0, 92,0,0,0];
+// stab chord: 32步
+const _ST=[0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,0,0,
+           0,0,0,0, 0,0,0,0, 1,0,0,0, 0,0,1,0];
+const _SH=[147,0,0,0,0,0,0,0,110,0,0,0,0,0,0,0,
+           147,0,0,0,0,0,0,0,110,0,0,0,0,0,0,0]; // stab hz
+// lead melody: 64步，四小节激进旋律
+const _LN=Array(64).fill(0);
+[[0,659],[2,587],[4,659],[6,784],[8,880],[10,784],[12,659],[14,587],
+ [16,698],[18,659],[20,587],[22,523],[24,587],[26,523],[28,494],[30,440],
+ [32,880],[34,988],[36,880],[38,784],[40,880],[42,988],[44,1047],[46,880],
+ [48,784],[50,698],[52,784],[54,880],[56,784],[58,698],[60,659],[62,587]
+].forEach(([s,f])=>_LN[s]=f);
+const _LD=[0.09,0.07,0.09,0.07,0.12,0.07,0.09,0.07,
+           0.09,0.07,0.09,0.07,0.09,0.07,0.09,0.07,
+           0.07,0.06,0.07,0.06,0.09,0.06,0.12,0.07,
+           0.09,0.07,0.09,0.07,0.09,0.07,0.09,0.07];
+
+function _scheduleBeat(){
+  while(_nextBeat < AC.currentTime+0.14){
+    const s=_beatStep%16, s32=_beatStep%32, s64=_beatStep%64;
+    if(_K[s])  _kick(_nextBeat);
+    if(_SN[s]&&!_GH[s]) _snare(_nextBeat,false);
+    if(_GH[s]) _snare(_nextBeat,true);
+    if(_HH[s]) _hat(_nextBeat,!!_OH[s]);
+    if(_BN[s32]) _bass(_nextBeat,_BN[s32]);
+    if(_ST[s32]&&_SH[s32]) _stab(_nextBeat,_SH[s32]);
+    if(_LN[s64]) _lead(_nextBeat,_LN[s64],_LD[s64%32]||0.09);
+    _nextBeat+=S16; _beatStep++;
+  }
+}
+function startMusic(){
+  if(_beatTimer||!AC) return;
+  _nextBeat=AC.currentTime+0.05; _beatStep=0;
+  _beatTimer=setInterval(_scheduleBeat,20);
+}
+function stopMusic(){
+  if(_beatTimer){clearInterval(_beatTimer);_beatTimer=null;}
+}
+
+// ── SFX ──────────────────────────────────────────────────────────
+
+// 高速金属摩擦碰撞音：冲击瞬态 + 刮削噪声扫频 + 旋转体减速金属鸣
+function sfxCollide(force){
+  if(!AC||force<0.5) return;
+  const t=AC.currentTime;
+  const v=Math.min(0.92,0.15+force*0.09);
+
+  // 层1：极短冲击瞬态（碰触最初的几毫秒，纯高频噪声爆破）
+  _noise(t,0.014,v*0.88,5500,22000);
+
+  // 层2：高速金属刮削核心（带通噪声，中心频率从高速向低速扫）
+  // 这是两个高速旋转金属体相互摩擦的主要特征
+  const scrapeDur=Math.min(0.2,0.07+force*0.012);
+  const sr=AC.sampleRate,sn=Math.ceil(sr*(scrapeDur+0.01));
+  const sb=AC.createBuffer(1,sn,sr); const sd=sb.getChannelData(0);
+  for(let i=0;i<sn;i++) sd[i]=Math.random()*2-1;
+  const ss=AC.createBufferSource(); ss.buffer=sb;
+  const bp=AC.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=2.8;
+  bp.frequency.setValueAtTime(9000+force*180,t+0.006);
+  bp.frequency.exponentialRampToValueAtTime(2200,t+scrapeDur);
+  const sg=AC.createGain(); sg.gain.setValueAtTime(v*0.78,t+0.006);
+  sg.gain.exponentialRampToValueAtTime(0.0001,t+scrapeDur);
+  ss.connect(bp); bp.connect(sg); sg.connect(mGain);
+  ss.start(t+0.005); ss.stop(t+scrapeDur+0.02);
+
+  // 层3：金属体被强制减速时的锯齿下行扫频（"刺啦"金属音）
+  const rg=AC.createGain(); rg.gain.setValueAtTime(v*0.6,t+0.003);
+  rg.gain.exponentialRampToValueAtTime(0.0001,t+0.1); rg.connect(mGain);
+  const ro=AC.createOscillator(); ro.type='sawtooth';
+  ro.frequency.setValueAtTime(3400+force*90,t+0.003);
+  ro.frequency.exponentialRampToValueAtTime(700,t+0.08);
+  ro.connect(rg); ro.start(t+0.002); ro.stop(t+0.11);
+
+  // 层4：中高频二次谐波刮削（让音色更粗粝）
+  const rg2=AC.createGain(); rg2.gain.setValueAtTime(v*0.35,t+0.008);
+  rg2.gain.exponentialRampToValueAtTime(0.0001,t+0.06); rg2.connect(mGain);
+  const ro2=AC.createOscillator(); ro2.type='sawtooth';
+  ro2.frequency.setValueAtTime(5500+force*60,t+0.008);
+  ro2.frequency.exponentialRampToValueAtTime(1400,t+0.055);
+  ro2.connect(rg2); ro2.start(t+0.007); ro2.stop(t+0.07);
+
+  // 层5（大碰撞）：低频质量冲击感 + 额外宽频摩擦
+  if(force>5){
+    const ig=AC.createGain(); ig.gain.setValueAtTime(v*0.55,t);
+    ig.gain.exponentialRampToValueAtTime(0.0001,t+0.1); ig.connect(mGain);
+    const io=AC.createOscillator();
+    io.frequency.setValueAtTime(130+force*5,t);
+    io.frequency.exponentialRampToValueAtTime(38,t+0.08);
+    io.connect(ig); io.start(t); io.stop(t+0.11);
+    _noise(t,0.05,v*0.35,300,3500);
+  }
+}
+
+// 撞墙：金属边框共鸣 + 重击
+let _wallCD=0;
+function sfxWall(spd){
+  if(!AC) return;
+  const now=AC.currentTime; if(now<_wallCD) return; _wallCD=now+0.06;
+  const v=Math.min(0.65,0.18+spd*0.05);
+  // 金属框架低频共鸣
+  [180,360,540].forEach((f,i)=>{
+    const g=AC.createGain(); g.gain.setValueAtTime(v/(i+1),now); g.gain.exponentialRampToValueAtTime(0.0001,now+0.22-i*0.04); g.connect(mGain);
+    const o=AC.createOscillator(); o.type='sine'; o.frequency.value=f;
+    o.connect(g); o.start(now); o.stop(now+0.25);
+  });
+  _noise(now,0.04,v*0.55,1200,8000);
+  _noise(now,0.12,v*0.25,180,600);
+}
+
+function sfxLaunch(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  // 发射扫频
+  const g=AC.createGain(); g.gain.setValueAtTime(0.42,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.35); g.connect(mGain);
+  const o=AC.createOscillator(); o.type='sawtooth';
+  o.frequency.setValueAtTime(160,t); o.frequency.exponentialRampToValueAtTime(1100,t+0.26);
+  const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=3500;
+  o.connect(f); f.connect(g); o.start(t); o.stop(t+0.38);
+  _noise(t,0.15,0.16,2200);
+  // 陀螺金属旋转共鸣（启动时的嗡鸣）
+  const sg=AC.createGain(); sg.gain.setValueAtTime(0,t); sg.gain.linearRampToValueAtTime(0.12,t+0.25); sg.gain.linearRampToValueAtTime(0,t+1.1); sg.connect(mGain);
+  const so=AC.createOscillator(); so.type='sawtooth'; so.frequency.value=68;
+  const sf=AC.createBiquadFilter(); sf.type='bandpass'; sf.frequency.value=220; sf.Q.value=10;
+  so.connect(sf); sf.connect(sg); so.start(t); so.stop(t+1.2);
+}
+
+function sfxDash(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  const g=AC.createGain(); g.gain.setValueAtTime(0.32,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.16); g.connect(mGain);
+  const o=AC.createOscillator(); o.type='square';
+  o.frequency.setValueAtTime(440,t); o.frequency.exponentialRampToValueAtTime(180,t+0.13);
+  o.connect(g); o.start(t); o.stop(t+0.18);
+  _noise(t,0.08,0.14,2000,12000);
+}
+
+function sfxOrb(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  [880,1108,1318,1760].forEach((f,i)=>_osc(f,'sine',t+i*0.05,0.22,0.2,null));
+}
+
+function sfxSkill(sk){
+  if(!AC) return;
+  const t=AC.currentTime;
+  if(sk==='飞冲'){
+    // 超速金属冲刺
+    [80,160,320,640,1280].forEach((f,i)=>{_osc(f,'sawtooth',t+i*0.045,0.1,0.4/(i+1),null);});
+    _noise(t,0.3,0.32,400,10000);
+  }else if(sk==='护盾'){
+    // 金属壳展开音
+    [220,330,440,660,880,1100].forEach((f,i)=>_osc(f,'sine',t+i*0.032,0.32,0.24,null));
+    _noise(t,0.06,0.18,5000,16000);
+    // 低频金属轰鸣
+    _osc(60,'sine',t,0.4,0.45,null);
+  }else{
+    // 残影闪现
+    _osc(880,'square',t,0.035,0.4,null);
+    _osc(1320,'sine',t+0.04,0.18,0.3,null);
+    _osc(660,'square',t+0.08,0.035,0.35,null);
+    _noise(t,0.22,0.28,2500,14000);
+  }
+}
+
+function sfxRingOut(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  // 大型金属物体坠落碰撞
+  [65,97,130].forEach((f,i)=>{
+    const g=AC.createGain(); g.gain.setValueAtTime(0.6-i*0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.9-i*0.1); g.connect(mGain);
+    const o=AC.createOscillator(); o.type=i===0?'sawtooth':'sine'; o.frequency.setValueAtTime(f*2,t); o.frequency.exponentialRampToValueAtTime(f,t+0.25);
+    o.connect(g); o.start(t); o.stop(t+1);
+  });
+  _noise(t,0.6,0.55,120,6000);
+  _noise(t+0.05,0.5,0.4,80,2000);
+  _noise(t+0.15,0.35,0.28,60,800);
+}
+
+function sfxRoundWin(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  [[523,0],[659,.09],[784,.18],[1047,.32],[1318,.48]].forEach(([f,d])=>_osc(f,'sine',t+d,0.28,0.35,null));
+}
+function sfxRoundLose(){
+  if(!AC) return;
+  const t=AC.currentTime;
+  [[392,0],[349,.11],[330,.24],[262,.4],[196,.58]].forEach(([f,d])=>_osc(f,'sine',t+d,0.24,0.28,null));
+}
+function sfxCountdown(){
+  if(!AC) return;
+  _osc(1047,'sine',AC.currentTime,0.06,0.28,null);
+  _noise(AC.currentTime,0.04,0.1,4000,12000);
+}
+// ── 软心形曲线（sin(t)底部无尖，顶部浅弧）────────────────────────
+// 预计算96点边界（3D XZ坐标）
+const HEART_N=96;
+const HEART_PTS=[];   // {x,z} in arena space
+(function precomputeHeart(){
+  for(let i=0;i<HEART_N;i++){
+    const t=i/HEART_N*Math.PI*2;
+    // hx=纯sin(t)→底部圆滑无尖；hy系数控制顶部弧度（浅）
+    const hx=6.2*Math.sin(t);
+    const hy=4.8*Math.cos(t)-1.8*Math.cos(2*t)-0.25*Math.cos(3*t)+0.3;
+    HEART_PTS.push({x:hx,z:-hy}); // rotateX后y→-z
+  }
+})();
+
+// 多边形内外测试（射线法）
+function heartContains(x,z,scale=1){
+  const px=x/scale,pz=z/scale;
+  let inside=false;
+  for(let i=0,j=HEART_N-1;i<HEART_N;j=i++){
+    const xi=HEART_PTS[i].x,zi=HEART_PTS[i].z;
+    const xj=HEART_PTS[j].x,zj=HEART_PTS[j].z;
+    if((zi>pz)!==(zj>pz)&&px<(xj-xi)*(pz-zi)/(zj-zi)+xi) inside=!inside;
+  }
+  return inside;
+}
+// 最近边界点的向外法线
+function heartWallNormal(x,z){
+  let minD=Infinity,bx=HEART_PTS[0].x,bz=HEART_PTS[0].z;
+  for(let i=0;i<HEART_N;i++){
+    const d=(x-HEART_PTS[i].x)**2+(z-HEART_PTS[i].z)**2;
+    if(d<minD){minD=d;bx=HEART_PTS[i].x;bz=HEART_PTS[i].z;}
+  }
+  const len=Math.sqrt(bx*bx+bz*bz)||1;
+  return {nx:bx/len,nz:bz/len}; // 向外（边界点→外侧）
+}
+function heartNearWall(x,z){return heartContains(x,z,1.0)&&!heartContains(x,z,0.94);}
+function heartInHaz(x,z){return heartContains(x,z,1.0)&&!heartContains(x,z,0.84);}
+function heartCrossed(x,z){return !heartContains(x,z,1.0);}
+function heartRingOut(x,z){return !heartContains(x,z,1.14);}
+
+// ── 慢动作 ────────────────────────────────────────────────────────
+let timeScale=1;
+
+// ── 拖尾系统 ──────────────────────────────────────────────────────
+const TRAIL_N=14;
+let pTrailMeshes=[],eTrailMeshes=[];
+const trailGeo=new THREE.SphereGeometry(.07,4,4);
+function initTrails(){
+  [...pTrailMeshes,...eTrailMeshes].forEach(m=>scene.remove(m));
+  pTrailMeshes=[];eTrailMeshes=[];
+  const mk=(col)=>{
+    const arr=[];
+    for(let i=0;i<TRAIL_N;i++){
+      const m=new THREE.Mesh(trailGeo,new THREE.MeshBasicMaterial(
+        {color:col,transparent:true,opacity:0}));
+      scene.add(m);arr.push(m);
+    }
+    return arr;
+  };
+  pTrailMeshes=mk(TMPL[pID].color);
+  eTrailMeshes=mk(TMPL[AI_ID].color);
+}
+const pTrailPos=[],eTrailPos=[];
+function updateTrail(meshes,posArr,x,z,alive){
+  if(alive){posArr.unshift({x,z});if(posArr.length>TRAIL_N)posArr.pop();}
+  meshes.forEach((m,i)=>{
+    const p=posArr[i];
+    if(p&&alive){
+      m.position.set(p.x,.58,p.z);
+      const t=1-i/TRAIL_N;
+      m.material.opacity=t*t*0.55;
+      const s=0.55+t*0.45;
+      m.scale.setScalar(s);
+    }else{m.material.opacity=0;}
+  });
+}
+
+const TMPL=[
+  {name:'冲击型',skill:'飞冲', color:0xff4400,emi:0x551100,hp:140,maxSpin:3400,spd:28,mass:0.80,brate:1.2},
+  {name:'稳定型',skill:'护盾', color:0x4488ff,emi:0x001133,hp:200,maxSpin:2600,spd:22,mass:0.95,brate:1.0},
+  {name:'技巧型',skill:'残影',color:0xaa44ff,emi:0x220044,hp:115,maxSpin:3900,spd:34,mass:0.70,brate:1.4},
+];
+const AI_ID=1;
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+document.getElementById('gc').appendChild(renderer.domElement);
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x010108);
+scene.fog=new THREE.Fog(0x010108,22,55);
+
+const cam=new THREE.PerspectiveCamera(50,1,0.1,100);
+cam.position.set(0,17,12);cam.lookAt(0,0,0);
+let _camBaseY=17,_camBaseZ=12;
+
+function onResize(){
+  renderer.setSize(innerWidth,innerHeight);
+  cam.aspect=innerWidth/innerHeight;
+  if(cam.aspect<1){
+    const s=Math.min(1/cam.aspect*0.88,2.2);
+    _camBaseY=17*s;_camBaseZ=12*s;
+  }else{
+    _camBaseY=17;_camBaseZ=12;
+  }
+  cam.position.set(0,_camBaseY,_camBaseZ);
+  cam.lookAt(0,0,0);
+  cam.updateProjectionMatrix();
+}
+onResize();window.addEventListener('resize',onResize);
+
+scene.add(new THREE.AmbientLight(0x112233,0.75));
+const cLight=new THREE.PointLight(0x0099ff,2.8,38);
+cLight.position.set(0,13,0);cLight.castShadow=true;scene.add(cLight);
+const pGlow=new THREE.PointLight(0x00ffcc,1.2,20);pGlow.position.set(0,2,7);scene.add(pGlow);
+const eGlow=new THREE.PointLight(0xff3300,1.0,20);eGlow.position.set(0,2,-7);scene.add(eGlow);
+
+const AR=8,TOP_R=0.55;
+const arenaObjs=[];
+let currentArena=0;
+function $add(o){scene.add(o);arenaObjs.push(o);return o;}
+function clearArena(){arenaObjs.forEach(o=>scene.remove(o));arenaObjs.length=0;}
+
+function buildCircleArena(){
+  // 碗状地面（自定义多环BufferGeometry，中心低边缘高）
+  const RINGS=22,SEGS=72,bowlH=0.58;
+  const verts=[],inds=[],uvs=[];
+  verts.push(0,0,0);uvs.push(0.5,0.5);
+  for(let r=1;r<=RINGS;r++){
+    const rad=AR*r/RINGS;
+    const y=Math.pow(r/RINGS,1.8)*bowlH; // 非线性：中心平缓、边缘陡
+    for(let s=0;s<SEGS;s++){
+      const a=s/SEGS*Math.PI*2;
+      verts.push(rad*Math.cos(a),y,rad*Math.sin(a));
+      uvs.push(0.5+0.5*(r/RINGS)*Math.cos(a),0.5+0.5*(r/RINGS)*Math.sin(a));
+    }
+  }
+  for(let s=0;s<SEGS;s++) inds.push(0,1+s,1+(s+1)%SEGS);
+  for(let r=0;r<RINGS-1;r++){
+    for(let s=0;s<SEGS;s++){
+      const a=1+r*SEGS+s,b=1+r*SEGS+(s+1)%SEGS,c=1+(r+1)*SEGS+s,d=1+(r+1)*SEGS+(s+1)%SEGS;
+      inds.push(a,b,c);inds.push(b,d,c);
+    }
+  }
+  const bGeo=new THREE.BufferGeometry();
+  bGeo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+  bGeo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+  bGeo.setIndex(inds);bGeo.computeVertexNormals();
+  const floor=new THREE.Mesh(bGeo,new THREE.MeshStandardMaterial(
+    {color:0x070710,emissive:0x010118,roughness:.8,metalness:.25,side:THREE.DoubleSide}));
+  floor.receiveShadow=true;$add(floor);
+  // 同心环网格（根据碗高调整Y位置）
+  for(let r=2;r<AR;r+=2){
+    const y=Math.pow(r/AR,1.8)*bowlH+0.02;
+    const m=new THREE.Mesh(new THREE.TorusGeometry(r,.018,8,64),
+      new THREE.MeshBasicMaterial({color:r===6?0x1a3355:0x0e1a2e,transparent:true,opacity:.7}));
+    m.rotation.x=Math.PI/2;m.position.y=y;$add(m);
+  }
+  const rimY=bowlH+0.02;
+  const rim=new THREE.Mesh(new THREE.TorusGeometry(AR,.1,16,80),
+    new THREE.MeshBasicMaterial({color:0x0055ff,transparent:true,opacity:.95}));
+  rim.rotation.x=Math.PI/2;rim.position.y=rimY;$add(rim);
+  const haz=new THREE.Mesh(new THREE.RingGeometry(6.5,AR,64),
+    new THREE.MeshBasicMaterial({color:0xff2200,transparent:true,opacity:.06,side:THREE.DoubleSide}));
+  haz.rotation.x=-Math.PI/2;haz.position.y=rimY-0.01;$add(haz);
+  const cm=new THREE.Mesh(new THREE.CircleGeometry(.32,32),
+    new THREE.MeshBasicMaterial({color:0x00ffcc,transparent:true,opacity:.22}));
+  cm.rotation.x=-Math.PI/2;cm.position.y=0.01;$add(cm);
+}
+
+function buildHeartArena(){
+  const bowlH=0.58;
+  // 地面：从预计算的HEART_PTS生成ShapeGeometry + 碗状高低差
+  const shape2D=new THREE.Shape(HEART_PTS.map(p=>new THREE.Vector2(p.x,-p.z)));
+  const geo=new THREE.ShapeGeometry(shape2D,80);
+  geo.rotateX(-Math.PI/2);
+  const pos=geo.attributes.position;
+  for(let i=0;i<pos.count;i++){
+    const x=pos.getX(i),z=pos.getZ(i),r=Math.sqrt(x*x+z*z);
+    // 碗状：以心形最大半径7为参考，中心最低，边缘最高
+    pos.setY(i,Math.pow(r/7.0,1.9)*bowlH);
+  }
+  pos.needsUpdate=true;geo.computeVertexNormals();
+  $add(new THREE.Mesh(geo,new THREE.MeshStandardMaterial(
+    {color:0x07050f,emissive:0x010008,roughness:.88,metalness:.18,side:THREE.DoubleSide})));
+  // 外缘发光轮廓
+  const rimPts=HEART_PTS.map(p=>new THREE.Vector3(p.x,bowlH+0.06,p.z));
+  rimPts.push(rimPts[0]);
+  $add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(rimPts),
+    new THREE.LineBasicMaterial({color:0xff2288})));
+  // 同心轮廓（0.84倍、0.6倍）
+  [0.84,0.6].forEach((sc,i)=>{
+    const inner=HEART_PTS.map(p=>{
+      const yr=Math.pow(Math.sqrt(p.x*p.x+p.z*p.z)/7.0,1.9)*bowlH;
+      return new THREE.Vector3(p.x*sc,yr+0.02,p.z*sc);
+    });
+    inner.push(inner[0]);
+    $add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(inner),
+      new THREE.LineBasicMaterial({color:i===0?0x3a0a44:0x1a0520,transparent:true,opacity:.75})));
+  });
+  // 危险区（外环心形覆盖）
+  const outerPts=HEART_PTS.map(p=>new THREE.Vector2(p.x,-p.z));
+  const innerPts=HEART_PTS.map(p=>new THREE.Vector2(p.x*0.84,-p.z*0.84));
+  const dShape=new THREE.Shape(outerPts);
+  dShape.holes.push(new THREE.Path(innerPts));
+  const dGeo=new THREE.ShapeGeometry(dShape,48);
+  dGeo.rotateX(-Math.PI/2);
+  $add(new THREE.Mesh(dGeo,new THREE.MeshBasicMaterial(
+    {color:0xff1166,transparent:true,opacity:.055,side:THREE.DoubleSide})));
+  // 中心标记
+  const cm=new THREE.Mesh(new THREE.CircleGeometry(.32,32),
+    new THREE.MeshBasicMaterial({color:0xff44aa,transparent:true,opacity:.22}));
+  cm.rotation.x=-Math.PI/2;cm.position.y=0.02;$add(cm);
+}
+
+function setupArena(){clearArena();currentArena===0?buildCircleArena():buildHeartArena();
+  // 划痕覆盖层（每次buildArena后重建，让贴图平面跟着场地）
+  scratchLayer.onArenaBuilt();
+}
+
+// ── 划痕系统 ──────────────────────────────────────────────────────
+const scratchLayer=(function(){
+  const S=1024;
+  const cv=document.createElement('canvas');
+  cv.width=cv.height=S;
+  const ctx=cv.getContext('2d');
+
+  // ── 一次性预设所有 ctx 样式，之后不再重置 ──
+  ctx.lineCap='round';
+  ctx.lineJoin='round';
+  ctx.globalCompositeOperation='source-over';
+
+  const tex=new THREE.CanvasTexture(cv);
+  tex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  let mesh=null;
+
+  // prev 用 flat 数字避免每帧 GC
+  let ppx=NaN,ppz=NaN,epx=NaN,epz=NaN;
+
+  // UV 缩放常量（随场地预计算）
+  let uvScaleX=1/(AR*2),uvScaleZ=1/(AR*2);
+  function refreshUVScale(){
+    if(currentArena===0){uvScaleX=uvScaleZ=1/(AR*2);}
+    else{uvScaleX=uvScaleZ=1/15.2;}
+  }
+
+  function clear(){
+    ctx.clearRect(0,0,S,S);
+    tex.needsUpdate=true;
+    ppx=ppz=epx=epz=NaN;
+    refreshUVScale();
+  }
+
+  // 轻重变化用的低频相位计数器（避免每帧 Date.now() 调用）
+  let _phase=0;
+
+  // 内联UV计算，避免函数调用和对象创建
+  function tick(tp,te,dt){
+    if(gameState!=='active')return;
+    _phase+=dt*2.8; // 约 2.8 rad/s 的缓慢相位推进
+
+    let drew=false;
+
+    // ── 每颗陀螺分别计算力度，再分别画 ──
+    // 用 source-over + 低 alpha → 多次经过自然叠加变深
+    ctx.globalCompositeOperation='source-over';
+
+    function strokeTop(cx0,cz0,cx1,cz1,vx,vz,phaseOff){
+      // 速度：快 → 轻（轮胎飞转触地轻），慢/停 → 重（研磨感）
+      const spd=Math.sqrt(vx*vx+vz*vz);
+      const maxSpd=32; // 大约陀螺最高速
+      const speedRatio=Math.min(spd/maxSpd,1);
+      // 轻重波动：低频 sin + 速度反比，范围 0.05 ~ 0.38
+      const wave=Math.sin(_phase+phaseOff)*0.5+0.5; // 0~1
+      const alpha=0.03+(1-speedRatio)*0.11+wave*0.05;
+      // 线宽：慢时更宽（磨得深），快时细
+      const lw=0.7+(1-speedRatio)*1.6+wave*0.4;
+
+      // 外层痕迹
+      ctx.strokeStyle='rgba(210,212,220,1)';
+      ctx.lineWidth=lw;
+      ctx.globalAlpha=alpha;
+      ctx.beginPath();
+      ctx.moveTo((0.5+cx0*uvScaleX)*S,(0.5-cz0*uvScaleZ)*S);
+      ctx.lineTo((0.5+cx1*uvScaleX)*S,(0.5-cz1*uvScaleZ)*S);
+      ctx.stroke();
+
+      // 内层高光（比外层更细更亮，叠在中心）
+      ctx.strokeStyle='rgba(255,255,255,1)';
+      ctx.lineWidth=lw*0.28;
+      ctx.globalAlpha=alpha*0.55;
+      ctx.beginPath();
+      ctx.moveTo((0.5+cx0*uvScaleX)*S,(0.5-cz0*uvScaleZ)*S);
+      ctx.lineTo((0.5+cx1*uvScaleX)*S,(0.5-cz1*uvScaleZ)*S);
+      ctx.stroke();
+    }
+
+    if(tp.alive&&!isNaN(ppx)){
+      strokeTop(ppx,ppz,tp.x,tp.z,tp.vx,tp.vz,0);
+      drew=true;
+    }
+    if(te.alive&&!isNaN(epx)){
+      strokeTop(epx,epz,te.x,te.z,te.vx,te.vz,Math.PI); // 相位偏移π，与玩家不同步
+      drew=true;
+    }
+
+    if(drew) tex.needsUpdate=true;
+
+    // 更新 prev
+    if(tp.alive){ppx=tp.x;ppz=tp.z;}
+    if(te.alive){epx=te.x;epz=te.z;}
+  }
+
+  function onArenaBuilt(){
+    if(mesh){scene.remove(mesh);mesh=null;}
+    clear();
+
+    // 圆形：用和地面完全一致的分段数重建，然后抬高一点点
+    let geo;
+    const OFFSET=0.012; // 贴地偏移，刚好浮在表面
+    const bowlH=0.78;
+
+    if(currentArena===0){
+      // 与 buildCircleArena 相同的环状几何
+      const RINGS=22,SEGS=72;
+      const verts=[],inds=[],uvs=[];
+      verts.push(0,OFFSET,0);uvs.push(0.5,0.5);
+      for(let r=1;r<=RINGS;r++){
+        const rad=AR*r/RINGS;
+        const y=Math.pow(r/RINGS,1.8)*bowlH+OFFSET;
+        for(let s=0;s<SEGS;s++){
+          const a=s/SEGS*Math.PI*2;
+          verts.push(rad*Math.cos(a),y,rad*Math.sin(a));
+          uvs.push(0.5+0.5*(r/RINGS)*Math.cos(a),0.5+0.5*(r/RINGS)*Math.sin(a));
+        }
+      }
+      for(let s=0;s<SEGS;s++) inds.push(0,1+s,1+(s+1)%SEGS);
+      for(let r=0;r<RINGS-1;r++){
+        for(let s=0;s<SEGS;s++){
+          const a=1+r*SEGS+s,b=1+r*SEGS+(s+1)%SEGS,
+                c=1+(r+1)*SEGS+s,d=1+(r+1)*SEGS+(s+1)%SEGS;
+          inds.push(a,b,c);inds.push(b,d,c);
+        }
+      }
+      geo=new THREE.BufferGeometry();
+      geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
+      geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));
+      geo.setIndex(inds);
+
+    }else{
+      // 心形：用相同的ShapeGeometry，然后逐顶点施加碗高
+      const shape2D=new THREE.Shape(HEART_PTS.map(p=>new THREE.Vector2(p.x,-p.z)));
+      geo=new THREE.ShapeGeometry(shape2D,80);
+      geo.rotateX(-Math.PI/2);
+      const pos=geo.attributes.position;
+      // 重建UV（ShapeGeometry默认UV不符合我们的映射）
+      const uvArr=[];
+      for(let i=0;i<pos.count;i++){
+        const x=pos.getX(i),z=pos.getZ(i);
+        const r=Math.sqrt(x*x+z*z);
+        pos.setY(i,Math.pow(r/7.0,1.9)*bowlH+OFFSET);
+        uvArr.push(0.5+x/15.2, 0.5-z/15.2); // 与worldToUV scale一致
+      }
+      pos.needsUpdate=true;
+      geo.setAttribute('uv',new THREE.Float32BufferAttribute(uvArr,2));
+    }
+
+    geo.computeVertexNormals();
+    mesh=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({
+      map:tex,transparent:true,opacity:1,
+      depthWrite:false,
+      polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,
+      side:THREE.DoubleSide
+    }));
+    // 不再用 position.y 偏移，高度已嵌入顶点
+    scene.add(mesh);
+  }
+
+  return{tick,clear,onArenaBuilt};
+})();
+
+// ── 斑点贴图生成 ─────────────────────────────────────────────────
+function mkSpotTex(bgCol,dotCol,patId){
+  const S=512,cv=document.createElement('canvas');
+  cv.width=cv.height=S;
+  const cx=cv.getContext('2d'),h=S/2;
+  cx.fillStyle='#'+new THREE.Color(bgCol).getHexString();
+  cx.fillRect(0,0,S,S);
+  cx.fillStyle='#'+new THREE.Color(dotCol).getHexString();
+  if(patId===0){
+    // 冲击型：3叶非对称大斑 + 弧线标记 → 旋转时形成3叶残影
+    [[h,h,55],[h-95,h-75,40],[h+95,h-75,40],[h-75,h+90,30],[h+75,h+90,30],
+     [h,h-138,20],[h-138,h+32,16],[h+138,h+32,16]].forEach(([x,y,r])=>{
+      cx.beginPath();cx.arc(x,y,r,0,Math.PI*2);cx.fill();
+    });
+    cx.strokeStyle='#'+new THREE.Color(dotCol).getHexString();
+    cx.lineWidth=10;cx.globalAlpha=.38;
+    for(let i=0;i<3;i++){
+      const a=i/3*Math.PI*2;
+      cx.beginPath();cx.arc(h,h,148,a,a+.85);cx.stroke();
+    }
+    cx.globalAlpha=1;
+  }else if(patId===1){
+    // 稳定型：8重同心对称点阵 → 高速旋转时模糊成纯圆环
+    cx.beginPath();cx.arc(h,h,38,0,Math.PI*2);cx.fill();
+    [[8,95,24],[16,180,15],[24,230,9]].forEach(([n,r,dr])=>{
+      for(let i=0;i<n;i++){
+        const a=i/n*Math.PI*2;
+        cx.beginPath();cx.arc(h+Math.cos(a)*r,h+Math.sin(a)*r,dr,0,Math.PI*2);cx.fill();
+      }
+    });
+  }else{
+    // 技巧型：阿基米德螺旋点列 → 旋转时产生动态螺旋残影
+    for(let i=0;i<18;i++){
+      const t=i/18,a=t*Math.PI*7,r=14+t*200;
+      cx.beginPath();cx.arc(h+Math.cos(a)*r,h+Math.sin(a)*r,5+t*14,0,Math.PI*2);cx.fill();
+    }
+    cx.globalAlpha=.5;
+    cx.fillRect(h-6,h-50,12,100);cx.fillRect(h-50,h-6,100,12);
+    cx.globalAlpha=1;
+  }
+  return new THREE.CanvasTexture(cv);
+}
+
+function mkTop(color,emi,typeId,isPlayer){
+  const g=new THREE.Group();
+  const mc=new THREE.Color(color);
+  const sm=(c,e,r=.3,m=.8)=>new THREE.MeshStandardMaterial({
+    color:c instanceof THREE.Color?c:new THREE.Color(c),
+    emissive:e instanceof THREE.Color?e:new THREE.Color(e),
+    emissiveIntensity:.35,roughness:r,metalness:m
+  });
+  const tipMat=new THREE.MeshStandardMaterial({color:0xccddee,metalness:1,roughness:.04});
+  const glowMat=(c)=>new THREE.MeshStandardMaterial({color:0xffffff,emissive:c,emissiveIntensity:.85,metalness:.95,roughness:.06});
+  // 斑点贴图圆盘工厂
+  const mkSDisk=(r,y,bgC,dotC,pat)=>{
+    const m=new THREE.Mesh(new THREE.CircleGeometry(r,56),
+      new THREE.MeshStandardMaterial({map:mkSpotTex(bgC,dotC,pat),roughness:.3,metalness:.1}));
+    m.rotation.x=-Math.PI/2;m.position.y=y;return m;
+  };
+
+  if(typeId===0){
+    // ── 冲击型：六边形锯刃盘 + 三叶攻击刃 ──
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.68,.76,.2,6),sm(color,emi,.2,.92));
+    disc.castShadow=true; g.add(disc);
+    for(let i=0;i<3;i++){
+      const a=i*Math.PI*2/3;
+      const blade=new THREE.Mesh(new THREE.BoxGeometry(.7,.13,.2),sm(0xffddbb,emi,.12,.98));
+      blade.position.set(Math.cos(a)*.74,0,Math.sin(a)*.74);
+      blade.rotation.y=-a; g.add(blade);
+      const fang=new THREE.Mesh(new THREE.ConeGeometry(.07,.22,5),sm(0xffffff,emi,.08,1));
+      fang.position.set(Math.cos(a)*1.08,.02,Math.sin(a)*1.08);
+      fang.rotation.z=Math.PI/2;fang.rotation.y=-a+Math.PI/2;g.add(fang);
+    }
+    const spike=new THREE.Mesh(new THREE.ConeGeometry(.16,.45,6),sm(0xeeddcc,emi,.1,1));
+    spike.position.y=.33;g.add(spike);
+    const ring=new THREE.Mesh(new THREE.TorusGeometry(.72,.055,6,18),glowMat(mc));
+    ring.rotation.x=Math.PI/2;g.add(ring);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.09,.48,8),tipMat);
+    tip.position.y=-.35;tip.rotation.x=Math.PI;g.add(tip);
+    // 斑点盘：贴在主盘顶面，黄色斑点
+    g.add(mkSDisk(.62,.12,color,0xffee00,0));
+
+  }else if(typeId===1){
+    // ── 稳定型：高塔主体 + 超厚防护缓冲环 ──
+    const tower=new THREE.Mesh(new THREE.CylinderGeometry(.38,.44,.78,8),sm(color,emi,.45,.7));
+    tower.castShadow=true;g.add(tower);
+    const bumper=new THREE.Mesh(new THREE.TorusGeometry(.64,.22,10,20),sm(new THREE.Color(color).lerp(new THREE.Color(0xaaccff),.18),emi,.38,.72));
+    bumper.rotation.x=Math.PI/2;bumper.position.y=-.04;g.add(bumper);
+    const base=new THREE.Mesh(new THREE.CylinderGeometry(.6,.63,.1,8),sm(color,emi,.5,.65));
+    base.position.y=-.44;g.add(base);
+    const dome=new THREE.Mesh(new THREE.SphereGeometry(.35,14,8,0,Math.PI*2,0,Math.PI/2),sm(0xddeeff,new THREE.Color(color).multiplyScalar(.4),.18,.88));
+    dome.position.y=.39;g.add(dome);
+    const rimGlow=new THREE.Mesh(new THREE.TorusGeometry(.64,.038,6,24),glowMat(mc));
+    rimGlow.rotation.x=Math.PI/2;rimGlow.position.y=-.04;g.add(rimGlow);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.11,.38,8),tipMat);
+    tip.position.y=-.56;tip.rotation.x=Math.PI;g.add(tip);
+    // 斑点盘：贴在缓冲环顶面（宽环形），青色斑点
+    const ringDisk=new THREE.Mesh(new THREE.RingGeometry(.42,.84,56),
+      new THREE.MeshStandardMaterial({map:mkSpotTex(color,0x00ffee,1),roughness:.3,metalness:.1,side:THREE.DoubleSide}));
+    ringDisk.rotation.x=-Math.PI/2;ringDisk.position.y=.18;g.add(ringDisk);
+
+  }else{
+    // ── 技巧型：细轴 + 十字飞臂 + 四个陀飞轮配重 ──
+    const axle=new THREE.Mesh(new THREE.CylinderGeometry(.17,.19,.62,10),sm(color,emi,.22,.88));
+    axle.castShadow=true;g.add(axle);
+    const armDirs=[[1,0,0],[0,0,1]];
+    armDirs.forEach((dir,i)=>{
+      const arm=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,1.6,8),sm(new THREE.Color(color).lerp(new THREE.Color(0xffffff),.22),emi,.18,.92));
+      if(i===0)arm.rotation.z=Math.PI/2;else arm.rotation.x=Math.PI/2;
+      g.add(arm);
+      for(let s=-1;s<=1;s+=2){
+        const w=new THREE.Mesh(new THREE.SphereGeometry(.18,12,10),sm(0xffffff,new THREE.Color(color).multiplyScalar(.55),.12,.97));
+        w.position.set(dir[0]*s*.76,dir[1]*s*.76,dir[2]*s*.76);
+        g.add(w);
+        const wr=new THREE.Mesh(new THREE.TorusGeometry(.18,.032,6,14),glowMat(mc));
+        wr.position.copy(w.position);
+        if(i===0)wr.rotation.z=Math.PI/2;else wr.rotation.x=Math.PI/2;
+        g.add(wr);
+        // 每个配重端面加小斑点盘
+        g.add(mkSDisk(.14,w.position.y+.01,color,0xff44ff,2));
+      }
+    });
+    const hub=new THREE.Mesh(new THREE.SphereGeometry(.22,14,12),glowMat(mc));
+    g.add(hub);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(.07,.58,8),tipMat);
+    tip.position.y=-.48;tip.rotation.x=Math.PI;g.add(tip);
+    // 中心大贴图盘（中轴顶面）
+    g.add(mkSDisk(.16,.32,color,0xff44ff,2));
+  }
+
+  // ── 敌我标识（非常显眼）──────────────────────────────────────
+  const idColor=isPlayer?0x00ffcc:0xff3322;
+  const idC=new THREE.Color(idColor);
+  // 层1：顶部悬浮大主环（半透明）
+  const crownG=new THREE.Group();
+  const crown=new THREE.Mesh(
+    new THREE.TorusGeometry(0.95,.07,10,40),
+    new THREE.MeshBasicMaterial({color:idColor,transparent:true,opacity:.38})
+  );
+  crown.rotation.x=Math.PI/2;crownG.add(crown);
+  // 层2：外侧细光晕环
+  const crownOuter=new THREE.Mesh(
+    new THREE.TorusGeometry(1.08,.028,8,40),
+    new THREE.MeshBasicMaterial({color:idColor,transparent:true,opacity:.16})
+  );
+  crownOuter.rotation.x=Math.PI/2;crownG.add(crownOuter);
+  // 层3：方向箭头（半透明）
+  const arrowGeo=new THREE.BufferGeometry();
+  const arrowV=new Float32Array([0,.28,0, -.18,-.14,0, .18,-.14,0]);
+  arrowGeo.setAttribute('position',new THREE.BufferAttribute(arrowV,3));
+  const arrow=new THREE.Mesh(arrowGeo,new THREE.MeshBasicMaterial({color:idColor,transparent:true,opacity:.28,side:THREE.DoubleSide}));
+  arrow.position.y=.02;crownG.add(arrow);
+  crownG.position.set(0,1.12,0);
+  g.add(crownG);
+  g._crown=crownG;
+
+  // 层4：地面大光晕（极淡）
+  const halo=new THREE.Mesh(
+    new THREE.CircleGeometry(1.4,40),
+    new THREE.MeshBasicMaterial({color:idColor,transparent:true,opacity:.1,side:THREE.DoubleSide})
+  );
+  halo.rotation.x=-Math.PI/2;halo.position.y=-.64;g.add(halo);
+  // 层5：地面内圈边缘（稍强）
+  const haloRim=new THREE.Mesh(
+    new THREE.RingGeometry(1.1,1.4,40),
+    new THREE.MeshBasicMaterial({color:idColor,transparent:true,opacity:.22,side:THREE.DoubleSide})
+  );
+  haloRim.rotation.x=-Math.PI/2;haloRim.position.y=-.63;g.add(haloRim);
+
+  g.position.y=.6;
+  return g;
+}
+
+const aimPts=[new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,-5)];
+const aimGeo=new THREE.BufferGeometry().setFromPoints(aimPts);
+const aimLine=new THREE.Line(aimGeo,new THREE.LineDashedMaterial({color:0x00ffcc,dashSize:.28,gapSize:.16,transparent:true,opacity:.75}));
+aimLine.position.y=.22;aimLine.visible=false;aimLine.computeLineDistances();scene.add(aimLine);
+function setAimLine(sx,sz,ex,ez){
+  const p=aimLine.geometry.attributes.position;
+  p.setXYZ(0,sx,0,sz);p.setXYZ(1,ex,0,ez);p.needsUpdate=true;aimLine.computeLineDistances();
+}
+
+const partPool=[];
+const pGeo=new THREE.SphereGeometry(.07,5,5);
+function spawnParts(x,z,color,n=8){
+  for(let i=0;i<n;i++){
+    const m=new THREE.Mesh(pGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:1}));
+    const a=Math.PI*2*i/n+Math.random()*.6,s=2+Math.random()*6;
+    m.position.set(x,.6,z);scene.add(m);
+    partPool.push({mesh:m,vx:Math.cos(a)*s,vy:1.5+Math.random()*3,vz:Math.sin(a)*s,life:1});
+  }
+}
+function tickParts(dt){
+  for(let i=partPool.length-1;i>=0;i--){
+    const p=partPool[i];p.life-=dt*2.2;
+    if(p.life<=0){scene.remove(p.mesh);partPool.splice(i,1);continue;}
+    p.vx*=.88;p.vy-=14*dt;p.vz*=.88;
+    p.mesh.position.x+=p.vx*dt;p.mesh.position.y+=p.vy*dt;p.mesh.position.z+=p.vz*dt;
+    p.mesh.material.opacity=p.life*.9;
+  }
+}
+
+const orbObjs=[];
+const orbGeo=new THREE.SphereGeometry(.3,14,14);
+function spawnOrbs(){
+  orbObjs.forEach(o=>{if(o.alive)scene.remove(o.mesh);});orbObjs.length=0;
+  [{x:-2.5,z:0},{x:2.5,z:0}].forEach(p=>{
+    const m=new THREE.Mesh(orbGeo,new THREE.MeshStandardMaterial({color:0xffcc00,emissive:0xffaa00,emissiveIntensity:1.3,roughness:0,metalness:.5}));
+    m.position.set(p.x,.7,p.z);m.castShadow=true;scene.add(m);
+    orbObjs.push({mesh:m,x:p.x,z:p.z,t:Math.random()*6.28,alive:true});
+  });
+}
+function tickOrbs(dt,tp,te){
+  orbObjs.forEach(o=>{
+    if(!o.alive)return;
+    o.t+=dt;o.mesh.position.y=.6+Math.sin(o.t*2)*.22;o.mesh.rotation.y+=dt*2;
+    [tp,te].forEach(t=>{
+      if(!t.alive||!o.alive)return;
+      const dx=t.x-o.x,dz=t.z-o.z;
+      if(dx*dx+dz*dz<1.1){
+        o.alive=false;scene.remove(o.mesh);
+        t.burst=Math.min(100,t.burst+55);
+        sfxOrb();
+        if(t.isPlayer)showMsg('⚡ 能量球 +55爆发',.9);
+        spawnParts(o.x,o.z,0xffcc00,8);
+      }
+    });
+  });
+}
+
+function mkTopData(tmpl,isPlayer){
+  // 起始位置：圆形场用前后，心形场用左右对称
+  const sx= currentArena===1?(isPlayer?-4.5:4.5):0;
+  const sz= currentArena===1?0:(isPlayer?5.0:-5.0);
+  return{mesh:null,isPlayer,x:sx,z:sz,vx:0,vz:0,
+    hp:tmpl.hp,maxHp:tmpl.hp,spin:tmpl.maxSpin,maxSpin:tmpl.maxSpin,burst:0,
+    dashCD:0,DASH_CD:2.5,skillCD:0,SKILL_CD:8,
+    dashing:false,dashT:0,shielded:false,shieldT:0,phantom:false,phantomT:0,
+    tiltX:0,tiltZ:0,tiltVX:0,tiltVZ:0,
+    wallCD:0,          // 壁面碰撞冷却，防止每帧重复触发
+    alive:true,template:tmpl};
+}
+
+let gameState='title',pID=0,score=[0,0],round=1,roundTimer=30;
+let tp,te,camShake=0,lastT=0,endLock=false;
+
+const RC=new THREE.Raycaster();
+const floorPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+const floorHit=new THREE.Vector3();
+function xyToArena(cx,cy){
+  const r=renderer.domElement.getBoundingClientRect();
+  const x=(cx-r.left)/r.width*2-1,y=-((cy-r.top)/r.height)*2+1;
+  RC.setFromCamera({x,y},cam);
+  return RC.ray.intersectPlane(floorPlane,floorHit)?{x:floorHit.x,z:floorHit.z}:null;
+}
+
+const drag={on:false,sx:0,sz:0,mx:0,mz:0};
+function onDragStart(cx,cy){
+  if(gameState!=='prepare')return;
+  const p=xyToArena(cx,cy);if(!p)return;
+  drag.on=true;drag.sx=p.x;drag.sz=p.z;drag.mx=p.x;drag.mz=p.z;
+  aimLine.visible=true;
+}
+function onDragMove(cx,cy){
+  if(!drag.on||gameState!=='prepare')return;
+  const p=xyToArena(cx,cy);if(!p)return;
+  drag.mx=p.x;drag.mz=p.z;
+  const dx=drag.mx-drag.sx,dz=drag.mz-drag.sz,d=Math.sqrt(dx*dx+dz*dz)||.001;
+  const sc=Math.min(d/4,1);
+  setAimLine(tp.x,tp.z,tp.x+dx/d*sc*5,tp.z+dz/d*sc*5);
+}
+function onDragEnd(){
+  if(!drag.on||gameState!=='prepare'){drag.on=false;return;}
+  drag.on=false;aimLine.visible=false;
+  const dx=drag.mx-drag.sx,dz=drag.mz-drag.sz,d=Math.sqrt(dx*dx+dz*dz);
+  if(d<.3)return;
+  const spd=Math.min(d/4,1)*tp.template.spd;
+  tp.vx=dx/d*spd;tp.vz=dz/d*spd;
+  launch();
+}
+renderer.domElement.addEventListener('mousedown',e=>onDragStart(e.clientX,e.clientY));
+renderer.domElement.addEventListener('mousemove',e=>onDragMove(e.clientX,e.clientY));
+renderer.domElement.addEventListener('mouseup',()=>onDragEnd());
+renderer.domElement.addEventListener('touchstart',e=>{e.preventDefault();const t=e.touches[0];onDragStart(t.clientX,t.clientY);},{passive:false});
+renderer.domElement.addEventListener('touchmove', e=>{e.preventDefault();const t=e.touches[0];onDragMove(t.clientX,t.clientY);},{passive:false});
+renderer.domElement.addEventListener('touchend',  e=>{e.preventDefault();onDragEnd();},{passive:false});
+document.addEventListener('keydown',e=>{
+  if(gameState!=='active')return;
+  if(e.code==='Space'){e.preventDefault();doPlayerDash();}
+  if(e.code==='KeyQ'){e.preventDefault();doPlayerSkill();}
+});
+
+function doPlayerDash(){
+  if(tp.dashCD>0)return;
+  const s=Math.sqrt(tp.vx*tp.vx+tp.vz*tp.vz);if(s<.5)return;
+  tp.vx*=2.6;tp.vz*=2.6;tp.dashing=true;tp.dashT=.18;tp.dashCD=tp.DASH_CD;
+  sfxDash();
+  showMsg('冲刺!',.7);
+}
+function doPlayerSkill(){
+  if(tp.burst<100||tp.skillCD>0)return;
+  tp.burst=0;tp.skillCD=tp.SKILL_CD;
+  fireSkill(tp,te);
+}
+function flashScreen(type){
+  const el=document.getElementById('skill-flash');
+  el.className='';void el.offsetWidth;
+  el.style.opacity='1';el.className=type;
+  if(type==='instant'){setTimeout(()=>{el.style.transition='opacity .35s';el.style.opacity='0';},120);}
+  else{setTimeout(()=>{el.style.transition='opacity .6s';el.style.opacity='0';},700);}
+}
+const SK_ICONS={'飞冲':'⚡','护盾':'🛡','残影':'👾'};
+function fireSkill(user,target){
+  const sk=user.template.skill;
+  sfxSkill(sk);
+  if(user.isPlayer) document.getElementById('sk-icon').textContent=SK_ICONS[sk]||'🔥';
+  if(sk==='飞冲'){
+    const dx=target.x-user.x,dz=target.z-user.z,d=Math.sqrt(dx*dx+dz*dz)||1;
+    user.vx=dx/d*user.template.spd*2.4;user.vz=dz/d*user.template.spd*2.4;
+    user.dashing=true;user.dashT=.28;
+    spawnParts(user.x,user.z,0xff6600,18);spawnParts(user.x,user.z,0xffff00,8);
+    if(user.isPlayer){flashScreen('instant');showMsg('⚡ 飞冲！',1);}
+    else showMsg('敌方飞冲！',.9);
+  }else if(sk==='护盾'){
+    user.shielded=true;user.shieldT=2.8;
+    spawnParts(user.x,user.z,0x4488ff,14);spawnParts(user.x,user.z,0xaaddff,6);
+    if(user.isPlayer){flashScreen('sustained');showMsg('🛡 护盾激活！',1);}
+    else showMsg('敌方激活护盾',.9);
+  }else if(sk==='残影'){
+    user.vx*=2.0;user.vz*=2.0;user.phantom=true;user.phantomT=1.2;
+    const dx=target.x-user.x,dz=target.z-user.z,d=Math.sqrt(dx*dx+dz*dz)||1;
+    target.vx+=dx/d*4.5;target.vz+=dz/d*4.5;
+    spawnParts(user.x,user.z,0xaa44ff,16);spawnParts(user.x,user.z,0xffffff,6);
+    if(user.isPlayer){flashScreen('sustained');showMsg('👾 残影！',1);}
+    else showMsg('敌方残影突袭！',.9);
+  }
+}
+
+function initRound(){
+  endLock=false;gameState='prepare';
+  if(physTick._orbTimer){clearTimeout(physTick._orbTimer);physTick._orbTimer=null;}
+  setupArena();
+  pTrailPos.length=0;eTrailPos.length=0;
+  timeScale=1;
+  if(tp&&tp.mesh){scene.remove(tp.mesh);tp.mesh=null;}
+  if(te&&te.mesh){scene.remove(te.mesh);te.mesh=null;}
+  partPool.forEach(p=>scene.remove(p.mesh));partPool.length=0;
+  orbObjs.forEach(o=>{if(o.alive)scene.remove(o.mesh);});orbObjs.length=0;
+  const pt=TMPL[pID],et=TMPL[AI_ID];
+  tp=mkTopData(pt,true);te=mkTopData(et,false);
+  tp.mesh=mkTop(pt.color,pt.emi,pID,true);tp.mesh.position.set(tp.x,.6,tp.z);scene.add(tp.mesh);
+  te.mesh=mkTop(et.color,et.emi,AI_ID,false);te.mesh.position.set(te.x,.6,te.z);scene.add(te.mesh);
+  roundTimer=30;
+  document.getElementById('round-lbl').textContent='第 '+round+' 回合';
+  document.getElementById('p-name').textContent=pt.name;
+  document.getElementById('e-name').textContent=et.name;
+  updateSkillIcon();
+  const timerEl=document.getElementById('timer-txt');
+  timerEl.textContent='30';timerEl.classList.remove('urgent');
+  document.getElementById('hint-bar').textContent='拖拽鼠标瞄准并松开发射';
+  updateHUD();refreshPips();
+  showMsg('第 '+round+' 回合',1.5);
+}
+
+function launch(){
+  gameState='active';
+  sfxLaunch();
+  startMusic();
+  document.getElementById('hint-bar').textContent='SPACE 冲刺 · Q 技能（爆发满时）';
+  const dx=tp.x-te.x,dz=tp.z-te.z,d=Math.sqrt(dx*dx+dz*dz)||1;
+  const sp=(Math.random()-.5)*.5;
+  te.vx=(dx/d+sp)*te.template.spd*(.72+Math.random()*.28);
+  te.vz=dz/d*te.template.spd*(.72+Math.random()*.28);
+  spawnOrbs();
+  showMsg('⚔ FIGHT!',1.2);
+}
+
+const FRIC=0.9996,SPIN_D=1.2,SPIN_HAZ=6;
+
+function physTick(dt){
+  if(gameState!=='active')return;
+  roundTimer-=dt;
+  if(roundTimer<=0){roundTimer=0;endRound('time');return;}
+  const ts=Math.ceil(roundTimer);
+  const timerEl=document.getElementById('timer-txt');
+  timerEl.textContent=ts;timerEl.classList.toggle('urgent',ts<=10);
+  if(ts<=10 && Math.ceil(roundTimer+dt)>ts) sfxCountdown();
+  movTop(tp,dt);if(gameState!=='active')return;
+  movTop(te,dt);if(gameState!=='active')return;
+  aiTick(te,tp,dt);
+  checkColl(tp,te);if(gameState!=='active')return;
+  tickOrbs(dt,tp,te);tickParts(dt);
+  scratchLayer.tick(tp,te,dt);
+  // 拖尾更新
+  updateTrail(pTrailMeshes,pTrailPos,tp.x,tp.z,tp.alive);
+  updateTrail(eTrailMeshes,eTrailPos,te.x,te.z,te.alive);
+  // 慢动作回弹
+  if(timeScale<1) timeScale=Math.min(1,timeScale+dt*1.1);
+  // 能量球定时重刷：当所有球被拾取后，10秒后重新刷出
+  const allOrbDead=orbObjs.length===0||orbObjs.every(o=>!o.alive);
+  if(allOrbDead&&roundTimer>5&&!physTick._orbTimer){
+    physTick._orbTimer=setTimeout(()=>{spawnOrbs();physTick._orbTimer=null;},9500);
+  }
+  // 镜头震动 - 更强烈
+  if(camShake>0){
+    const s=camShake;
+    cam.position.x=Math.sin(s*55)*s*.55;
+    cam.position.z=_camBaseZ+Math.sin(s*41)*.3;
+    cam.position.y=_camBaseY+Math.cos(s*38)*s*.2;
+    camShake=Math.max(0,camShake-dt*5.5);
+    if(camShake<=0){cam.position.set(0,_camBaseY,_camBaseZ);}
+  }
+  // 陀螺位置 + 旋转 + 倾斜物理
+  [tp,te].forEach(t=>{
+    if(!t.alive||!t.mesh)return;
+    t.mesh.position.set(t.x,.6,t.z);
+    t.mesh.rotation.y+=t.spin/t.maxSpin*150*dt;
+    // crown环反向旋转抵消陀螺自转，保持朝向固定，并做呼吸脉冲
+    if(t.mesh._crown){
+      t.mesh._crown.rotation.y-=t.spin/t.maxSpin*150*dt;
+      // 呼吸：opacity 在 0.22~0.52 之间波动，不用scale避免遮挡感
+      const pulse=0.35+Math.sin(Date.now()*.0032)*0.17;
+      t.mesh._crown.traverse(c=>{
+        if(c.isMesh&&c.material&&c.material.transparent)
+          c.material.opacity=Math.max(0.08,c.material.opacity*0+pulse*(c.material.opacity>0.3?1:0.55));
+      });
+    }
+    // 倾斜弹簧复原（恢复力 + 阻尼）
+    const springK=22, damp=Math.pow(0.82,dt*60);
+    t.tiltVX+=(-springK*t.tiltX)*dt;
+    t.tiltVZ+=(-springK*t.tiltZ)*dt;
+    t.tiltVX*=damp; t.tiltVZ*=damp;
+    t.tiltX+=t.tiltVX*dt; t.tiltZ+=t.tiltVZ*dt;
+    // 低转速摇晃（阈值按maxSpin比例）
+    const spinRatio=t.spin/t.maxSpin;
+    const wobble=spinRatio<0.15?Math.sin(Date.now()*.014)*(1-spinRatio/0.15)*.28:0;
+    // 倾斜上限 0.55 rad (~31°)
+    t.tiltX=Math.max(-0.55,Math.min(0.55,t.tiltX));
+    t.tiltZ=Math.max(-0.55,Math.min(0.55,t.tiltZ+wobble));
+    t.mesh.rotation.x=t.tiltX;
+    t.mesh.rotation.z=t.tiltZ;
+  });
+  updateHUD();
+}
+
+function movTop(t,dt){
+  if(!t.alive)return;
+  // ── 摩擦 + 位移 ──
+  const f=Math.pow(FRIC,dt*60);t.vx*=f;t.vz*=f;
+  // ── 碗形坡度重力（推向中心）──
+  const slopeK=currentArena===0?5.5:4.8; // 坡度加速度系数
+  if(currentArena===0){
+    const dist0=Math.sqrt(t.x*t.x+t.z*t.z);
+    if(dist0>0.05){
+      // 碗面坡度 ∝ (r/AR)^0.8，中心平缓边缘陡
+      const slope=slopeK*Math.pow(dist0/AR,0.8);
+      t.vx-=t.x/dist0*slope*dt;t.vz-=t.z/dist0*slope*dt;
+    }
+  }else{
+    // 心形场：朝最近的中心引力
+    const dist0=Math.sqrt(t.x*t.x+t.z*t.z);
+    if(dist0>0.05){t.vx-=t.x/dist0*slopeK*0.6*dt;t.vz-=t.z/dist0*slopeK*0.6*dt;}
+  }
+  t.x+=t.vx*dt;t.z+=t.vz*dt;
+
+  // ── 状态计时 ──
+  if(t.dashing){t.dashT-=dt;if(t.dashT<=0)t.dashing=false;}
+  if(t.shielded){
+    t.shieldT-=dt;
+    if(t.mesh)t.mesh.traverse(c=>{if(c.material)c.material.emissiveIntensity=.4+Math.sin(Date.now()*.007)*.45;});
+    if(t.shieldT<=0){t.shielded=false;if(t.mesh)t.mesh.traverse(c=>{if(c.material)c.material.emissiveIntensity=.35;});}
+  }
+  if(t.phantom){
+    t.phantomT-=dt;
+    if(t.mesh)t.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material.transparent=true;c.material.opacity=.40;}});
+    if(t.phantomT<=0){
+      t.phantom=false;
+      if(t.mesh)t.mesh.traverse(c=>{if(c.isMesh&&c.material){c.material.transparent=false;c.material.opacity=1;}});
+    }
+  }
+  t.dashCD=Math.max(0,t.dashCD-dt);
+  t.skillCD=Math.max(0,t.skillCD-dt);
+  t.wallCD=Math.max(0,(t.wallCD||0)-dt);
+
+  // ── 转速衰减 ──
+  const dist=Math.sqrt(t.x*t.x+t.z*t.z);
+  const inHaz=currentArena===0?dist>6.5:heartInHaz(t.x,t.z);
+  t.spin=Math.max(0,t.spin-(SPIN_D+(inHaz?SPIN_HAZ:0))*dt);
+
+  // ── 边缘碰撞与弹射（冷却保护，每次最多触发一次）──
+  let nearWall=false,wNx=0,wNz=0;
+  if(currentArena===0){
+    if(dist>AR-TOP_R-0.1&&dist>0.01){nearWall=true;wNx=t.x/dist;wNz=t.z/dist;}
+  }else{
+    if(heartNearWall(t.x,t.z)){
+      nearWall=true;const wn=heartWallNormal(t.x,t.z);wNx=wn.nx;wNz=wn.nz;
+    }
+  }
+  if(nearWall&&t.wallCD<=0){
+    const dot=t.vx*wNx+t.vz*wNz;
+    if(dot>0){
+      const spd=Math.sqrt(t.vx*t.vx+t.vz*t.vz);
+      const e=1.38+Math.min(spd*0.028,0.28);
+      t.vx-=e*dot*wNx;t.vz-=e*dot*wNz;
+      // ── 推回场内（修正：沿法线方向推向圆心，不是对侧）──
+      if(currentArena===0){
+        // 把陀螺推到安全半径处
+        const safeR=AR-TOP_R-0.18;
+        t.x=wNx*safeR;t.z=wNz*safeR;
+      }else{
+        // 心形：沿法线向内推，量加大确保离开nearWall区域
+        t.x-=wNx*0.42;t.z-=wNz*0.42;
+      }
+      t.spin=Math.max(0,t.spin-22);
+      t.burst=Math.min(100,t.burst+8);
+      t.wallCD=0.15; // 150ms冷却
+      const tiltForce=dot*0.65;
+      t.tiltVX+=wNz*tiltForce;t.tiltVZ-=wNx*tiltForce;
+      // 清拖尾避免鬼影
+      (t.isPlayer?pTrailPos:eTrailPos).length=0;
+      sfxWall(Math.abs(dot));
+      spawnParts(t.x,t.z,currentArena===0?0x2299ff:0xff2288,6);
+      spawnParts(t.x,t.z,0xffffff,3);
+      camShake=Math.min(.8,camShake+Math.abs(dot)*0.11);
+    }
+  }
+
+  // ── 击飞出界（慢动作演出）──
+  const isOut=currentArena===0?dist>AR+1.0:heartRingOut(t.x,t.z);
+  if(currentArena===0&&dist>AR+0.05&&dist<AR+0.3&&timeScale>0.5) timeScale=0.18;
+  if(currentArena===1&&heartCrossed(t.x,t.z)&&!heartRingOut(t.x,t.z)&&timeScale>0.5) timeScale=0.18;
+  if(isOut){
+    t.alive=false;
+    if(t.mesh){
+      spawnParts(t.x,t.z,t.template.color,32);
+      spawnParts(t.x,t.z,0xffffff,16);
+      spawnParts(t.x,t.z,0xffcc00,10);
+      scene.remove(t.mesh);t.mesh=null;
+    }
+    (t.isPlayer?pTrailPos:eTrailPos).length=0;
+    camShake=1.1;sfxRingOut();
+    showMsg(t.isPlayer?'💥 你被击飞出界！':'💥 对手飞出场外！',1.6);
+    endRound('ringout');return;
+  }
+  if(t.spin<=0){
+    t.alive=false;
+    if(t.mesh){spawnParts(t.x,t.z,t.template.color,10);scene.remove(t.mesh);t.mesh=null;}
+    endRound('spinout');return;
+  }
+  if(t.hp<=0){
+    t.hp=0;t.alive=false;
+    if(t.mesh){spawnParts(t.x,t.z,t.template.color,10);scene.remove(t.mesh);t.mesh=null;}
+    endRound('hpout');return;
+  }
+}
+
+function checkColl(ta,tb){
+  if(!ta.alive||!tb.alive)return;
+  const dx=ta.x-tb.x,dz=ta.z-tb.z,dist=Math.sqrt(dx*dx+dz*dz);
+  if(dist>=TOP_R*2||dist<.001)return;
+  const nx=dx/dist,nz=dz/dist;
+  const rvx=ta.vx-tb.vx,rvz=ta.vz-tb.vz,rspd=rvx*nx+rvz*nz;
+  if(rspd>0)return;
+  const ma=ta.template.mass,mb=tb.template.mass;
+  // 恢复系数提高到 0.95 — 接近完全弹性碰撞，更爽快
+  const e=0.95;
+  const j=-(1+e)*rspd/(1/ma+1/mb);
+  ta.vx+=j/ma*nx; ta.vz+=j/ma*nz;
+  tb.vx-=j/mb*nx; tb.vz-=j/mb*nz;
+  // 分离重叠
+  const ov=TOP_R*2-dist;
+  ta.x+=nx*ov*.55; ta.z+=nz*ov*.55;
+  tb.x-=nx*ov*.45; tb.z-=nz*ov*.45;
+  const force=Math.abs(rspd);
+  // ── 伤害（大幅降低，不能一碰就死）──
+  const dmg=force*0.55;
+  if(!ta.phantom)ta.hp=Math.max(0,ta.hp-dmg/ma*(tb.shielded?.2:1));
+  if(!tb.phantom)tb.hp=Math.max(0,tb.hp-dmg/mb*(ta.shielded?.2:1));
+  if(!ta.phantom)ta.spin=Math.max(0,ta.spin-force*18);
+  if(!tb.phantom)tb.spin=Math.max(0,tb.spin-force*18);
+  // 低血量回馈系数（濒死时更快积累爆发）
+  const taLow=ta.hp/ta.maxHp<0.3?1.6:1;
+  const tbLow=tb.hp/tb.maxHp<0.3?1.6:1;
+  ta.burst=Math.min(100,ta.burst+force*14*ta.template.brate*taLow);
+  tb.burst=Math.min(100,tb.burst+force*14*tb.template.brate*tbLow);
+  // ── 倾斜冲量：被打方向相反，制造视觉反馈 ──
+  const tiltF=force*.38;
+  // ta 被推向 +nx 方向 → tiltZ 向 -nx 倾
+  ta.tiltVX+=(-nz)*tiltF/ma; ta.tiltVZ+=nx*tiltF/ma;
+  tb.tiltVX+=nz*tiltF/mb;    tb.tiltVZ+=(-nx)*tiltF/mb;
+  // ── 特效 ──
+  const cx=(ta.x+tb.x)/2,cz=(ta.z+tb.z)/2;
+  const bigHit=force>5.5;
+  spawnParts(cx,cz,bigHit?0xffff44:0xffffff,Math.round(Math.min(22,6+force*2)));
+  if(bigHit){
+    spawnParts(cx,cz,0xff8800,8);
+    spawnParts(cx,cz,ta.template.color,5);
+    spawnParts(cx,cz,tb.template.color,5);
+  }
+  camShake=Math.min(.9,force*.13);
+  sfxCollide(force);
+  if(force>7)showMsg('猛烈碰撞！',.6);
+  if(force>11)showMsg('超级冲击！！',.8);
+}
+
+function aiTick(ai,pl,dt){
+  if(!ai.alive||!pl.alive)return;
+  const dx=pl.x-ai.x,dz=pl.z-ai.z,dist=Math.sqrt(dx*dx+dz*dz)||1;
+  ai.vx+=dx/dist*6.5*dt;ai.vz+=dz/dist*6.5*dt;
+  const spd=Math.sqrt(ai.vx*ai.vx+ai.vz*ai.vz),cap=ai.template.spd*.9;
+  if(spd>cap){ai.vx=ai.vx/spd*cap;ai.vz=ai.vz/spd*cap;}
+  const dc=Math.sqrt(ai.x*ai.x+ai.z*ai.z);
+  if(dc>5.9){ai.vx-=ai.x/dc*7*dt;ai.vz-=ai.z/dc*7*dt;}
+  if(ai.dashCD<=0&&dist<4.5){
+    ai.vx*=2.2;ai.vz*=2.2;ai.dashing=true;ai.dashT=.18;
+    ai.dashCD=ai.DASH_CD*(.8+Math.random()*.5);
+  }
+  if(ai.burst>=100&&ai.skillCD<=0){
+    ai.burst=0;ai.skillCD=ai.SKILL_CD;fireSkill(ai,pl);
+  }
+}
+
+function endRound(reason){
+  if(endLock||gameState!=='active')return;
+  endLock=true;gameState='roundResult';
+  aimLine.visible=false;
+  orbObjs.forEach(o=>{if(o.alive){scene.remove(o.mesh);o.alive=false;}});
+  let winner,why;
+  if(reason==='ringout'||reason==='spinout'||reason==='hpout'){
+    winner=tp.alive?'player':'enemy';
+    why={ringout:'击飞出界',spinout:'转速归零',hpout:'耐久耗尽'}[reason];
+  }else{
+    const pr=tp.hp/tp.maxHp,er=te.hp/te.maxHp;
+    winner=pr>er?'player':er>pr?'enemy':'draw';
+    why='时间到 · 耐久判定';
+  }
+  if(winner==='player')score[0]++;
+  else if(winner==='enemy')score[1]++;
+  if(winner==='player') sfxRoundWin(); else sfxRoundLose();
+  const rdTxt=document.getElementById('rd-txt');
+  const rdDet=document.getElementById('rd-detail');
+  const ovRound=document.getElementById('ov-round');
+  rdTxt.textContent=winner==='player'?'你赢了！':winner==='enemy'?'对手胜利':'平局';
+  rdTxt.style.color=winner==='player'?'#00ffcc':winner==='enemy'?'#ff4422':'#ffcc00';
+  rdDet.textContent='第 '+round+' 回合 · '+why;
+  ovRound.classList.remove('hide');
+  if(score[0]>=2||score[1]>=2){
+    setTimeout(()=>{ovRound.classList.add('hide');showMatchResult();},2200);
+  }else{
+    round++;
+    setTimeout(()=>{ovRound.classList.add('hide');initRound();},2400);
+  }
+}
+
+function showMatchResult(){
+  gameState='matchResult';
+  const mt=document.getElementById('mt-txt');
+  const ms=document.getElementById('mt-sub');
+  const ov=document.getElementById('ov-match');
+  mt.textContent=score[0]>=2?'胜利！':'失败…';
+  mt.style.color=score[0]>=2?'#00ffcc':'#ff4422';
+  ms.textContent=score[0]+' - '+score[1];
+  ov.classList.remove('hide');
+}
+
+function resetMatch(){
+  score=[0,0];round=1;
+  document.getElementById('ov-match').classList.add('hide');
+  initRound();
+}
+
+function showMsg(txt,dur){
+  const el=document.getElementById('msg-txt');
+  el.textContent=txt;el.style.opacity='1';
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>el.style.opacity='0',dur*1000);
+}
+
+function updateHUD(){
+  if(!tp||!te)return;
+  // ── 耐久（颜色随血量变化）──
+  const pHpPct=tp.hp/tp.maxHp, eHpPct=te.hp/te.maxHp;
+  const hpColor=(p,isP)=>p>0.5
+    ?(isP?'linear-gradient(90deg,#00cc55,#00ee77)':'linear-gradient(90deg,#cc2200,#ee4400)')
+    :p>0.25?'linear-gradient(90deg,#cc7700,#ffaa00)':'linear-gradient(90deg,#cc1100,#ff3300)';
+  const phEl=document.getElementById('p-hp');
+  phEl.style.width=(pHpPct*100)+'%';phEl.style.background=hpColor(pHpPct,true);
+  phEl.style.animation=pHpPct<0.25?'hpBeat .5s ease-in-out infinite':'none';
+  document.getElementById('p-hp-val').textContent=Math.ceil(tp.hp);
+  const ehEl=document.getElementById('e-hp');
+  ehEl.style.width=(eHpPct*100)+'%';ehEl.style.background=hpColor(eHpPct,false);
+  ehEl.style.animation=eHpPct<0.25?'hpBeat .5s ease-in-out infinite':'none';
+  document.getElementById('e-hp-val').textContent=Math.ceil(te.hp);
+  // ── 转速 / 爆发条 ──
+  document.getElementById('p-sp').style.width=(tp.spin/tp.maxSpin*100)+'%';
+  document.getElementById('p-bu').style.width=tp.burst+'%';
+  document.getElementById('e-sp').style.width=(te.spin/te.maxSpin*100)+'%';
+  document.getElementById('e-bu').style.width=te.burst+'%';
+  // ── 冲刺按钮四态 ──
+  const dashBtn=document.getElementById('act-dash');
+  const dashCdEl=document.getElementById('dash-cd');
+  const dashCdTxt=document.getElementById('dash-cd-txt');
+  if(tp.dashCD>0){
+    dashBtn.className='sk-btn dash-cooldown';
+    dashCdEl.style.height=(tp.dashCD/tp.DASH_CD*100)+'%';
+    dashCdTxt.textContent=tp.dashCD.toFixed(1);
+  }else{
+    dashBtn.className='sk-btn dash-ready';
+    dashCdEl.style.height='0%';
+    dashCdTxt.textContent='';
+  }
+  // ── 技能按钮四态 ──
+  const skillBtn=document.getElementById('act-skill');
+  const skillCdEl=document.getElementById('skill-cd');
+  const skillCdTxt=document.getElementById('skill-cd-txt');
+  const burstCircle=document.querySelector('#burst-ring circle');
+  const CIRC=157;
+  if(tp.skillCD>0){
+    // 冷却中：显示剩余秒数
+    skillBtn.className='sk-btn state-cooldown';
+    skillCdEl.style.height=(tp.skillCD/tp.SKILL_CD*100)+'%';
+    skillCdTxt.textContent=tp.skillCD.toFixed(1);
+    burstCircle.style.strokeDashoffset=CIRC;
+    burstCircle.style.stroke='rgba(255,180,0,0.2)';
+  }else if(tp.burst<100){
+    // 等待能量：显示爆发弧线进度
+    skillBtn.className='sk-btn state-need-energy';
+    skillCdEl.style.height='0%';skillCdTxt.textContent='';
+    burstCircle.style.strokeDashoffset=CIRC*(1-tp.burst/100);
+    burstCircle.style.stroke='rgba(255,180,0,0.6)';
+  }else{
+    // 就绪：发光脉冲
+    skillBtn.className='sk-btn state-ready';
+    skillCdEl.style.height='0%';skillCdTxt.textContent='';
+    burstCircle.style.strokeDashoffset=0;
+    burstCircle.style.stroke='rgba(255,210,0,0.9)';
+  }
+}
+
+function refreshPips(){
+  ['pp1','pp2'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.className='pip'+(i<score[0]?' p-won':'');
+  });
+  ['ep1','ep2'].forEach((id,i)=>{
+    const el=document.getElementById(id);
+    el.className='pip'+(i<score[1]?' e-won':'');
+  });
+}
+
+// ── UI EVENTS ─────────────────────────────────────────────────────
+document.getElementById('btn-enter').addEventListener('click',()=>{
+  initAudio();
+  document.getElementById('ov-title').classList.add('hide');
+  document.getElementById('ov-loadout').classList.remove('hide');
+});
+
+document.querySelectorAll('.card').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel');
+    pID=parseInt(c.dataset.id);
+  });
+});
+
+document.getElementById('btn-fight').addEventListener('click',()=>{
+  document.getElementById('ov-loadout').classList.add('hide');
+  document.getElementById('hud').style.display='';
+  initTrails();
+  document.getElementById('act-swap').classList.add('visible');
+  initRound();
+});
+
+document.getElementById('btn-replay').addEventListener('click',()=>resetMatch());
+document.getElementById('btn-swap-rematch').addEventListener('click',()=>{
+  score=[0,0];round=1;
+  document.getElementById('ov-match').classList.add('hide');
+  document.getElementById('hud').style.display='none';
+  document.getElementById('ov-loadout').classList.remove('hide');
+});
+
+// 竞技场选择
+document.querySelectorAll('.arena-opt').forEach(el=>{
+  el.addEventListener('click',()=>{
+    document.querySelectorAll('.arena-opt').forEach(x=>x.classList.remove('sel'));
+    el.classList.add('sel');
+    currentArena=parseInt(el.dataset.arena);
+  });
+});
+
+// 换陀螺按钮（对战准备阶段可用）
+const actSwap=document.getElementById('act-swap');
+actSwap.addEventListener('touchstart',e=>{e.preventDefault();doSwap();},{passive:false});
+actSwap.addEventListener('click',doSwap);
+function doSwap(){
+  if(gameState!=='prepare')return;
+  if(tp&&tp.mesh){scene.remove(tp.mesh);tp.mesh=null;}
+  if(te&&te.mesh){scene.remove(te.mesh);te.mesh=null;}
+  pTrailPos.length=0;eTrailPos.length=0;
+  document.getElementById('hud').style.display='none';
+  document.getElementById('ov-loadout').classList.remove('hide');
+  actSwap.classList.remove('visible');
+}
+
+// 技能按钮触控
+['act-dash','act-skill'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('touchstart',e=>{
+    e.preventDefault();e.stopPropagation();
+    if(id==='act-dash')doPlayerDash();else doPlayerSkill();
+  },{passive:false});
+  el.addEventListener('click',()=>{
+    if(id==='act-dash')doPlayerDash();else doPlayerSkill();
+  });
+});
+// initRound时更新技能图标
+function updateSkillIcon(){
+  const sk=TMPL[pID].skill;
+  const el=document.getElementById('sk-icon');
+  if(el) el.textContent=SK_ICONS[sk]||'🔥';
+  const sn=document.getElementById('sn');
+  if(sn) sn.textContent=sk;
+}
+
+// ── RENDER LOOP ───────────────────────────────────────────────────
+let prevT=0;
+function loop(t){
+  requestAnimationFrame(loop);
+  const rawDt=Math.min((t-prevT)/1000,.05);prevT=t;
+  const dt=rawDt*timeScale;
+  physTick(dt);
+  renderer.render(scene,cam);
+}
+requestAnimationFrame(t=>{prevT=t;requestAnimationFrame(loop);});
+</script>
+</body>
+</html>

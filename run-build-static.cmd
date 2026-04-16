@@ -1,0 +1,14 @@
+@echo off
+setlocal
+cd /d "%~dp0"
+call npm run build:static
+set EXIT_CODE=%ERRORLEVEL%
+if not "%EXIT_CODE%"=="0" (
+  echo.
+  echo Static build failed with exit code %EXIT_CODE%.
+  pause
+  exit /b %EXIT_CODE%
+)
+echo.
+echo Static build created in dist-static.
+pause

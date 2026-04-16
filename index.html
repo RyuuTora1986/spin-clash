@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Spin Clash</title>
+<link rel="stylesheet" href="./css/game.css">
+</head>
+<body>
+<div id="gc"></div>
+<div id="skill-flash"></div>
+<div id="hud" style="display:none">
+  <div class="hud-panel" id="p-panel">
+    <div class="id-bar"></div>
+    <div class="hud-inner">
+      <div class="hud-who">
+        <div class="hud-dot"></div>
+        <div class="hud-who-labels">
+          <div class="hud-top-name" id="p-name"></div>
+          <div class="hud-role" id="p-role"></div>
+        </div>
+      </div>
+      <div class="hud-hp-section">
+        <div class="hud-hp-header">
+          <span class="hud-hp-lbl" id="p-hp-lbl"></span>
+          <span class="hud-hp-num" id="p-hp-val">140</span>
+        </div>
+        <div class="hud-hp-track">
+          <div class="hud-hp-fill" id="p-hp" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="hud-sub-bars">
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl" id="p-spin-lbl"></div>
+          <div class="hud-sub-track"><div class="hud-sub-fill sp-fill" id="p-sp" style="width:100%"></div></div>
+        </div>
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl" id="p-burst-lbl"></div>
+          <div class="hud-sub-track"><div class="hud-sub-fill bu-fill" id="p-bu" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="skill-panel">
+    <div class="sk-btn state-cooldown" id="act-dash" onclick="return window.__spinClashInvoke('dash')">
+      <div class="sk-icon" id="dash-icon"></div>
+      <div class="sk-name" id="dash-name"></div>
+      <div class="sk-key">SPC</div>
+      <div class="sk-cd-mask" id="dash-cd" style="height:0%"></div>
+      <div class="sk-cd-txt" id="dash-cd-txt"></div>
+    </div>
+    <div class="sk-btn state-cooldown" id="act-skill" onclick="return window.__spinClashInvoke('skill')">
+      <div class="sk-icon" id="sk-icon"></div>
+      <div class="sk-name" id="sn"></div>
+      <div class="sk-key">Q</div>
+      <div class="sk-cd-mask" id="skill-cd" style="height:0%"></div>
+      <div class="sk-cd-txt" id="skill-cd-txt"></div>
+      <svg class="sk-burst-ring" id="burst-ring" viewBox="0 0 56 56">
+        <circle cx="28" cy="28" r="25" fill="none" stroke="rgba(255,180,0,0.45)" stroke-width="2.5" stroke-dasharray="157" stroke-dashoffset="157" stroke-linecap="round" transform="rotate(-90 28 28)" style="transition:stroke-dashoffset .08s linear"></circle>
+      </svg>
+    </div>
+  </div>
+
+  <div class="hud-panel" id="e-panel">
+    <div class="id-bar"></div>
+    <div class="hud-inner">
+      <div class="hud-who">
+        <div class="hud-dot"></div>
+        <div class="hud-who-labels">
+          <div class="hud-top-name" id="e-name"></div>
+          <div class="hud-role" id="e-role"></div>
+        </div>
+      </div>
+      <div class="hud-hp-section">
+        <div class="hud-hp-header">
+          <span class="hud-hp-lbl" id="e-hp-lbl"></span>
+          <span class="hud-hp-num" id="e-hp-val">200</span>
+        </div>
+        <div class="hud-hp-track">
+          <div class="hud-hp-fill" id="e-hp" style="width:100%"></div>
+        </div>
+      </div>
+      <div class="hud-sub-bars">
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl" id="e-spin-lbl"></div>
+          <div class="hud-sub-track"><div class="hud-sub-fill sp-fill" id="e-sp" style="width:100%"></div></div>
+        </div>
+        <div class="hud-sub-row">
+          <div class="hud-sub-lbl" id="e-burst-lbl"></div>
+          <div class="hud-sub-track"><div class="hud-sub-fill bu-fill" id="e-bu" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="act-swap" onclick="return window.__spinClashInvoke('swap')"><span id="swap-icon"></span><small id="swap-label"></small></div>
+  <div id="score-area">
+    <div class="score-label-txt">ROUND</div>
+    <div class="pips-row">
+      <div class="pip" id="pp1"></div><div class="pip" id="pp2"></div>
+      <div class="vs-txt">VS</div>
+      <div class="pip" id="ep1"></div><div class="pip" id="ep2"></div>
+    </div>
+    <div id="round-lbl"></div>
+  </div>
+  <div id="timer-txt">30</div>
+  <div id="msg-txt"></div>
+  <div id="hint-bar"></div>
+</div>
+<div class="ov" id="ov-title">
+  <h1 id="title-main"></h1>
+  <div class="sub" id="title-sub"></div>
+  <div class="tagline" id="title-tagline"></div>
+  <div class="deco-line"></div>
+  <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('enterBattle')"></button>
+</div>
+<div class="ov hide" id="ov-loadout">
+  <h2 id="loadout-title"></h2>
+  <div class="sub2" id="loadout-subtitle"></div>
+  <div class="currency-bar" id="currency-bar"></div>
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="mode-quick" type="button" onclick="return window.__spinClashInvoke('setMode','quick')"></button>
+    <button class="mode-tab" id="mode-challenge" type="button" onclick="return window.__spinClashInvoke('setMode','challenge')"></button>
+  </div>
+  <div class="mode-hint" id="mode-hint"></div>
+  <div class="challenge-panel hide" id="challenge-panel">
+    <div class="challenge-line" id="challenge-node-name"></div>
+    <div class="challenge-line" id="challenge-node-detail"></div>
+    <div class="challenge-line" id="challenge-progress"></div>
+  </div>
+  <div class="arena-sel">
+    <div class="arena-opt sel" data-arena="0" id="arena-opt-0" onclick="return window.__spinClashInvoke('selectArena',0)"></div>
+    <div class="arena-opt" data-arena="1" id="arena-opt-1" onclick="return window.__spinClashInvoke('selectArena',1)"></div>
+    <div class="arena-opt" data-arena="2" id="arena-opt-2" onclick="return window.__spinClashInvoke('selectArena',2)"></div>
+  </div>
+  <div class="cards">
+    <div class="card sel" data-id="0" onclick="return window.__spinClashInvoke('selectTop',0)">
+      <div class="card-icon" style="background:radial-gradient(circle,#cc6622,#ccff12)" id="card-icon-0"></div>
+      <h3 id="card-name-0"></h3><div class="card-type" id="card-type-0"></div>
+      <div class="card-stats" id="card-stats-0"></div>
+      <div class="card-skill-tag" id="card-skill-0"></div>
+    </div>
+    <div class="card" data-id="1" onclick="return window.__spinClashInvoke('selectTop',1)">
+      <div class="card-icon" style="background:radial-gradient(circle,#4499ff,#2255cc)" id="card-icon-1"></div>
+      <h3 id="card-name-1"></h3><div class="card-type" id="card-type-1"></div>
+      <div class="card-stats" id="card-stats-1"></div>
+      <div class="card-skill-tag" id="card-skill-1"></div>
+    </div>
+    <div class="card" data-id="2" onclick="return window.__spinClashInvoke('selectTop',2)">
+      <div class="card-icon" style="background:radial-gradient(circle,#cc44ff,#8800cc)" id="card-icon-2"></div>
+      <h3 id="card-name-2"></h3><div class="card-type" id="card-type-2"></div>
+      <div class="card-stats" id="card-stats-2"></div>
+      <div class="card-skill-tag" id="card-skill-2"></div>
+    </div>
+  </div>
+  <button class="big-btn" id="btn-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
+</div>
+<div class="ov hide" id="ov-round">
+  <h2 id="rd-txt"></h2>
+  <div class="rd-detail" id="rd-detail"></div>
+  <div class="rd-next" id="rd-next"></div>
+</div>
+<div class="ov hide" id="ov-match">
+  <h2 id="mt-txt" style="color:#00ffcc"></h2>
+  <div class="mt-sub" id="mt-sub"></div>
+  <div class="mt-meta" id="mt-meta"></div>
+  <div class="mt-wallet" id="mt-wallet"></div>
+  <button class="sec-btn" id="btn-replay" onclick="return window.__spinClashInvoke('replay')"></button>
+  <button class="sec-btn" id="btn-swap-rematch" style="margin-top:10px;border-color:rgba(0,255,200,.3);color:#00cc99" onclick="return window.__spinClashInvoke('swapRematch')"></button>
+  <button class="sec-btn" id="btn-double-reward" style="margin-top:10px;border-color:rgba(255,180,0,.35);color:#ffcc55" onclick="return window.__spinClashInvoke('doubleReward')"></button>
+  <button class="sec-btn" id="btn-continue" style="display:none;margin-top:10px;border-color:rgba(255,120,80,.35);color:#ff9970" onclick="return window.__spinClashInvoke('continueReward')"></button>
+  <button class="sec-btn" id="btn-share" style="margin-top:10px" onclick="return window.__spinClashInvoke('share')"></button>
+</div>
+<script src="./src/bootstrap-app-globals.js"></script>
+<script src="./src/config-text.js"></script>
+<script src="./src/config-tops.js"></script>
+<script src="./src/config-arenas.js"></script>
+<script src="./src/config-modifiers.js"></script>
+<script src="./src/config-challenge-road.js"></script>
+<script src="./src/debug-service.js"></script>
+<script src="./src/storage-service.js"></script>
+<script src="./src/analytics-service.js"></script>
+<script src="./src/reward-service.js"></script>
+<script src="./src/share-service.js"></script>
+<script src="./src/progression-tools.js"></script>
+<script src="./src/loadout-ui-tools.js"></script>
+<script src="./src/match-flow-tools.js"></script>
+<script src="./src/debug-runtime-tools.js"></script>
+<script src="./src/ui-entry-tools.js"></script>
+<script src="./src/startup-tools.js"></script>
+<script src="./src/ui-shell-tools.js"></script>
+<script src="./src/combat-action-tools.js"></script>
+<script src="./src/round-flow-tools.js"></script>
+<script src="./src/battle-effects-tools.js"></script>
+<script src="./src/runtime-audio-tools.js"></script>
+<script src="./src/arena-math-tools.js"></script>
+<script src="./src/arena-render-tools.js"></script>
+<script src="./src/trail-render-tools.js"></script>
+<script src="./src/scratch-layer-tools.js"></script>
+<script src="./src/top-render-tools.js"></script>
+<script src="./src/aim-line-tools.js"></script>
+<script src="./src/scene-shell-tools.js"></script>
+<script src="./src/message-ui-tools.js"></script>
+<script src="./src/battle-view-tools.js"></script>
+<script src="./src/battle-sim-tools.js"></script>
+<script src="./assets/vendor/three.min.js"></script>
+<script>
+window.__spinClashInvoke=function(action){
+  var args=Array.prototype.slice.call(arguments,1);
+  var ui=window.__spinClashUI;
+  if(ui && typeof ui[action] === 'function'){
+    return ui[action].apply(ui,args);
+  }
+  if(action === 'enterBattle' && typeof window.__spinClashEnterBattle === 'function'){
+    return window.__spinClashEnterBattle();
+  }
+  return false;
+};
+window.__spinClashEnterBattle=function(){
+  var title=document.getElementById('ov-title');
+  var loadout=document.getElementById('ov-loadout');
+  if(title) title.classList.add('hide');
+  if(loadout) loadout.classList.remove('hide');
+};
+</script>
+<script defer src="./src/main.js"></script>
+</body>
+</html>
+
+

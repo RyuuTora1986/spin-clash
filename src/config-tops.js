@@ -1,0 +1,44 @@
+﻿(function(){
+  const root = window.SpinClash;
+  root.config.tops = [
+    {
+      id:'impact',
+      name:'Impact',
+      skill:'Fly Charge',
+      color:0xff4400,
+      emi:0x551100,
+      hp:140,
+      maxSpin:3400,
+      spd:28,
+      mass:0.80,
+      brate:1.2,
+      unlockCost:0
+    },
+    {
+      id:'armor',
+      name:'Armor',
+      skill:'Shield',
+      color:0x4488ff,
+      emi:0x001133,
+      hp:200,
+      maxSpin:2600,
+      spd:22,
+      mass:0.95,
+      brate:1.0,
+      unlockCost:0
+    },
+    {
+      id:'trick',
+      name:'Trick',
+      skill:'Phantom',
+      color:0xaa44ff,
+      emi:0x220044,
+      hp:115,
+      maxSpin:3900,
+      spd:34,
+      mass:0.70,
+      brate:1.4,
+      unlockCost:120
+    }
+  ];
+})();
