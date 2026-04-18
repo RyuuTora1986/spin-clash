@@ -25,6 +25,7 @@ function main() {
   } else {
     [
       'index.html',
+      'ads.txt',
       'css',
       'src',
       path.join('src', 'config-providers-override.js'),

@@ -64,6 +64,7 @@ function checkRequiredDocs() {
 function main() {
   [
     'index.html',
+    'ads.txt',
     'css/game.css',
     'src/main.js',
     'assets/vendor/three.min.js',

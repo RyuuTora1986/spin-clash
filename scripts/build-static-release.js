@@ -5,6 +5,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const outputDir = path.join(repoRoot, 'dist-static');
 const includedPaths = [
   'index.html',
+  'ads.txt',
   'css',
   'src',
   path.join('assets', 'vendor')
