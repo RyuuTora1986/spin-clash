@@ -62,6 +62,9 @@
 
     function mkTop(color,emi,typeId,isPlayer){
       const group = new THREE.Group();
+      const family = typeId === 'impact' || typeId === 0
+        ? 'impact'
+        : (typeId === 'armor' || typeId === 1 ? 'armor' : 'trick');
       const mainColor = new THREE.Color(color);
       const standardMaterial = (base,emissive,roughness=0.3,metalness=0.8)=>new THREE.MeshStandardMaterial({
         color:base instanceof THREE.Color ? base : new THREE.Color(base),
@@ -82,7 +85,7 @@
         return mesh;
       };
 
-      if(typeId===0){
+      if(family==='impact'){
         const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.68,0.76,0.2,6),standardMaterial(color,emi,0.2,0.92));
         disc.castShadow = true;
         group.add(disc);
@@ -109,7 +112,7 @@
         tip.rotation.x = Math.PI;
         group.add(tip);
         group.add(makeSpotDisk(0.62,0.12,color,0xffee00,0));
-      }else if(typeId===1){
+      }else if(family==='armor'){
         const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.44,0.78,8),standardMaterial(color,emi,0.45,0.7));
         tower.castShadow = true;
         group.add(tower);

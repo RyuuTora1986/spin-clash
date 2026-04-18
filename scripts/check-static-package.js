@@ -23,7 +23,14 @@ function main() {
   if (!fs.existsSync(distRoot)) {
     failures.push('dist-static is missing. Run `npm run build:static` first.');
   } else {
-    ['index.html', 'css', 'src', path.join('assets', 'vendor', 'three.min.js')].forEach(expectExists);
+    [
+      'index.html',
+      'css',
+      'src',
+      path.join('src', 'config-providers-override.js'),
+      path.join('src', 'config-providers-runtime.js'),
+      path.join('assets', 'vendor', 'three.min.js')
+    ].forEach(expectExists);
     ['docs', 'originals', 'scripts', 'package.json', 'README.md', 'progress.md'].forEach(expectMissing);
   }
 

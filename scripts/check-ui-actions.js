@@ -48,10 +48,17 @@ function collectExposedActions() {
 function main() {
   const invoked = collectInvokedActions();
   const exposed = collectExposedActions();
+  const requiredActions = new Set(['setLocale', 'guard']);
 
   for (const action of invoked) {
     if (!exposed.has(action) && action !== 'enterBattle') {
       failures.push(`index.html invokes missing UI action: ${action}`);
+    }
+  }
+
+  for (const action of requiredActions) {
+    if (!exposed.has(action)) {
+      failures.push(`Missing required UI action: ${action}`);
     }
   }
 

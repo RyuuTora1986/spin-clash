@@ -3,6 +3,12 @@
   const STORAGE_KEY = 'spin-clash-save';
   const SAVE_VERSION = 1;
   const WINDOW_NAME_PREFIX = '__spin_clash_save__:';
+  const SUPPORTED_LOCALES = ['en', 'zh', 'ja'];
+  const DEFAULT_RESEARCH_LEVELS = {
+    spin_core:0,
+    guard_frame:0,
+    burst_relay:0
+  };
   let storageBackend = null;
   let storageMode = 'memory';
   let lastDiagnostic = { mode:'memory', reason:'startup' };
@@ -15,15 +21,149 @@
     currency:0,
     challenge:{
       unlockedNodeIndex:0,
+      checkpointNodeIndex:0,
       completedNodes:[],
-      lastNodeIndex:null
+      lastNodeIndex:null,
+      unlockedRankIndex:0,
+      selectedRankIndex:0
     },
     unlocks:{
       arenas:['circle_bowl','heart_bowl'],
       tops:['impact','armor']
     },
+    research:{
+      levels:Object.assign({}, DEFAULT_RESEARCH_LEVELS)
+    },
+    settings:{
+      locale:'en',
+      musicEnabled:true,
+      sfxEnabled:true
+    },
     analytics:[]
   });
+
+  function isPlainObject(value){
+    return !!value && typeof value === 'object' && !Array.isArray(value);
+  }
+
+  function toNonNegativeInteger(value){
+    if(typeof value !== 'number' || !isFinite(value)) return null;
+    const normalized = Math.floor(value);
+    return normalized >= 0 ? normalized : null;
+  }
+
+  function pickFirstNonNegativeInteger(values, fallback){
+    for(let index = 0; index < values.length; index += 1){
+      const normalized = toNonNegativeInteger(values[index]);
+      if(normalized != null) return normalized;
+    }
+    return fallback;
+  }
+
+  function normalizeStringList(){
+    const seen = new Set();
+    const normalized = [];
+    for(let groupIndex = 0; groupIndex < arguments.length; groupIndex += 1){
+      const group = arguments[groupIndex];
+      if(!Array.isArray(group)) continue;
+      for(let itemIndex = 0; itemIndex < group.length; itemIndex += 1){
+        const value = group[itemIndex];
+        if(typeof value !== 'string' || !value) continue;
+        if(seen.has(value)) continue;
+        seen.add(value);
+        normalized.push(value);
+      }
+    }
+    return normalized;
+  }
+
+  function normalizeIntegerList(){
+    const source = arguments[0];
+    const seen = new Set();
+    const normalized = [];
+    if(!Array.isArray(source)) return normalized;
+    for(let index = 0; index < source.length; index += 1){
+      const value = toNonNegativeInteger(source[index]);
+      if(value == null || seen.has(value)) continue;
+      seen.add(value);
+      normalized.push(value);
+    }
+    return normalized;
+  }
+
+  function normalizeAnalytics(events){
+    if(!Array.isArray(events)) return [];
+    return events.filter(function(entry){
+      return isPlainObject(entry);
+    }).slice(-200);
+  }
+
+  function normalizeLocale(value){
+    if(typeof value !== 'string' || !value) return 'en';
+    const normalized = String(value).toLowerCase();
+    for(let index = 0; index < SUPPORTED_LOCALES.length; index += 1){
+      const locale = SUPPORTED_LOCALES[index];
+      if(normalized === locale || normalized.indexOf(locale + '-') === 0 || normalized.indexOf(locale + '_') === 0){
+        return locale;
+      }
+    }
+    return 'en';
+  }
+
+  function normalizeBoolean(value, fallback){
+    if(typeof value === 'boolean') return value;
+    return fallback;
+  }
+
+  function normalizeChallenge(source, baseChallenge){
+    const sourceChallenge = isPlainObject(source.challenge) ? source.challenge : {};
+    return {
+      unlockedNodeIndex:pickFirstNonNegativeInteger(
+        [sourceChallenge.unlockedNodeIndex, source.challengeUnlockedNodeIndex],
+        baseChallenge.unlockedNodeIndex
+      ),
+      checkpointNodeIndex:pickFirstNonNegativeInteger(
+        [sourceChallenge.checkpointNodeIndex],
+        baseChallenge.checkpointNodeIndex
+      ),
+      completedNodes:normalizeIntegerList(sourceChallenge.completedNodes),
+      lastNodeIndex:pickFirstNonNegativeInteger([sourceChallenge.lastNodeIndex], null),
+      unlockedRankIndex:pickFirstNonNegativeInteger([sourceChallenge.unlockedRankIndex], baseChallenge.unlockedRankIndex),
+      selectedRankIndex:0
+    };
+  }
+
+  function normalizeUnlocks(source, baseUnlocks){
+    const sourceUnlocks = isPlainObject(source.unlocks) ? source.unlocks : {};
+    return {
+      arenas:normalizeStringList(baseUnlocks.arenas, sourceUnlocks.arenas, source.unlockedArenas),
+      tops:normalizeStringList(baseUnlocks.tops, sourceUnlocks.tops, source.unlockedTops)
+    };
+  }
+
+  function normalizeResearch(source, baseResearch){
+    const sourceResearch = isPlainObject(source.research) ? source.research : {};
+    const sourceLevels = isPlainObject(sourceResearch.levels) ? sourceResearch.levels : sourceResearch;
+    const normalizedLevels = {};
+    Object.keys(baseResearch.levels || {}).forEach(function(trackId){
+      normalizedLevels[trackId] = pickFirstNonNegativeInteger(
+        [sourceLevels[trackId]],
+        baseResearch.levels[trackId]
+      );
+    });
+    return {
+      levels:normalizedLevels
+    };
+  }
+
+  function normalizeSettings(source, baseSettings){
+    const sourceSettings = isPlainObject(source.settings) ? source.settings : {};
+    return {
+      locale:normalizeLocale(sourceSettings.locale || source.locale || baseSettings.locale),
+      musicEnabled:normalizeBoolean(sourceSettings.musicEnabled, baseSettings.musicEnabled !== false),
+      sfxEnabled:normalizeBoolean(sourceSettings.sfxEnabled, baseSettings.sfxEnabled !== false)
+    };
+  }
 
   function sanitizeSave(save){
     const base = defaultSave();
@@ -31,23 +171,32 @@
     const merged = Object.assign({}, base, source);
     const baseChallenge = base.challenge || {};
     const baseUnlocks = base.unlocks || {};
-    const sourceChallenge = source.challenge || {};
-    const sourceUnlocks = source.unlocks || {};
-    merged.challenge = Object.assign({}, baseChallenge, sourceChallenge);
-    merged.unlocks = Object.assign({}, baseUnlocks, sourceUnlocks);
-    merged.challenge.completedNodes = Array.isArray(merged.challenge.completedNodes)
-      ? merged.challenge.completedNodes.slice()
-      : (Array.isArray(baseChallenge.completedNodes) ? baseChallenge.completedNodes.slice() : []);
-    merged.unlocks.arenas = Array.isArray(merged.unlocks.arenas)
-      ? merged.unlocks.arenas.slice()
-      : (Array.isArray(baseUnlocks.arenas) ? baseUnlocks.arenas.slice() : []);
-    merged.unlocks.tops = Array.isArray(merged.unlocks.tops)
-      ? merged.unlocks.tops.slice()
-      : (Array.isArray(baseUnlocks.tops) ? baseUnlocks.tops.slice() : []);
-    merged.analytics = Array.isArray(merged.analytics) ? merged.analytics.slice(-200) : [];
+    const baseResearch = base.research || { levels:Object.assign({}, DEFAULT_RESEARCH_LEVELS) };
+    const baseSettings = base.settings || { locale:'en', musicEnabled:true, sfxEnabled:true };
+    merged.challenge = normalizeChallenge(source, baseChallenge);
+    merged.challenge.unlockedRankIndex = Math.max(0, Math.min(merged.challenge.unlockedRankIndex, 2));
+    merged.challenge.selectedRankIndex = Math.max(
+      0,
+      Math.min(
+        pickFirstNonNegativeInteger(
+          [isPlainObject(source.challenge) ? source.challenge.selectedRankIndex : null],
+          baseChallenge.selectedRankIndex
+        ),
+        merged.challenge.unlockedRankIndex
+      )
+    );
+    merged.unlocks = normalizeUnlocks(source, baseUnlocks);
+    merged.research = normalizeResearch(source, baseResearch);
+    merged.settings = normalizeSettings(source, baseSettings);
+    merged.analytics = normalizeAnalytics(source.analytics);
     merged.version = SAVE_VERSION;
-    if(typeof merged.currency !== 'number') merged.currency = 0;
-    if(typeof merged.sessions !== 'number') merged.sessions = 0;
+    merged.currency = typeof source.currency === 'number' && isFinite(source.currency) && source.currency >= 0
+      ? source.currency
+      : base.currency;
+    merged.sessions = toNonNegativeInteger(source.sessions);
+    if(merged.sessions == null) merged.sessions = base.sessions;
+    if(typeof merged.firstSeenAt !== 'string' || !merged.firstSeenAt) merged.firstSeenAt = base.firstSeenAt;
+    if(typeof merged.lastSeenAt !== 'string' || !merged.lastSeenAt) merged.lastSeenAt = base.lastSeenAt;
     return merged;
   }
 

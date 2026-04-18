@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   const root = window.SpinClash;
   root.config.arenas = [
     {
@@ -20,7 +20,7 @@
       label:'HEX BOWL',
       type:'hex',
       hazardSpinThreshold:null,
-      unlockCost:140
+      unlockCost:120
     }
   ];
 })();

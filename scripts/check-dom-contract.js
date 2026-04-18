@@ -58,11 +58,27 @@ function collectHtmlIds() {
 function main() {
   const referencedIds = collectReferencedIds();
   const htmlIds = collectHtmlIds();
+  const requiredIds = [
+    'locale-title-switcher',
+    'locale-loadout-switcher',
+    'locale-title-en',
+    'locale-title-zh',
+    'locale-title-ja',
+    'locale-loadout-en',
+    'locale-loadout-zh',
+    'locale-loadout-ja'
+  ];
 
   for (const id of referencedIds) {
     if (dynamicIds.has(id)) continue;
     if (!htmlIds.has(id)) {
       failures.push(`Missing DOM id in index.html: ${id}`);
+    }
+  }
+
+  for (const id of requiredIds) {
+    if (!htmlIds.has(id)) {
+      failures.push(`Missing required localization DOM id in index.html: ${id}`);
     }
   }
 

@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   const root = window.SpinClash;
   const params = new URLSearchParams(window.location.search);
   const enabled = params.get('debug') === '1';
@@ -64,7 +64,14 @@
           btn.style.cursor = 'pointer';
           btn.style.font = '11px/1.2 monospace';
           btn.addEventListener('click',()=>{
-            const result = action.run();
+            let result;
+            try {
+              result = action.run();
+            } catch (error) {
+              render();
+              setStatus((action.label || 'ACTION')+' FAILED: '+(error && error.message ? error.message : String(error)), 'error');
+              return;
+            }
             if(result && typeof result.then === 'function'){
               btn.disabled = true;
               setStatus((action.label || 'ACTION')+'...', 'info');

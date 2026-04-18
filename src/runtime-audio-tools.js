@@ -1,11 +1,41 @@
 (function(){
   const root = window.SpinClash || (window.SpinClash = {});
 
-  root.createRuntimeAudioTools = function createRuntimeAudioTools(){
+  root.createRuntimeAudioTools = function createRuntimeAudioTools(options){
+    const runtimeOptions = options || {};
+    const storageService = runtimeOptions.storageService || null;
+    const signatureSkills = runtimeOptions.signatureSkills || {};
     let AC=null,mGain=null,_beatTimer=null,_nextBeat=0,_beatStep=0;
     let _wallCD=0;
     const BPM=174;
     const S16=60/BPM/4;
+
+    function getAudioSettings(){
+      const save = storageService && typeof storageService.get === 'function'
+        ? (storageService.get() || {})
+        : {};
+      const settings = save && save.settings ? save.settings : {};
+      return {
+        musicEnabled:settings.musicEnabled !== false,
+        sfxEnabled:settings.sfxEnabled !== false
+      };
+    }
+
+    function isMusicEnabled(){
+      return getAudioSettings().musicEnabled;
+    }
+
+    function isSfxEnabled(){
+      return getAudioSettings().sfxEnabled;
+    }
+
+    function resolveSignatureAudioStyle(skillId){
+      const signature = skillId && signatureSkills[skillId] ? signatureSkills[skillId] : null;
+      if(signature && signature.audioStyle) return signature.audioStyle;
+      if(skillId === 'Fly Charge') return 'charge';
+      if(skillId === 'Fortress Pulse') return 'pulse';
+      return 'phantom';
+    }
 
     function isSameOriginScript(filename){
       if(!filename) return false;
@@ -286,7 +316,7 @@
     }
 
     function startMusic(){
-      if(_beatTimer||!AC) return;
+      if(_beatTimer||!AC||!isMusicEnabled()) return;
       _nextBeat=AC.currentTime+0.05;
       _beatStep=0;
       _beatTimer=setInterval(_scheduleBeat,20);
@@ -300,7 +330,7 @@
     }
 
     function sfxCollide(force){
-      if(!AC||force<0.5) return;
+      if(!AC||!isSfxEnabled()||force<0.5) return;
       const t=AC.currentTime;
       const v=Math.min(0.92,0.15+force*0.09);
       _noise(t,0.014,v*0.88,5500,22000);
@@ -362,7 +392,7 @@
     }
 
     function sfxWall(spd){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const now=AC.currentTime;
       if(now<_wallCD) return;
       _wallCD=now+0.06;
@@ -384,7 +414,7 @@
     }
 
     function sfxLaunch(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       const g=AC.createGain();
       g.gain.setValueAtTime(0.42,t);
@@ -421,7 +451,7 @@
     }
 
     function sfxDash(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       const g=AC.createGain();
       g.gain.setValueAtTime(0.32,t);
@@ -437,19 +467,28 @@
       _noise(t,0.08,0.14,2000,12000);
     }
 
+    function sfxGuard(){
+      if(!AC||!isSfxEnabled()) return;
+      const t=AC.currentTime;
+      [440,660,990].forEach((f,i)=>_osc(f,'sine',t+i*0.03,0.22,0.18/(i+1),null));
+      _noise(t,0.06,0.1,3500,14000);
+      _osc(90,'triangle',t,0.28,0.18,null);
+    }
+
     function sfxOrb(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       [880,1108,1318,1760].forEach((f,i)=>_osc(f,'sine',t+i*0.05,0.22,0.2,null));
     }
 
     function sfxSkill(sk){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
-      if(sk==='Fly Charge'){
+      const audioStyle = resolveSignatureAudioStyle(sk);
+      if(audioStyle==='charge'){
         [80,160,320,640,1280].forEach((f,i)=>{_osc(f,'sawtooth',t+i*0.045,0.1,0.4/(i+1),null);});
         _noise(t,0.3,0.32,400,10000);
-      }else if(sk==='Shield'){
+      }else if(audioStyle==='pulse'){
         [220,330,440,660,880,1100].forEach((f,i)=>_osc(f,'sine',t+i*0.032,0.32,0.24,null));
         _noise(t,0.06,0.18,5000,16000);
         _osc(60,'sine',t,0.4,0.45,null);
@@ -462,7 +501,7 @@
     }
 
     function sfxRingOut(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       [65,97,130].forEach((f,i)=>{
         const g=AC.createGain();
@@ -483,19 +522,19 @@
     }
 
     function sfxRoundWin(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       [[523,0],[659,.09],[784,.18],[1047,.32],[1318,.48]].forEach(([f,d])=>_osc(f,'sine',t+d,0.28,0.35,null));
     }
 
     function sfxRoundLose(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       const t=AC.currentTime;
       [[392,0],[349,.11],[330,.24],[262,.4],[196,.58]].forEach(([f,d])=>_osc(f,'sine',t+d,0.24,0.28,null));
     }
 
     function sfxCountdown(){
-      if(!AC) return;
+      if(!AC||!isSfxEnabled()) return;
       _osc(1047,'sine',AC.currentTime,0.06,0.28,null);
       _noise(AC.currentTime,0.04,0.1,4000,12000);
     }
@@ -504,12 +543,16 @@
       installRuntimeGuards,
       showRuntimeError,
       initAudioSafely,
+      isMusicEnabled,
+      isSfxEnabled,
+      resolveSignatureAudioStyle,
       startMusic,
       stopMusic,
       sfxCollide,
       sfxWall,
       sfxLaunch,
       sfxDash,
+      sfxGuard,
       sfxOrb,
       sfxSkill,
       sfxRingOut,

@@ -2,6 +2,7 @@
   const root = window.SpinClash || (window.SpinClash = {});
 
   root.createBattleEffectsTools = function createBattleEffectsTools(options){
+    const uiText = options.uiText || {};
     const scene = options.scene || null;
     const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
     const sfxOrb = typeof options.sfxOrb === 'function' ? options.sfxOrb : function(){};
@@ -65,7 +66,7 @@
             scene.remove(o.mesh);
             t.burst=Math.min(100,t.burst+55);
             sfxOrb();
-            if(t.isPlayer)showMsg('+55 BURST',.9);
+            if(t.isPlayer) showMsg(uiText.messageBurstOrb || '+55 BURST',.9);
           }
         });
       });
