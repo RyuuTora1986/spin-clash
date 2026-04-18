@@ -1,0 +1,101 @@
+(function(){
+  const root = window.SpinClash;
+  root.config.enemyPresets = {
+    armor_standard:{
+      id:'armor_standard',
+      label:'ARMOR ANCHOR',
+      topId:'armor',
+      ai:{
+        seekForce:5.9,
+        speedCapScale:0.82,
+        inwardBiasRadius:5.2,
+        inwardBiasForce:8.2,
+        dashRange:3.4,
+        dashScale:1.9,
+        dashCooldownScaleMin:1.05,
+        dashCooldownScaleMax:1.45,
+        useSkillOnBurstReady:true
+      }
+    },
+    trick_standard:{
+      id:'trick_standard',
+      label:'TRICK HUNTER',
+      topId:'trick',
+      ai:{
+        seekForce:7.4,
+        speedCapScale:1.03,
+        inwardBiasRadius:6.4,
+        inwardBiasForce:5.8,
+        dashRange:5.4,
+        dashScale:2.45,
+        dashCooldownScaleMin:0.65,
+        dashCooldownScaleMax:1.0,
+        useSkillOnBurstReady:true
+      }
+    },
+    impact_standard:{
+      id:'impact_standard',
+      label:'IMPACT BRUISER',
+      topId:'impact',
+      ai:{
+        seekForce:6.9,
+        speedCapScale:0.94,
+        inwardBiasRadius:5.7,
+        inwardBiasForce:6.7,
+        dashRange:4.0,
+        dashScale:2.7,
+        dashCooldownScaleMin:0.9,
+        dashCooldownScaleMax:1.2,
+        useSkillOnBurstReady:true
+      }
+    },
+    armor_ram:{
+      id:'armor_ram',
+      label:'ARMOR RAM',
+      topId:'armor',
+      ai:{
+        seekForce:6.2,
+        speedCapScale:0.88,
+        inwardBiasRadius:5.6,
+        inwardBiasForce:8.3,
+        dashRange:3.7,
+        dashScale:2.02,
+        dashCooldownScaleMin:0.98,
+        dashCooldownScaleMax:1.3,
+        useSkillOnBurstReady:true
+      }
+    },
+    trick_drifter:{
+      id:'trick_drifter',
+      label:'TRICK DRIFTER',
+      topId:'trick',
+      ai:{
+        seekForce:6.5,
+        speedCapScale:1.05,
+        inwardBiasRadius:6.9,
+        inwardBiasForce:4.9,
+        dashRange:5.4,
+        dashScale:2.05,
+        dashCooldownScaleMin:0.78,
+        dashCooldownScaleMax:1.02,
+        useSkillOnBurstReady:true
+      }
+    },
+    impact_blitz:{
+      id:'impact_blitz',
+      label:'IMPACT BLITZ',
+      topId:'impact',
+      ai:{
+        seekForce:7.2,
+        speedCapScale:1.0,
+        inwardBiasRadius:5.4,
+        inwardBiasForce:6.9,
+        dashRange:4.4,
+        dashScale:2.75,
+        dashCooldownScaleMin:0.8,
+        dashCooldownScaleMax:1.08,
+        useSkillOnBurstReady:true
+      }
+    }
+  };
+})();
