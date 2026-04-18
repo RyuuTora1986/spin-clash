@@ -50,6 +50,13 @@
       <div class="sk-cd-mask" id="dash-cd" style="height:0%"></div>
       <div class="sk-cd-txt" id="dash-cd-txt"></div>
     </div>
+    <div class="sk-btn state-cooldown" id="act-guard" onclick="return window.__spinClashInvoke('guard')">
+      <div class="sk-icon" id="guard-icon"></div>
+      <div class="sk-name" id="guard-name"></div>
+      <div class="sk-key">E</div>
+      <div class="sk-cd-mask" id="guard-cd" style="height:0%"></div>
+      <div class="sk-cd-txt" id="guard-cd-txt"></div>
+    </div>
     <div class="sk-btn state-cooldown" id="act-skill" onclick="return window.__spinClashInvoke('skill')">
       <div class="sk-icon" id="sk-icon"></div>
       <div class="sk-name" id="sn"></div>
@@ -96,7 +103,7 @@
 
   <div id="act-swap" onclick="return window.__spinClashInvoke('swap')"><span id="swap-icon"></span><small id="swap-label"></small></div>
   <div id="score-area">
-    <div class="score-label-txt">ROUND</div>
+    <div class="score-label-txt" id="score-label-round">ROUND</div>
     <div class="pips-row">
       <div class="pip" id="pp1"></div><div class="pip" id="pp2"></div>
       <div class="vs-txt">VS</div>
@@ -112,22 +119,170 @@
   <h1 id="title-main"></h1>
   <div class="sub" id="title-sub"></div>
   <div class="tagline" id="title-tagline"></div>
+  <div class="locale-switcher title-locale-switcher" id="locale-title-switcher">
+    <button class="locale-btn" id="locale-title-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
+    <button class="locale-btn" id="locale-title-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">中文</button>
+    <button class="locale-btn" id="locale-title-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">日本語</button>
+  </div>
+  <div class="title-status">
+    <div class="title-status-line" id="title-progress"></div>
+    <div class="title-status-line" id="title-goal"></div>
+  </div>
+  <div class="home-top-panel" id="home-top-panel">
+    <button class="home-top-nav" id="btn-home-top-prev" type="button" onclick="return window.__spinClashInvoke('prevHomeTop')"></button>
+    <div class="home-top-stage-shell">
+      <div class="home-top-stage" id="home-top-stage"></div>
+    </div>
+    <div class="home-top-copy">
+      <div class="home-top-kicker" id="home-top-kicker"></div>
+      <div class="home-top-head">
+        <div class="home-top-name" id="home-top-name"></div>
+        <div class="home-top-count" id="home-top-count"></div>
+      </div>
+      <div class="home-top-type" id="home-top-type"></div>
+      <div class="home-top-skill" id="home-top-skill"></div>
+      <div class="home-top-traits" id="home-top-traits"></div>
+    </div>
+    <button class="home-top-nav" id="btn-home-top-next" type="button" onclick="return window.__spinClashInvoke('nextHomeTop')"></button>
+  </div>
   <div class="deco-line"></div>
-  <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('enterBattle')"></button>
+  <div class="title-actions">
+    <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('goPath')"></button>
+    <button class="title-alt-btn" id="btn-enter-quick" onclick="return window.__spinClashInvoke('goQuick')"></button>
+    <button class="title-alt-btn" id="btn-enter-workshop" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
+    <button class="title-alt-btn" id="btn-enter-settings" onclick="return window.__spinClashInvoke('goSettings')"></button>
+  </div>
 </div>
 <div class="ov hide" id="ov-loadout">
   <h2 id="loadout-title"></h2>
   <div class="sub2" id="loadout-subtitle"></div>
+  <div class="locale-switcher loadout-locale-switcher" id="locale-loadout-switcher">
+    <button class="locale-btn" id="locale-loadout-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
+    <button class="locale-btn" id="locale-loadout-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">中文</button>
+    <button class="locale-btn" id="locale-loadout-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">日本語</button>
+  </div>
+  <div class="shell-route-bar" id="shell-route-bar">
+    <button class="route-back-btn" id="btn-route-back" type="button" onclick="return window.__spinClashInvoke('goBack')"></button>
+    <div class="shell-route-copy">
+      <div class="shell-route-title" id="shell-route-title"></div>
+      <div class="shell-route-context" id="shell-route-context"></div>
+    </div>
+    <div class="shell-route-actions" id="shell-route-actions">
+      <button class="route-chip-btn" id="btn-route-workshop" type="button" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
+      <button class="route-chip-btn" id="btn-route-settings" type="button" onclick="return window.__spinClashInvoke('goSettings')"></button>
+    </div>
+  </div>
   <div class="currency-bar" id="currency-bar"></div>
+  <div class="featured-top-panel">
+    <div class="featured-top-copy">
+      <div class="featured-top-title" id="featured-top-title"></div>
+      <div class="featured-top-name" id="featured-top-name"></div>
+      <div class="featured-top-type" id="featured-top-type"></div>
+      <div class="featured-top-skill" id="featured-top-skill"></div>
+    </div>
+    <div class="featured-top-meta">
+      <div class="featured-traits-title" id="featured-traits-title"></div>
+      <div class="featured-top-traits" id="featured-top-traits"></div>
+    </div>
+  </div>
   <div class="mode-tabs">
     <button class="mode-tab active" id="mode-quick" type="button" onclick="return window.__spinClashInvoke('setMode','quick')"></button>
     <button class="mode-tab" id="mode-challenge" type="button" onclick="return window.__spinClashInvoke('setMode','challenge')"></button>
   </div>
   <div class="mode-hint" id="mode-hint"></div>
+  <div class="workshop-panel hide" id="workshop-panel">
+    <div class="workshop-title" id="workshop-title"></div>
+    <div class="workshop-hint" id="workshop-hint"></div>
+    <div class="research-track" id="research-track-0">
+      <div class="research-copy">
+        <div class="research-name" id="research-name-0"></div>
+        <div class="research-desc" id="research-desc-0"></div>
+      </div>
+      <div class="research-meta">
+        <div class="research-level" id="research-level-0"></div>
+        <div class="research-bonus" id="research-bonus-0"></div>
+        <div class="research-next" id="research-next-0"></div>
+      </div>
+      <button class="research-buy" id="research-buy-0" type="button" onclick="return window.__spinClashInvoke('buyResearch',0)"></button>
+    </div>
+    <div class="research-track" id="research-track-1">
+      <div class="research-copy">
+        <div class="research-name" id="research-name-1"></div>
+        <div class="research-desc" id="research-desc-1"></div>
+      </div>
+      <div class="research-meta">
+        <div class="research-level" id="research-level-1"></div>
+        <div class="research-bonus" id="research-bonus-1"></div>
+        <div class="research-next" id="research-next-1"></div>
+      </div>
+      <button class="research-buy" id="research-buy-1" type="button" onclick="return window.__spinClashInvoke('buyResearch',1)"></button>
+    </div>
+    <div class="research-track" id="research-track-2">
+      <div class="research-copy">
+        <div class="research-name" id="research-name-2"></div>
+        <div class="research-desc" id="research-desc-2"></div>
+      </div>
+      <div class="research-meta">
+        <div class="research-level" id="research-level-2"></div>
+        <div class="research-bonus" id="research-bonus-2"></div>
+        <div class="research-next" id="research-next-2"></div>
+      </div>
+      <button class="research-buy" id="research-buy-2" type="button" onclick="return window.__spinClashInvoke('buyResearch',2)"></button>
+    </div>
+  </div>
+  <div class="settings-panel hide" id="settings-panel">
+    <div class="settings-title" id="settings-title"></div>
+    <div class="settings-hint" id="settings-hint"></div>
+    <div class="settings-line" id="settings-language-label"></div>
+    <div class="settings-line" id="settings-audio-label"></div>
+    <div class="settings-actions">
+      <button class="settings-toggle-btn" id="btn-settings-music" type="button" onclick="return window.__spinClashInvoke('toggleMusic')"></button>
+      <button class="settings-toggle-btn" id="btn-settings-sfx" type="button" onclick="return window.__spinClashInvoke('toggleSfx')"></button>
+    </div>
+  </div>
   <div class="challenge-panel hide" id="challenge-panel">
     <div class="challenge-line" id="challenge-node-name"></div>
     <div class="challenge-line" id="challenge-node-detail"></div>
     <div class="challenge-line" id="challenge-progress"></div>
+    <div class="challenge-route-strip" id="challenge-route-strip"></div>
+    <div class="challenge-rank-title" id="challenge-rank-title"></div>
+    <div class="challenge-rank-strip">
+      <button class="challenge-rank-btn" id="challenge-rank-0" type="button" onclick="return window.__spinClashInvoke('setRoadRank',0)"></button>
+      <button class="challenge-rank-btn" id="challenge-rank-1" type="button" onclick="return window.__spinClashInvoke('setRoadRank',1)"></button>
+      <button class="challenge-rank-btn" id="challenge-rank-2" type="button" onclick="return window.__spinClashInvoke('setRoadRank',2)"></button>
+    </div>
+    <div class="challenge-rank-note" id="challenge-rank-note"></div>
+  </div>
+  <div class="quick-battle-panel hide" id="quick-battle-panel">
+    <div class="quick-arena-panel">
+      <button class="quick-arena-nav" id="btn-quick-arena-prev" type="button" onclick="return window.__spinClashInvoke('prevQuickArena')"></button>
+      <div class="quick-arena-stage-shell">
+        <div class="quick-arena-stage" id="quick-arena-stage"></div>
+        <div class="quick-arena-copy">
+          <div class="quick-arena-kicker" id="quick-arena-kicker"></div>
+          <div class="quick-arena-head">
+            <div class="quick-arena-name" id="quick-arena-name"></div>
+            <div class="quick-arena-status" id="quick-arena-status"></div>
+          </div>
+          <div class="quick-arena-desc" id="quick-arena-desc"></div>
+        </div>
+      </div>
+      <button class="quick-arena-nav" id="btn-quick-arena-next" type="button" onclick="return window.__spinClashInvoke('nextQuickArena')"></button>
+    </div>
+    <div class="quick-ready-panel">
+      <div class="quick-selected-top-panel">
+        <div class="quick-selected-top-stage" id="quick-selected-top-stage"></div>
+        <div class="quick-selected-top-copy">
+          <div class="quick-selected-top-kicker" id="quick-selected-top-kicker"></div>
+          <div class="quick-selected-top-name" id="quick-selected-top-name"></div>
+          <div class="quick-selected-top-status" id="quick-selected-top-status"></div>
+        </div>
+      </div>
+      <div class="quick-start-panel">
+        <div class="quick-start-hint" id="quick-start-hint"></div>
+        <button class="big-btn" id="btn-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
+      </div>
+    </div>
   </div>
   <div class="arena-sel">
     <div class="arena-opt sel" data-arena="0" id="arena-opt-0" onclick="return window.__spinClashInvoke('selectArena',0)"></div>
@@ -153,8 +308,24 @@
       <div class="card-stats" id="card-stats-2"></div>
       <div class="card-skill-tag" id="card-skill-2"></div>
     </div>
+    <div class="card" data-id="3" onclick="return window.__spinClashInvoke('selectTop',3)">
+      <div class="card-icon" style="background:radial-gradient(circle,#ff9966,#ff5522)" id="card-icon-3"></div>
+      <h3 id="card-name-3"></h3><div class="card-type" id="card-type-3"></div>
+      <div class="card-stats" id="card-stats-3"></div>
+      <div class="card-skill-tag" id="card-skill-3"></div>
+    </div>
+    <div class="card" data-id="4" onclick="return window.__spinClashInvoke('selectTop',4)">
+      <div class="card-icon" style="background:radial-gradient(circle,#ff88dd,#cc2299)" id="card-icon-4"></div>
+      <h3 id="card-name-4"></h3><div class="card-type" id="card-type-4"></div>
+      <div class="card-stats" id="card-stats-4"></div>
+      <div class="card-skill-tag" id="card-skill-4"></div>
+    </div>
   </div>
-  <button class="big-btn" id="btn-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
+  <button class="big-btn path-fight-btn" id="btn-path-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
+</div>
+<div class="battle-intro hide" id="battle-intro">
+  <div class="battle-intro-title" id="battle-intro-title"></div>
+  <div class="battle-intro-meta" id="battle-intro-meta"></div>
 </div>
 <div class="ov hide" id="ov-round">
   <h2 id="rd-txt"></h2>
@@ -165,7 +336,9 @@
   <h2 id="mt-txt" style="color:#00ffcc"></h2>
   <div class="mt-sub" id="mt-sub"></div>
   <div class="mt-meta" id="mt-meta"></div>
+  <div class="mt-breakdown" id="mt-breakdown"></div>
   <div class="mt-wallet" id="mt-wallet"></div>
+  <div class="mt-next" id="mt-next"></div>
   <button class="sec-btn" id="btn-replay" onclick="return window.__spinClashInvoke('replay')"></button>
   <button class="sec-btn" id="btn-swap-rematch" style="margin-top:10px;border-color:rgba(0,255,200,.3);color:#00cc99" onclick="return window.__spinClashInvoke('swapRematch')"></button>
   <button class="sec-btn" id="btn-double-reward" style="margin-top:10px;border-color:rgba(255,180,0,.35);color:#ffcc55" onclick="return window.__spinClashInvoke('doubleReward')"></button>
@@ -175,13 +348,24 @@
 <script src="./src/bootstrap-app-globals.js"></script>
 <script src="./src/config-text.js"></script>
 <script src="./src/config-tops.js"></script>
+<script src="./src/config-signature-skills.js"></script>
 <script src="./src/config-arenas.js"></script>
 <script src="./src/config-modifiers.js"></script>
+<script src="./src/config-enemy-presets.js"></script>
+<script src="./src/config-economy.js"></script>
+<script src="./src/config-research.js"></script>
+<script src="./src/config-road-ranks.js"></script>
 <script src="./src/config-challenge-road.js"></script>
+<script src="./src/localization-tools.js"></script>
+<script src="./src/config-providers.js"></script>
+<script src="./src/config-providers-override.js"></script>
+<script src="./src/config-providers-runtime.js"></script>
 <script src="./src/debug-service.js"></script>
+<script src="./src/provider-runtime-tools.js"></script>
 <script src="./src/storage-service.js"></script>
 <script src="./src/analytics-service.js"></script>
 <script src="./src/reward-service.js"></script>
+<script src="./src/share-card-tools.js"></script>
 <script src="./src/share-service.js"></script>
 <script src="./src/progression-tools.js"></script>
 <script src="./src/loadout-ui-tools.js"></script>
@@ -199,6 +383,8 @@
 <script src="./src/trail-render-tools.js"></script>
 <script src="./src/scratch-layer-tools.js"></script>
 <script src="./src/top-render-tools.js"></script>
+<script src="./src/home-top-showcase-tools.js"></script>
+<script src="./src/quick-battle-preview-tools.js"></script>
 <script src="./src/aim-line-tools.js"></script>
 <script src="./src/scene-shell-tools.js"></script>
 <script src="./src/message-ui-tools.js"></script>

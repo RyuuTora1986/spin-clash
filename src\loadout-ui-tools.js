@@ -1,0 +1,1101 @@
+(function(){
+  const root = window.SpinClash || (window.SpinClash = {});
+
+  root.createLoadoutUiTools = function createLoadoutUiTools(options){
+    const uiText = options.uiText || {};
+    const tops = options.tops || [];
+    const arenas = options.arenas || [];
+    const researchTracks = options.researchTracks || [];
+    const modifiers = options.modifiers || {};
+    const enemyPresets = options.enemyPresets || {};
+    const challengeRoad = options.challengeRoad || [];
+    const roadRanks = options.roadRanks || [];
+    const getSave = typeof options.getSave === 'function'
+      ? options.getSave
+      : function(){ return { currency:0, unlocks:{ arenas:[], tops:[] }, challenge:{ unlockedNodeIndex:0, checkpointNodeIndex:0 } }; };
+    const saveProgress = typeof options.saveProgress === 'function'
+      ? options.saveProgress
+      : function(mutator){ return mutator(getSave()); };
+    const getResearchLevel = typeof options.getResearchLevel === 'function'
+      ? options.getResearchLevel
+      : function(){ return 0; };
+    const getResearchBonuses = typeof options.getResearchBonuses === 'function'
+      ? options.getResearchBonuses
+      : function(){ return { hpMul:1, maxSpinMul:1, brateMul:1 }; };
+    const buyResearchLevel = typeof options.buyResearchLevel === 'function'
+      ? options.buyResearchLevel
+      : function(){ return { ok:false, reason:'unavailable' }; };
+    const getCurrentMode = typeof options.getCurrentMode === 'function' ? options.getCurrentMode : function(){ return 'quick'; };
+    const getUiRoute = typeof options.getUiRoute === 'function' ? options.getUiRoute : function(){ return getCurrentMode()==='challenge' ? 'path' : 'quick'; };
+    const getUiRouteFrom = typeof options.getUiRouteFrom === 'function' ? options.getUiRouteFrom : function(){ return 'home'; };
+    const getCurrentLocale = typeof options.getCurrentLocale === 'function' ? options.getCurrentLocale : function(){ return 'en'; };
+    const getMusicEnabled = typeof options.getMusicEnabled === 'function' ? options.getMusicEnabled : function(){ return true; };
+    const getSfxEnabled = typeof options.getSfxEnabled === 'function' ? options.getSfxEnabled : function(){ return true; };
+    const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
+    const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
+    const getPlayerTopId = typeof options.getPlayerTopId === 'function' ? options.getPlayerTopId : function(){ return 0; };
+    const getHomePreviewTopId = typeof options.getHomePreviewTopId === 'function' ? options.getHomePreviewTopId : function(){ return getPlayerTopId(); };
+    const getSessionTrialArenaIds = typeof options.getSessionTrialArenaIds === 'function'
+      ? options.getSessionTrialArenaIds
+      : function(){ return new Set(); };
+    const getUnlockedRoadRankIndex = typeof options.getUnlockedRoadRankIndex === 'function'
+      ? options.getUnlockedRoadRankIndex
+      : function(){ return 0; };
+    const getSelectedRoadRankIndex = typeof options.getSelectedRoadRankIndex === 'function'
+      ? options.getSelectedRoadRankIndex
+      : function(){ return 0; };
+    const setSelectedRoadRankIndex = typeof options.setSelectedRoadRankIndex === 'function'
+      ? options.setSelectedRoadRankIndex
+      : function(index){ return index; };
+    const analyticsService = options.analyticsService || null;
+    const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
+    const rewardService = options.rewardService || null;
+    const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
+    const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
+
+    function setText(id, value){
+      const el = document.getElementById(id);
+      if(el) el.textContent = value;
+    }
+
+    function setHtml(id, value){
+      const el = document.getElementById(id);
+      if(el) el.innerHTML = value;
+    }
+
+    function formatText(template, tokens){
+      const source = String(template == null ? '' : template);
+      return source.replace(/\{(\w+)\}/g, function(match, key){
+        return Object.prototype.hasOwnProperty.call(tokens || {}, key) ? String(tokens[key]) : match;
+      });
+    }
+
+    function updateLocaleButtons(){
+      const locale = getCurrentLocale();
+      const labels = uiText.localeButtons || {};
+      ['en','zh','ja'].forEach(function(localeId){
+        ['title','loadout'].forEach(function(scope){
+          const button = document.getElementById('locale-'+scope+'-'+localeId);
+          if(!button) return;
+          button.textContent = labels[localeId] || localeId.toUpperCase();
+          button.classList.toggle('active', locale === localeId);
+        });
+      });
+    }
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    function getLoadoutSubtitle(){
+      return getCurrentMode()==='challenge' ? uiText.challengeSubtitle : uiText.quickBattleSubtitle;
+    }
+
+    function getSignatureSkillId(template){
+      const combat = template && template.combat ? template.combat : null;
+      const actions = combat && combat.actions ? combat.actions : null;
+      const signature = actions && actions.signature ? actions.signature : null;
+      return (signature && signature.skillId) || (template ? template.skill : null) || 'Fly Charge';
+    }
+
+    function showRewardFailureFeedback(placement, input){
+      if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
+        showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 1.2);
+        return;
+      }
+      const info = rewardService.getFailureInfo(input);
+      let message = uiText.rewardError || 'REWARD FLOW FAILED.';
+      if(info.category === 'busy'){
+        message = uiText.rewardBusy || 'REWARD ALREADY IN PROGRESS.';
+      }else if(info.category === 'loading'){
+        message = uiText.rewardLoading || 'AD IS LOADING. TRY AGAIN.';
+      }else if(info.category === 'unavailable'){
+        message = uiText.rewardUnavailable || 'REWARD NOT AVAILABLE RIGHT NOW.';
+      }else if(info.category === 'declined'){
+        message = uiText.rewardTrialFail || 'TRIAL NOT GRANTED.';
+      }
+      showMsg(message, 1.2);
+    }
+
+    function getCurrentChallengeNode(){
+      const index = getActiveChallengeIndex();
+      return challengeRoad[index] || challengeRoad[challengeRoad.length-1] || null;
+    }
+
+    function getArenaLabel(index){
+      return arenas[index] ? arenas[index].label : 'ARENA';
+    }
+
+    function getArenaConfig(index){
+      return arenas[index] || { id:'unknown_arena', label:'ARENA', type:'circle', unlockCost:0 };
+    }
+
+    function getTopConfig(index){
+      return tops[index] || { id:'unknown_top', name:'TOP', unlockCost:0 };
+    }
+
+    function getTopById(topId){
+      return tops.find((top)=>top && top.id === topId) || null;
+    }
+
+    function getCardText(index){
+      return uiText.cards && uiText.cards[index] ? uiText.cards[index] : null;
+    }
+
+    function getEnemyPresetById(id){
+      return enemyPresets[id] || null;
+    }
+
+    function isArenaUnlocked(index){
+      const arena = getArenaConfig(index);
+      const save = getSave();
+      const unlocked = save.unlocks && Array.isArray(save.unlocks.arenas) ? save.unlocks.arenas : [];
+      return arena.unlockCost <= 0 || unlocked.includes(arena.id) || getSessionTrialArenaIds().has(arena.id);
+    }
+
+    function isTopUnlocked(index){
+      const top = getTopConfig(index);
+      const save = getSave();
+      const unlocked = save.unlocks && Array.isArray(save.unlocks.tops) ? save.unlocks.tops : [];
+      return top.unlockCost <= 0 || unlocked.includes(top.id);
+    }
+
+    function getUnlockedTopIndexes(){
+      const unlockedIndexes = [];
+      tops.forEach(function(top, index){
+        if(top && isTopUnlocked(index)){
+          unlockedIndexes.push(index);
+        }
+      });
+      if(!unlockedIndexes.length && tops.length){
+        unlockedIndexes.push(Math.max(0, Math.min(tops.length - 1, parseInt(getPlayerTopId(), 10) || 0)));
+      }
+      return unlockedIndexes;
+    }
+
+    function getHomePreviewTopIndex(){
+      if(!tops.length) return 0;
+      return Math.max(0, Math.min(tops.length - 1, parseInt(getHomePreviewTopId(), 10) || 0));
+    }
+
+    function getHomeTopLockHint(top){
+      if(!top) return uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+      if(top.unlockSource === 'road_or_shop'){
+        return uiText.homeTopLockedHintRoadShop || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+      }
+      if(top.unlockSource === 'road'){
+        return uiText.homeTopLockedHintRoad || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+      }
+      if(top.unlockSource === 'shop'){
+        return uiText.homeTopLockedHintShop || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+      }
+      return uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+    }
+
+    function normalizeCompareText(value){
+      return String(value || '')
+        .replace(/\s+/g, '')
+        .replace(/[·・\-_/]/g, '')
+        .toLowerCase();
+    }
+
+    function getArenaButtonText(index){
+      const arena = getArenaConfig(index);
+      if(isArenaUnlocked(index)){
+        if(getSessionTrialArenaIds().has(arena.id) && arena.unlockCost > 0){
+          return arena.label+' - '+uiText.trialArena;
+        }
+        return arena.label;
+      }
+      return arena.label+' - '+uiText.lockedArena+' '+arena.unlockCost;
+    }
+
+    function updateCurrencyUI(){
+      const save = getSave();
+      const label = uiText.currencyLabel || 'SCRAP';
+      setText('currency-bar', label+': '+save.currency);
+      setText('mt-wallet', (uiText.walletLabel || 'BALANCE')+' '+save.currency+' '+label);
+    }
+
+    function getResearchTrack(index){
+      return researchTracks[index] || null;
+    }
+
+    function getResearchState(index){
+      const track = getResearchTrack(index);
+      if(!track){
+        return null;
+      }
+      const level = getResearchLevel(track.id);
+      const maxLevel = Array.isArray(track.levels) ? track.levels.length : 0;
+      const currentLevelConfig = level > 0 && track.levels[level - 1] ? track.levels[level - 1] : null;
+      const nextLevelConfig = level < maxLevel ? track.levels[level] : null;
+      return {
+        track,
+        level,
+        maxLevel,
+        currentLevelConfig,
+        nextLevelConfig,
+        maxed:level >= maxLevel
+      };
+    }
+
+    function formatResearchLevel(state){
+      return (uiText.workshopLevel || 'LV')+' '+state.level+'/'+state.maxLevel;
+    }
+
+    function formatResearchCurrent(state){
+      return (uiText.workshopCurrent || 'ACTIVE')+': '+(state.currentLevelConfig ? state.currentLevelConfig.preview : (uiText.noBonus || 'NO BONUS'));
+    }
+
+    function formatResearchNext(state){
+      return state.maxed
+        ? (uiText.workshopMaxed || 'MAXED')
+        : (uiText.workshopNext || 'NEXT')+': '+state.nextLevelConfig.preview;
+    }
+
+    function getResearchButtonText(state){
+      if(state.maxed){
+        return uiText.workshopMaxed || 'MAXED';
+      }
+      return (uiText.workshopBuy || 'UPGRADE')+' '+state.nextLevelConfig.cost;
+    }
+
+    function updateWorkshopUI(){
+      const panel = document.getElementById('workshop-panel');
+      const workshopVisible = getUiRoute() === 'workshop';
+      if(panel){
+        panel.classList.toggle('hide', !workshopVisible);
+      }
+      setText('workshop-title', uiText.workshopTitle || 'WORKSHOP RESEARCH');
+      setText('workshop-hint', uiText.workshopHint || 'Permanent SCRAP upgrades. Effects apply to every duel.');
+      for(let index = 0; index < researchTracks.length; index += 1){
+        const state = getResearchState(index);
+        const row = document.getElementById('research-track-'+index);
+        const buyButton = document.getElementById('research-buy-'+index);
+        if(!state){
+          if(row) row.style.display = 'none';
+          continue;
+        }
+        if(row){
+          row.style.display = '';
+          row.classList.toggle('maxed', state.maxed);
+          row.classList.toggle('locked', !state.maxed && getSave().currency < state.nextLevelConfig.cost);
+        }
+        setText('research-name-'+index, state.track.label);
+        setText('research-desc-'+index, state.track.description);
+        setText('research-level-'+index, formatResearchLevel(state));
+        setText('research-bonus-'+index, formatResearchCurrent(state));
+        setText('research-next-'+index, formatResearchNext(state));
+        if(buyButton){
+          buyButton.textContent = getResearchButtonText(state);
+          buyButton.disabled = state.maxed || (!state.nextLevelConfig || getSave().currency < state.nextLevelConfig.cost);
+        }
+      }
+    }
+
+    function updateTopCardUI(){
+      const currencyLabel = uiText.currencyLabel || 'SCRAP';
+      document.querySelectorAll('.card').forEach((el)=>{
+        const topIndex = parseInt(el.dataset.id,10);
+        const top = getTopConfig(topIndex);
+        const locked = !isTopUnlocked(topIndex);
+        const cardText = getCardText(topIndex);
+        el.classList.toggle('sel', topIndex===getPlayerTopId());
+        el.classList.toggle('locked', locked);
+        setText('card-name-'+topIndex, top.name || 'TOP');
+        if(cardText){
+          setText('card-type-'+topIndex, cardText.type);
+          setHtml('card-stats-'+topIndex, cardText.stats);
+          setText(
+            'card-skill-'+topIndex,
+            locked
+              ? (uiText.lockedTop+' - '+top.unlockCost+' '+currencyLabel)
+              : cardText.skill
+          );
+        }
+      });
+    }
+
+    function updateFeaturedTopUI(){
+      const topIndex = getPlayerTopId();
+      const top = getTopConfig(topIndex);
+      const cardText = getCardText(topIndex) || {};
+      const locked = !isTopUnlocked(topIndex);
+      const traits = Array.isArray(cardText.traits) ? cardText.traits : [];
+      setText('featured-top-title', uiText.featuredTopTitle || 'SELECTED TOP');
+      setText('featured-top-name', top.name || 'TOP');
+      setText('featured-top-type', cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP'));
+      setText(
+        'featured-top-skill',
+        locked
+          ? ((uiText.lockedTop || 'LOCKED')+' - '+(top.unlockCost || 0)+' '+(uiText.currencyLabel || 'SCRAP'))
+          : (cardText.pitch || cardText.skill || top.skill || 'Ready for the next duel.')
+      );
+      setText(
+        'featured-top-traits',
+        locked
+          ? (uiText.loadoutHintQuick || 'Choose a top to view its strengths.')
+          : traits.join(' - ')
+      );
+    }
+
+    function getArenaDescription(index){
+      const arena = getArenaConfig(index);
+      const descriptions = uiText.quickArenaDescriptions || {};
+      if(arena && descriptions[arena.id]){
+        return descriptions[arena.id];
+      }
+      if(arena && arena.type === 'heart'){
+        return 'Heart bowl that exaggerates angle pressure and edge decisions.';
+      }
+      if(arena && arena.type === 'hex'){
+        return 'Hex bowl with harsher rebounds and tighter escape lanes.';
+      }
+      return 'Balanced circular bowl with the cleanest center-control reads.';
+    }
+
+    function getQuickArenaStatus(index){
+      const arena = getArenaConfig(index);
+      if(!arena) return uiText.quickArenaUnlocked || uiText.homeTopUnlocked || 'UNLOCKED';
+      if(getSessionTrialArenaIds().has(arena.id) && arena.unlockCost > 0){
+        return uiText.trialArena || 'TRIAL ACTIVE';
+      }
+      return isArenaUnlocked(index)
+        ? (uiText.quickArenaUnlocked || uiText.homeTopUnlocked || 'UNLOCKED')
+        : (uiText.quickArenaLocked || uiText.lockedArena || 'LOCKED');
+    }
+
+    function getQuickStartState(){
+      const arenaIndex = Math.max(0, Math.min(arenas.length - 1, parseInt(getSelectedArenaIndex(), 10) || 0));
+      const topIndex = Math.max(0, Math.min(tops.length - 1, parseInt(getPlayerTopId(), 10) || 0));
+      const arena = getArenaConfig(arenaIndex);
+      const top = getTopConfig(topIndex);
+      const topLocked = !isTopUnlocked(topIndex);
+      const arenaUnlocked = isArenaUnlocked(arenaIndex);
+      const arenaLocked = !arenaUnlocked;
+      const save = getSave();
+      const arenaUnlockCost = Math.max(0, arena && typeof arena.unlockCost === 'number' ? arena.unlockCost : 0);
+      const canBuyArena = arenaLocked && save.currency >= arenaUnlockCost;
+      const shouldOfferTrial = arenaLocked && !canBuyArena;
+      let buttonVariant = 'ready';
+      let buttonLabel = uiText.fightButton || 'START MATCH';
+      let hint = uiText.quickStartReadyHint || 'Arena selected. Start when ready.';
+      if(topLocked){
+        buttonVariant = 'top-locked';
+        buttonLabel = uiText.quickStartBlockedButton || uiText.lockedTop || 'TOP LOCKED';
+        hint = uiText.quickStartBlockedHint || uiText.quickTopLockedHint || 'Locked tops cannot enter quick battle.';
+      }else if(canBuyArena){
+        buttonVariant = 'arena-unlock';
+        buttonLabel = uiText.quickStartArenaUnlockButton || 'UNLOCK + START';
+        hint = formatText(
+          uiText.quickStartArenaUnlockHint || 'Spend {cost} SCRAP to unlock this arena, then begin immediately.',
+          { cost:arenaUnlockCost }
+        );
+      }else if(shouldOfferTrial){
+        buttonVariant = 'arena-trial';
+        buttonLabel = uiText.quickStartArenaTrialButton || 'WATCH AD TRIAL';
+        hint = uiText.quickStartArenaTrialHint || 'SCRAP is short. Watch an ad to activate a temporary arena trial.';
+      }
+      return {
+        arenaIndex,
+        arena,
+        topIndex,
+        top,
+        topLocked,
+        arenaUnlocked,
+        arenaLocked,
+        canBuyArena,
+        shouldOfferTrial,
+        buttonVariant,
+        buttonLabel,
+        hint
+      };
+    }
+
+    function updateQuickBattleUI(){
+      const state = getQuickStartState();
+      const prevButton = document.getElementById('btn-quick-arena-prev');
+      const nextButton = document.getElementById('btn-quick-arena-next');
+      const fightButton = document.getElementById('btn-fight');
+      const arenaStatus = document.getElementById('quick-arena-status');
+      const topStatus = document.getElementById('quick-selected-top-status');
+      const panel = document.getElementById('quick-battle-panel');
+      if(panel){
+        panel.classList.toggle('top-locked', state.topLocked);
+        panel.classList.toggle('arena-locked', state.arenaLocked);
+        panel.classList.toggle('arena-purchase-ready', state.buttonVariant === 'arena-unlock');
+        panel.classList.toggle('arena-trial-ready', state.buttonVariant === 'arena-trial');
+      }
+
+      setText('quick-arena-kicker', uiText.quickArenaTitle || 'SELECTED ARENA');
+      setText('quick-arena-name', state.arena.label || 'ARENA');
+      setText('quick-arena-status', getQuickArenaStatus(state.arenaIndex));
+      setText('quick-arena-desc', getArenaDescription(state.arenaIndex));
+      setText('btn-quick-arena-prev', uiText.homeTopPrev || '<');
+      setText('btn-quick-arena-next', uiText.homeTopNext || '>');
+
+      setText('quick-selected-top-kicker', uiText.quickTopTitle || 'DEPLOYED TOP');
+      setText('quick-selected-top-name', state.top.name || 'TOP');
+      setText('quick-selected-top-status', '');
+      setText('quick-start-hint', state.hint);
+      setText('btn-fight', state.buttonLabel);
+
+      if(prevButton) prevButton.disabled = arenas.length <= 1;
+      if(nextButton) nextButton.disabled = arenas.length <= 1;
+      if(fightButton){
+        fightButton.disabled = state.topLocked;
+        fightButton.classList.toggle('danger-disabled', state.topLocked);
+        fightButton.classList.toggle('arena-locked', !state.topLocked && state.arenaLocked);
+        fightButton.classList.toggle('cta-unlock', state.buttonVariant === 'arena-unlock');
+        fightButton.classList.toggle('cta-trial', state.buttonVariant === 'arena-trial');
+      }
+      if(arenaStatus){
+        arenaStatus.classList.toggle('locked', !state.arenaUnlocked);
+        arenaStatus.classList.toggle('unlocked', state.arenaUnlocked);
+      }
+      if(topStatus){
+        topStatus.classList.remove('locked');
+        topStatus.classList.remove('unlocked');
+      }
+    }
+
+    function updateHomeTopUI(){
+      const currentTopIndex = getHomePreviewTopIndex();
+      const top = getTopConfig(currentTopIndex);
+      const cardText = getCardText(currentTopIndex) || {};
+      const locked = !isTopUnlocked(currentTopIndex);
+      const traits = Array.isArray(cardText.traits) ? cardText.traits : [];
+      const prevButton = document.getElementById('btn-home-top-prev');
+      const nextButton = document.getElementById('btn-home-top-next');
+      const statusEl = document.getElementById('home-top-count');
+      const stageShellEl = document.querySelector('.home-top-stage-shell');
+      const typeEl = document.getElementById('home-top-type');
+      const canCycle = tops.length > 1;
+      const typeText = cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP');
+      const hideDuplicateType = !locked && normalizeCompareText(typeText) === normalizeCompareText(top.name || 'TOP');
+
+      setText('home-top-kicker', uiText.homeTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
+      setText('home-top-name', top.name || 'TOP');
+      setText('home-top-count', locked ? (uiText.homeTopLocked || uiText.lockedTop || 'LOCKED') : (uiText.homeTopUnlocked || uiText.homeTopCountLabel || 'UNLOCKED'));
+      setText('home-top-type', hideDuplicateType ? '' : typeText);
+      setText(
+        'home-top-skill',
+        locked
+          ? (uiText.homeTopLockedSkill || 'Silhouette only. Full ability data unlocks later.')
+          : (cardText.skill || top.skill || (uiText.homeTopEmpty || 'Choose an unlocked top to preview its strengths.'))
+      );
+      setText(
+        'home-top-traits',
+        locked
+          ? getHomeTopLockHint(top)
+          : (cardText.pitch || (traits.length ? traits.slice(0, 2).join(' - ') : (uiText.homeTopEmpty || 'Choose an unlocked top to preview its strengths.')))
+      );
+      setText('btn-home-top-prev', uiText.homeTopPrev || '<');
+      setText('btn-home-top-next', uiText.homeTopNext || '>');
+      if(statusEl){
+        statusEl.classList.toggle('locked', locked);
+        statusEl.classList.toggle('unlocked', !locked);
+      }
+      if(stageShellEl){
+        stageShellEl.classList.toggle('locked-preview', locked);
+        stageShellEl.dataset.lockLabel = locked ? (uiText.homeTopLocked || uiText.lockedTop || 'LOCKED') : '';
+      }
+      if(typeEl){
+        typeEl.classList.toggle('is-hidden', hideDuplicateType);
+      }
+      if(prevButton) prevButton.disabled = !canCycle;
+      if(nextButton) nextButton.disabled = !canCycle;
+    }
+
+    function getModifierById(id){
+      return modifiers[id] || modifiers.standard || { id:'standard', label:'STANDARD', description:'No special rules.' };
+    }
+
+    function getChapterLabel(node){
+      if(!node) return uiText.challengeMode || 'CHAMPIONSHIP PATH';
+      return node.chapterLabel || (node.chapterId ? String(node.chapterId).replace(/_/g,' ').toUpperCase() : (uiText.challengeMode || 'CHAMPIONSHIP PATH'));
+    }
+
+    function getTierLabel(node){
+      if(!node || !node.tier) return '';
+      if(node.tier === 'boss') return uiText.tierBoss || 'BOSS';
+      if(node.tier === 'final') return uiText.tierFinal || 'FINAL';
+      return '';
+    }
+
+    function formatNodeLabel(number){
+      return (uiText.battleIntroNodeLabel || uiText.resultNodeLabel || 'NODE')+' '+number;
+    }
+
+    function formatMultiplier(value){
+      const normalized = typeof value === 'number' && isFinite(value) ? Math.round(value * 100) / 100 : 1;
+      return normalized % 1 === 0 ? normalized.toFixed(0) : String(normalized);
+    }
+
+    function getRoadRank(index){
+      return roadRanks[index] || null;
+    }
+
+    function getSelectedRoadRank(){
+      return getRoadRank(getSelectedRoadRankIndex()) || getRoadRank(0) || null;
+    }
+
+    function getSettingsToggleLabel(kind, enabled){
+      if(kind === 'music'){
+        return enabled
+          ? (uiText.settingsMusicOn || 'MUSIC: ON')
+          : (uiText.settingsMusicOff || 'MUSIC: OFF');
+      }
+      return enabled
+        ? (uiText.settingsSfxOn || 'SFX: ON')
+        : (uiText.settingsSfxOff || 'SFX: OFF');
+    }
+
+    function getRoadRankButtonText(index){
+      const rank = getRoadRank(index);
+      if(!rank) return uiText.roadRankTitle || 'ROAD RANK';
+      return index > getUnlockedRoadRankIndex()
+        ? rank.label+' - '+(uiText.roadRankLocked || 'LOCKED')
+        : rank.label;
+    }
+
+    function getRoadRankNote(rank){
+      if(!rank) return uiText.roadRankHint || '';
+      const parts = [rank.label];
+      if(rank.description){
+        parts.push(rank.description);
+      }
+      parts.push((uiText.roadRankRewardLabel || 'Reward')+' x'+formatMultiplier(rank.rewardMul));
+      return parts.join(' - ');
+    }
+
+    function updateChallengeRouteUI(){
+      const container = document.getElementById('challenge-route-strip');
+      if(!container) return;
+      const save = getSave();
+      const completedNodes = save.challenge && Array.isArray(save.challenge.completedNodes)
+        ? save.challenge.completedNodes
+        : [];
+      const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex || 0 : 0;
+      const activeIndex = getActiveChallengeIndex();
+      container.innerHTML = challengeRoad.map(function(node, index){
+        const classes = ['route-node'];
+        if(index === activeIndex) classes.push('current');
+        if(completedNodes.includes(index)) classes.push('cleared');
+        if(index > unlockedNodeIndex) classes.push('locked');
+        if(node && node.tier === 'boss') classes.push('boss');
+        if(node && node.tier === 'final') classes.push('final');
+        if(node && node.checkpointOnClear) classes.push('checkpoint');
+        return '<span class="'+classes.join(' ')+'">'+escapeHtml(index + 1)+'</span>';
+      }).join('');
+    }
+
+    function getTitleProgressText(){
+      const save = getSave();
+      const challenge = save.challenge || {};
+      const rank = getSelectedRoadRank();
+      const nextNodeIndex = Math.min(challenge.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1));
+      return [
+        uiText.titleProgressLabel || 'PATH STATUS',
+        formatNodeLabel(nextNodeIndex + 1),
+        rank ? rank.label : null,
+        (uiText.currencyLabel || 'SCRAP')+' '+(save.currency || 0)
+      ].filter(Boolean).join(' - ');
+    }
+
+    function getTitleGoalText(){
+      const save = getSave();
+      const challenge = save.challenge || {};
+      if((challenge.unlockedNodeIndex || 0) < challengeRoad.length - 1){
+        const targetNode = challengeRoad[Math.min(challenge.unlockedNodeIndex || 0, challengeRoad.length - 1)] || null;
+        if(targetNode){
+          return [
+            uiText.titleGoalLabel || 'NEXT TARGET',
+            formatNodeLabel((challenge.unlockedNodeIndex || 0) + 1),
+            targetNode.name,
+            getArenaLabel(targetNode.arenaIndex)
+          ].filter(Boolean).join(' - ');
+        }
+      }
+      return [
+        uiText.titleGoalLabel || 'NEXT TARGET',
+        uiText.roadClear || 'ROAD CLEAR',
+        uiText.roadRankHint || 'Push a higher rank or open the workshop.'
+      ].filter(Boolean).join(' - ');
+    }
+
+    function updateTitleSummary(){
+      const currentTopIndex = getHomePreviewTopIndex();
+      const homePreviewLocked = !isTopUnlocked(currentTopIndex);
+      const pathButton = document.getElementById('btn-enter');
+      const quickButton = document.getElementById('btn-enter-quick');
+      setText('title-progress', getTitleProgressText());
+      setText('title-goal', getTitleGoalText());
+      updateHomeTopUI();
+      if(pathButton){
+        pathButton.disabled = homePreviewLocked;
+        pathButton.classList.toggle('is-disabled', homePreviewLocked);
+      }
+      if(quickButton){
+        quickButton.disabled = homePreviewLocked;
+        quickButton.classList.toggle('is-disabled', homePreviewLocked);
+      }
+    }
+
+    function updateRoadRankUI(){
+      const selectedRank = getSelectedRoadRank();
+      const unlockedRankIndex = getUnlockedRoadRankIndex();
+      setText('challenge-rank-title', uiText.roadRankTitle || 'ROAD RANK');
+      setText('challenge-rank-note', getRoadRankNote(selectedRank));
+      for(let index = 0; index < 3; index += 1){
+        const button = document.getElementById('challenge-rank-'+index);
+        const rank = getRoadRank(index);
+        if(!button) continue;
+        if(!rank){
+          button.style.display = 'none';
+          continue;
+        }
+        button.style.display = '';
+        button.textContent = getRoadRankButtonText(index);
+        button.disabled = index > unlockedRankIndex;
+        button.classList.toggle('active', index === getSelectedRoadRankIndex());
+        button.classList.toggle('locked', index > unlockedRankIndex);
+      }
+    }
+
+    function updateModeUI(){
+      const save = getSave();
+      const currentNode = getCurrentChallengeNode();
+      const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex : 0;
+      const checkpointNodeIndex = save.challenge ? save.challenge.checkpointNodeIndex || 0 : 0;
+      const currentMode = getCurrentMode();
+      const uiRoute = getUiRoute();
+      const routeOrigin = getUiRouteFrom();
+      const isPathRoute = uiRoute === 'path';
+      const isQuickRoute = uiRoute === 'quick';
+      const isWorkshopRoute = uiRoute === 'workshop';
+      const isSettingsRoute = uiRoute === 'settings';
+      const routeTitle = isPathRoute
+        ? (uiText.challengeMode || 'CHAMPIONSHIP PATH')
+        : isQuickRoute
+          ? (uiText.quickMode || 'QUICK BATTLE')
+          : isWorkshopRoute
+            ? (uiText.workshopTitle || 'WORKSHOP')
+            : (uiText.settingsTitle || 'SETTINGS');
+      const routeContext = isPathRoute
+        ? (uiText.loadoutHintChallenge || 'Battle through fixed nodes with modifiers and persistent rewards.')
+        : isQuickRoute
+          ? (uiText.loadoutHintQuick || 'Choose any arena and top for a one-off duel.')
+          : isWorkshopRoute
+            ? ((uiText.routeFromLabel || 'FROM')+' '+(routeOrigin === 'path'
+              ? (uiText.challengeMode || 'CHAMPIONSHIP PATH')
+              : routeOrigin === 'quick'
+                ? (uiText.quickMode || 'QUICK BATTLE')
+                : (uiText.homeRoute || 'HOME')))
+            : (uiText.settingsHint || 'Language and shell preferences for the current static build.');
+
+      setText('loadout-title', routeTitle);
+      setText('loadout-subtitle', routeContext);
+      setText('shell-route-title', routeTitle);
+      setText('shell-route-context', routeContext);
+      setText('btn-route-back', uiText.backButton || 'BACK');
+      setText('btn-route-workshop', uiText.titleWorkshop || 'WORKSHOP');
+      setText('btn-route-settings', uiText.settingsTitle || 'SETTINGS');
+      setText('btn-fight', uiText.fightButton || 'START MATCH');
+      setText('btn-path-fight', uiText.challengeButton || 'ENTER PATH');
+
+      const quickTab = document.getElementById('mode-quick');
+      const challengeTab = document.getElementById('mode-challenge');
+      const modeHint = document.getElementById('mode-hint');
+      const challengePanel = document.getElementById('challenge-panel');
+      const quickBattlePanel = document.getElementById('quick-battle-panel');
+      const routeActions = document.getElementById('shell-route-actions');
+      const featuredPanel = document.querySelector('.featured-top-panel');
+      const arenaPanel = document.querySelector('.arena-sel');
+      const cardsPanel = document.querySelector('.cards');
+      const fightButton = document.getElementById('btn-fight');
+      const pathFightButton = document.getElementById('btn-path-fight');
+      const settingsPanel = document.getElementById('settings-panel');
+      const localeSwitcher = document.getElementById('locale-loadout-switcher');
+      const musicToggle = document.getElementById('btn-settings-music');
+      const sfxToggle = document.getElementById('btn-settings-sfx');
+
+      if(routeActions) routeActions.style.display = isPathRoute || isQuickRoute ? '' : 'none';
+      if(quickTab) quickTab.style.display = 'none';
+      if(challengeTab) challengeTab.style.display = 'none';
+      if(modeHint){
+        modeHint.style.display = isPathRoute || isQuickRoute ? '' : 'none';
+        modeHint.textContent = isPathRoute ? uiText.loadoutHintChallenge : uiText.loadoutHintQuick;
+      }
+      if(challengePanel) challengePanel.classList.toggle('hide', !isPathRoute);
+      if(quickBattlePanel) quickBattlePanel.classList.toggle('hide', !isQuickRoute);
+      if(featuredPanel) featuredPanel.style.display = isPathRoute ? '' : 'none';
+      if(arenaPanel) arenaPanel.style.display = 'none';
+      if(cardsPanel) cardsPanel.style.display = isPathRoute ? '' : 'none';
+      if(fightButton) fightButton.style.display = isQuickRoute ? '' : 'none';
+      if(pathFightButton) pathFightButton.style.display = isPathRoute ? '' : 'none';
+      if(settingsPanel) settingsPanel.classList.toggle('hide', !isSettingsRoute);
+      if(localeSwitcher) localeSwitcher.style.display = isSettingsRoute ? '' : 'none';
+      setText('settings-title', uiText.settingsTitle || 'SETTINGS');
+      setText('settings-hint', uiText.settingsHint || 'Language and audio toggles update immediately and persist to local save data.');
+      setText('settings-language-label', uiText.settingsLanguageLabel || 'LANGUAGE: use the locale buttons above.');
+      setText('settings-audio-label', (uiText.settingsAudioLabel || 'AUDIO')+': '+[
+        getSettingsToggleLabel('music', getMusicEnabled()),
+        getSettingsToggleLabel('sfx', getSfxEnabled())
+      ].join(' - '));
+      setText('btn-settings-music', getSettingsToggleLabel('music', getMusicEnabled()));
+      setText('btn-settings-sfx', getSettingsToggleLabel('sfx', getSfxEnabled()));
+      if(musicToggle) musicToggle.classList.toggle('off', !getMusicEnabled());
+      if(sfxToggle) sfxToggle.classList.toggle('off', !getSfxEnabled());
+
+      document.querySelectorAll('.arena-opt').forEach((el)=>{
+        const arenaIndex = parseInt(el.dataset.arena,10);
+        el.style.display = 'none';
+        el.classList.toggle('sel', arenaIndex===getSelectedArenaIndex());
+        el.classList.toggle('locked', !isArenaUnlocked(arenaIndex));
+        el.textContent = getArenaButtonText(arenaIndex);
+      });
+
+      updateTopCardUI();
+      updateFeaturedTopUI();
+      updateQuickBattleUI();
+      updateCurrencyUI();
+      updateWorkshopUI();
+      updateRoadRankUI();
+      updateChallengeRouteUI();
+      updateTitleSummary();
+
+      if(isPathRoute && currentNode){
+        const modifier = getModifierById(currentNode.modifierId);
+        const enemyPreset = getEnemyPresetById(currentNode.enemyPresetId);
+        const enemyTop = enemyPreset ? getTopById(enemyPreset.topId) : null;
+        const activeChallengeIndex = getActiveChallengeIndex();
+        const chapterLabel = getChapterLabel(currentNode);
+        const tierLabel = getTierLabel(currentNode);
+        const roadRank = getSelectedRoadRank();
+        const previewBits = [
+          currentNode.previewLabel || chapterLabel,
+          tierLabel,
+          currentNode.checkpointOnClear ? (uiText.checkpointLabel || 'CHECKPOINT') : ''
+        ].filter(Boolean);
+        const detailBits = previewBits.concat([
+          roadRank ? roadRank.label : null,
+          getArenaLabel(currentNode.arenaIndex),
+          enemyTop ? enemyTop.name : 'TOP',
+          modifier.label
+        ]).filter(Boolean);
+        const tail = unlockedNodeIndex >= challengeRoad.length-1 && activeChallengeIndex >= challengeRoad.length-1
+          ? uiText.challengeComplete
+          : (activeChallengeIndex > unlockedNodeIndex ? uiText.challengeLocked : (currentNode.previewDesc || modifier.description));
+        setText('challenge-node-name', chapterLabel+' - '+formatNodeLabel(activeChallengeIndex+1)+' - '+currentNode.name);
+        setText('challenge-node-detail', detailBits.join(' - '));
+        setText('challenge-progress', [
+          (uiText.resultBreakdownNode || 'NODE')+' '+currentNode.reward+' '+uiText.currencyLabel,
+          currentNode.firstClearBonus > 0 ? ('+'+currentNode.firstClearBonus+' '+(uiText.resultBreakdownFirstClear || 'FIRST CLEAR')) : null,
+          roadRank ? roadRank.label+' x'+formatMultiplier(roadRank.rewardMul) : null,
+          (uiText.resumeLabel || 'Resume')+' '+(checkpointNodeIndex + 1),
+          tail
+        ].filter(Boolean).join(' - '));
+      }
+      updateLocaleButtons();
+    }
+
+    function applyStaticText(){
+      setText('title-main', uiText.titleMain);
+      setText('title-sub', uiText.titleSub);
+      setText('title-tagline', uiText.titleTagline);
+      setText('btn-enter', uiText.enterBattle);
+      setText('btn-enter-quick', uiText.titleQuickBattle || uiText.quickMode || 'QUICK BATTLE');
+      setText('btn-enter-workshop', uiText.titleWorkshop || 'WORKSHOP');
+      setText('btn-enter-settings', uiText.settingsTitle || 'SETTINGS');
+      setText('loadout-title', uiText.loadoutTitle);
+      setText('loadout-subtitle', getLoadoutSubtitle());
+      setText('featured-top-title', uiText.featuredTopTitle || 'SELECTED TOP');
+      setText('featured-traits-title', uiText.featuredTraitsTitle || 'TRACK TRAITS');
+      setText('arena-opt-0', getArenaButtonText(0));
+      setText('arena-opt-1', getArenaButtonText(1));
+      setText('arena-opt-2', getArenaButtonText(2));
+      setText('btn-fight', uiText.fightButton || 'START MATCH');
+      setText('btn-path-fight', uiText.challengeButton || 'ENTER PATH');
+      setText('rd-next', uiText.roundNext);
+      setText('btn-replay', uiText.replay);
+      setText('btn-swap-rematch', uiText.rematch);
+      setText('btn-double-reward', uiText.rewardDouble);
+      setText('btn-continue', uiText.rewardContinue);
+      setText('btn-share', uiText.shareResult);
+      setText('mode-quick', uiText.quickMode);
+      setText('mode-challenge', uiText.challengeMode);
+      setText('p-role', '* '+uiText.playerRole);
+      setText('e-role', '* '+uiText.enemyRole);
+      setText('p-hp-lbl', uiText.hp);
+      setText('e-hp-lbl', uiText.hp);
+      setText('p-spin-lbl', uiText.spin);
+      setText('e-spin-lbl', uiText.spin);
+      setText('p-burst-lbl', uiText.burst);
+      setText('e-burst-lbl', uiText.burst);
+      setText('dash-icon', uiText.dashIcon);
+      setText('dash-name', uiText.dashName);
+      setText('guard-icon', uiText.guardIcon);
+      setText('guard-name', uiText.guardName);
+      setText('swap-icon', uiText.swapIcon);
+      setText('swap-label', uiText.swapLabel);
+      setText('score-label-round', uiText.roundLabel || 'ROUND');
+      setText('hint-bar', uiText.hintAim || 'Drag to aim, then release to launch.');
+      setText('sk-icon', 'SK');
+      const selectedTop = tops[getPlayerTopId()] || tops[0] || null;
+      const selectedSkillId = getSignatureSkillId(selectedTop);
+      setText('sn', uiText.skillLabels && uiText.skillLabels[selectedSkillId] ? uiText.skillLabels[selectedSkillId] : selectedSkillId);
+
+      (uiText.cards || []).forEach((card,index)=>{
+        setText('card-icon-'+index, card.icon);
+        setText('card-name-'+index, tops[index] ? tops[index].name : 'TOP');
+        setText('card-type-'+index, card.type);
+        setHtml('card-stats-'+index, card.stats);
+        setText('card-skill-'+index, card.skill);
+      });
+
+      updateTopCardUI();
+      updateFeaturedTopUI();
+      updateCurrencyUI();
+      updateWorkshopUI();
+      updateRoadRankUI();
+      updateChallengeRouteUI();
+      updateTitleSummary();
+      updateLocaleButtons();
+    }
+
+    function attemptArenaAccess(index){
+      const arena = getArenaConfig(index);
+      if(isArenaUnlocked(index)){
+        setCurrentArena(index);
+        return Promise.resolve(true);
+      }
+
+      const save = getSave();
+      if(save.currency >= arena.unlockCost){
+        const currencyBefore = save.currency;
+        saveProgress((draft)=>{
+          draft.currency -= arena.unlockCost;
+          draft.unlocks = draft.unlocks || { arenas:[], tops:[] };
+          draft.unlocks.arenas = Array.isArray(draft.unlocks.arenas) ? draft.unlocks.arenas : [];
+          if(!draft.unlocks.arenas.includes(arena.id)){
+            draft.unlocks.arenas.push(arena.id);
+          }
+          return draft;
+        });
+        if(analyticsService){
+          analyticsService.track('unlock_grant',{
+            kind:'arena',
+            grantType:'purchase',
+            source:'quick_battle_shop',
+            mode:getCurrentMode(),
+            arenaId:arena.id,
+            arenaLabel:arena.label,
+            cost:arena.unlockCost,
+            currencyBefore,
+            currencyAfter:currencyBefore - arena.unlockCost
+          });
+          analyticsService.track('unlock_purchase',{
+            kind:'arena',
+            arenaId:arena.id,
+            arenaLabel:arena.label,
+            cost:arena.unlockCost,
+            currencyBefore,
+            currencyAfter:currencyBefore - arena.unlockCost
+          });
+        }
+        setCurrentArena(index);
+        showMsg(arena.label+' '+uiText.unlockArena,1.2);
+        refresh();
+        return Promise.resolve(true);
+      }
+
+      if(!rewardService || typeof rewardService.request !== 'function'){
+        return Promise.resolve(false);
+      }
+
+      if(analyticsService){
+        analyticsService.track('trial_unlock_start',{
+          kind:'arena',
+          mode:getCurrentMode(),
+          arenaId:arena.id,
+          arenaLabel:arena.label
+        });
+      }
+
+      return rewardService.request('trial_unlock_arena',{ arenaId:arena.id }).then((result)=>{
+        if(typeof rewardService.wasGranted === 'function' && !rewardService.wasGranted(result)){
+          showRewardFailureFeedback('trial_unlock_arena', result);
+          return false;
+        }
+        getSessionTrialArenaIds().add(arena.id);
+        if(analyticsService){
+          analyticsService.track('trial_unlock_complete',{
+            kind:'arena',
+            mode:getCurrentMode(),
+            arenaId:arena.id,
+            arenaLabel:arena.label
+          });
+        }
+        setCurrentArena(index);
+        showMsg(arena.label+' '+uiText.trialArena,1.2);
+        refresh();
+        return true;
+      }).catch((error)=>{
+        showRewardFailureFeedback('trial_unlock_arena', error);
+        refresh();
+        return false;
+      });
+    }
+
+    function attemptTopAccess(index){
+      const top = getTopConfig(index);
+      if(isTopUnlocked(index)){
+        return Promise.resolve(true);
+      }
+      const save = getSave();
+      if(save.currency < top.unlockCost){
+        showMsg(uiText.lockedTop+' '+top.unlockCost+' '+(uiText.currencyLabel || 'SCRAP'),1.2);
+        refresh();
+        return Promise.resolve(false);
+      }
+      const currencyBefore = save.currency;
+      saveProgress((draft)=>{
+        draft.currency -= top.unlockCost;
+        draft.unlocks = draft.unlocks || { arenas:[], tops:[] };
+        draft.unlocks.tops = Array.isArray(draft.unlocks.tops) ? draft.unlocks.tops : [];
+        if(!draft.unlocks.tops.includes(top.id)){
+          draft.unlocks.tops.push(top.id);
+        }
+        return draft;
+      });
+      if(analyticsService){
+        analyticsService.track('unlock_grant',{
+          kind:'top',
+          grantType:'purchase',
+          source:'loadout_shop',
+          mode:getCurrentMode(),
+          topId:top.id,
+          topLabel:top.name,
+          cost:top.unlockCost,
+          currencyBefore,
+          currencyAfter:currencyBefore - top.unlockCost
+        });
+        analyticsService.track('unlock_purchase',{
+          kind:'top',
+          topId:top.id,
+          topLabel:top.name,
+          cost:top.unlockCost,
+          currencyBefore,
+          currencyAfter:currencyBefore - top.unlockCost
+        });
+      }
+      showMsg(top.name+' '+uiText.unlockTop,1.2);
+      refresh();
+      return Promise.resolve(true);
+    }
+
+    function toggleWorkshopOpen(){
+      updateWorkshopUI();
+      return getUiRoute() === 'workshop';
+    }
+
+    function setWorkshopOpen(next){
+      updateWorkshopUI();
+      return !!next;
+    }
+
+    function isWorkshopOpen(){
+      return getUiRoute() === 'workshop';
+    }
+
+    function attemptResearchPurchase(index){
+      const state = getResearchState(index);
+      if(!state){
+        return Promise.resolve(false);
+      }
+      const result = buyResearchLevel(state.track.id);
+      if(!result || result.ok !== true){
+        if(result && result.reason === 'maxed'){
+          showMsg(state.track.label+' '+(uiText.workshopMaxed || 'MAXED'), 1.2);
+        }else if(result && result.reason === 'insufficient'){
+          showMsg((uiText.workshopLocked || 'MORE SCRAP NEEDED')+' '+result.cost, 1.2);
+        }
+        refresh();
+        return Promise.resolve(false);
+      }
+      if(analyticsService){
+        analyticsService.track('research_purchase',{
+          trackId:result.trackId,
+          trackLabel:result.trackLabel,
+          levelBefore:result.levelBefore,
+          levelAfter:result.levelAfter,
+          maxLevel:result.maxLevel,
+          remainingLevels:result.remainingLevels,
+          cost:result.cost,
+          currencyBefore:result.currencyBefore,
+          currencyAfter:result.currencyAfter,
+          preview:result.preview,
+          mode:getCurrentMode()
+        });
+      }
+      showMsg(result.trackLabel+' '+(uiText.workshopUnlocked || 'RESEARCH UPGRADED'), 1.2);
+      refresh();
+      return Promise.resolve(true);
+    }
+
+    function selectRoadRank(index){
+      const previousIndex = getSelectedRoadRankIndex();
+      const previousRank = getRoadRank(previousIndex);
+      const nextIndex = setSelectedRoadRankIndex(index);
+      const nextRank = getRoadRank(nextIndex);
+      if(
+        analyticsService
+        && previousIndex !== nextIndex
+        && nextRank
+      ){
+        analyticsService.track('road_rank_select',{
+          mode:getCurrentMode(),
+          source:'loadout',
+          unlockedRankIndex:getUnlockedRoadRankIndex(),
+          fromRankIndex:previousIndex,
+          fromRankId:previousRank ? previousRank.id : null,
+          fromRankLabel:previousRank ? previousRank.label : null,
+          toRankIndex:nextIndex,
+          toRankId:nextRank.id,
+          toRankLabel:nextRank.label
+        });
+      }
+      return nextIndex;
+    }
+
+    return {
+      getLoadoutSubtitle,
+      getCurrentChallengeNode,
+      getArenaLabel,
+      getArenaConfig,
+      getTopConfig,
+      isArenaUnlocked,
+      isTopUnlocked,
+      attemptArenaAccess,
+      attemptTopAccess,
+      toggleWorkshopOpen,
+      isWorkshopOpen,
+      attemptResearchPurchase,
+      setWorkshopOpen,
+      selectRoadRank,
+      getArenaButtonText,
+      updateCurrencyUI,
+      updateTopCardUI,
+      updateFeaturedTopUI,
+      updateHomeTopUI,
+      updateWorkshopUI,
+      applyStaticText,
+      updateModeUI
+    };
+  };
+})();
