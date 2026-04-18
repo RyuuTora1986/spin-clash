@@ -1,6 +1,6 @@
 # Analytics Events
 
-This document maps the analytics events that are actually emitted today, where they fire, and which planned events are still missing.
+This document maps the analytics events that are actually emitted today and where they fire.
 
 ## Current Event Pipeline
 - Adapter: `src/analytics-service.js`
@@ -14,9 +14,21 @@ Event shape:
 {
   name: 'event_name',
   payload: { ... },
-  at: '2026-04-16T12:34:56.000Z'
+  at: '2026-04-16T12:34:56.000Z',
+  forwarding: {
+    forwarded: false,
+    reason: 'local_only'
+  }
 }
 ```
+
+Forwarding contract notes:
+- `forwarding` is attached by `src/analytics-service.js`, not by gameplay callers
+- local/default mode records `reason: 'local_only'`
+- PostHog mode records either:
+  - `{ forwarded: true }`, or
+  - `{ forwarded: false, reason: 'posthog_loading' | 'posthog_config_missing' | 'posthog_unavailable' }`
+- local save buffering remains the source of truth even when forwarding is enabled
 
 ## Implemented Events
 
@@ -29,6 +41,7 @@ Event shape:
   - `hasProgress`
   - `currency`
   - `challengeUnlockedNodeIndex`
+  - `challengeCheckpointNodeIndex`
   - `unlockedArenaCount`
   - `unlockedTopCount`
 
@@ -41,6 +54,7 @@ Event shape:
   - `hasProgress`
   - `currency`
   - `challengeUnlockedNodeIndex`
+  - `challengeCheckpointNodeIndex`
   - `unlockedArenaCount`
   - `unlockedTopCount`
 
@@ -72,6 +86,8 @@ Event shape:
   - `playerTopLabel`
   - `enemyTop`
   - `enemyTopLabel`
+  - `enemyPresetId`
+  - `enemyPresetLabel`
   - `challengeNode`
   - `modifier`
 
@@ -81,14 +97,27 @@ Event shape:
 - Payload:
   - `mode`
   - `arena`
+  - `arenaId`
   - `playerTop`
+  - `playerTopLabel`
   - `enemyTop`
+  - `enemyTopLabel`
+  - `enemyPresetId`
+  - `enemyPresetLabel`
+  - `roadRankId`
+  - `roadRankLabel`
+  - `chapterId`
+  - `chapterLabel`
+  - `tier`
+  - `checkpointOnClear`
   - `result`
   - `endReason`
   - `roundCount`
   - `durationSec`
   - `score`
+  - `roadRankRewardMul`
   - `challengeNode`
+  - `challengeNodeId`
   - `modifier`
   - `reward`
 
@@ -105,9 +134,18 @@ Event shape:
 - Payload:
   - `nodeIndex`
   - `nodeId`
+  - `chapterId`
+  - `chapterLabel`
+  - `tier`
+  - `checkpointOnClear`
+  - `reward`
+  - `roadRankId`
+  - `roadRankLabel`
   - `arena`
   - `playerTop`
   - `enemyTop`
+  - `enemyPresetId`
+  - `enemyPresetLabel`
   - `modifier`
 
 ### `challenge_clear`
@@ -116,8 +154,34 @@ Event shape:
 - Payload:
   - `nodeIndex`
   - `nodeId`
+  - `chapterId`
+  - `chapterLabel`
+  - `tier`
   - `arena`
+  - `roadRankId`
+  - `roadRankLabel`
+  - `checkpointReached`
+  - `resumeNodeIndex`
+  - `firstClear`
   - `reward`
+  - `rewardBase`
+  - `rewardNode`
+  - `rewardFirstClearBonus`
+  - `rewardRankBonus`
+
+### `championship_checkpoint`
+- Source: `src/match-flow-tools.js`
+- Trigger: Championship Path checkpoint node clear that advances the stored resume node
+- Payload:
+  - `nodeIndex`
+  - `nodeId`
+  - `chapterId`
+  - `chapterLabel`
+  - `tier`
+  - `resumeNodeIndex`
+  - `roadRankIndex`
+  - `roadRankId`
+  - `roadRankLabel`
 
 ### `reward_offer_show`
 - Source: `src/reward-service.js`
@@ -161,11 +225,40 @@ Event shape:
   - `kind`
   - `mode`
   - `result`
+  - `moment`
   - `arenaId`
   - `arenaLabel`
   - `playerTop`
+  - `playerTopLabel`
   - `enemyTop`
+  - `enemyTopLabel`
+  - `enemyPreset`
+  - `enemyPresetLabel`
   - `challengeNode`
+  - `scorePlayer`
+  - `scoreEnemy`
+
+### `share_complete`
+- Source: `src/share-service.js`
+- Trigger: share flow completes through native share or fallback handling
+- Payload:
+  - `kind`
+  - `mode`
+  - `result`
+  - `moment`
+  - `arenaId`
+  - `arenaLabel`
+  - `playerTop`
+  - `playerTopLabel`
+  - `enemyTop`
+  - `enemyTopLabel`
+  - `enemyPreset`
+  - `enemyPresetLabel`
+  - `challengeNode`
+  - `scorePlayer`
+  - `scoreEnemy`
+  - `method`
+  - `artifact`
 
 ### `unlock_purchase`
 - Source: `src/loadout-ui-tools.js`
@@ -180,6 +273,50 @@ Event shape:
   - `cost`
   - `currencyBefore`
   - `currencyAfter`
+
+### `research_purchase`
+- Source: `src/loadout-ui-tools.js`
+- Trigger: Workshop Research upgrade purchased with SCRAP from the loadout workshop panel
+- Payload:
+  - `trackId`
+  - `trackLabel`
+  - `levelBefore`
+  - `levelAfter`
+  - `maxLevel`
+  - `remainingLevels`
+  - `cost`
+  - `currencyBefore`
+  - `currencyAfter`
+  - `preview`
+  - `mode`
+
+### `road_rank_select`
+- Source: `src/loadout-ui-tools.js`
+- Trigger: player selects a different unlocked Road Rank in Championship Path loadout
+- Payload:
+  - `mode`
+  - `source`
+  - `unlockedRankIndex`
+  - `fromRankIndex`
+  - `fromRankId`
+  - `fromRankLabel`
+  - `toRankIndex`
+  - `toRankId`
+  - `toRankLabel`
+
+### `road_rank_unlock`
+- Source: `src/match-flow-tools.js`
+- Trigger: final Championship Path clear on the current highest unlocked Road Rank
+- Payload:
+  - `mode`
+  - `fromRankIndex`
+  - `fromRankId`
+  - `fromRankLabel`
+  - `toRankIndex`
+  - `toRankId`
+  - `toRankLabel`
+  - `challengeNode`
+  - `challengeNodeId`
 
 ### `unlock_grant`
 - Source:
@@ -247,6 +384,8 @@ Event shape:
 - `match_end`
 - `challenge_fail`
 - `challenge_clear`
+- `championship_checkpoint`
+- `road_rank_unlock`
 
 ### Rewarded Flows
 - `reward_offer_show`
@@ -258,15 +397,22 @@ Event shape:
 
 ### Share
 - `share_click`
+- `share_complete`
 
 ### Unlocks
 - `unlock_grant`
 - `unlock_purchase`
 
+### Workshop
+- `research_purchase`
+
+### Loadout / Path Entry
+- `road_rank_select`
+
 ## Recommended Next Implementation Order
-1. extend `unlock_grant` beyond purchases when future content grants tops through Challenge Road or other progression
-2. validate whether `session_end` lifecycle coverage is good enough across the main target browsers before depending on it for retention reporting
-3. add outcome-detail enrichment only if a real analytics sink needs deeper funnel analysis
+1. validate whether `session_end` lifecycle coverage is good enough across the main target browsers before depending on it for retention reporting
+2. keep event payload growth additive and normalized through service layers only
+3. add deeper reward funnel or share-card outcome detail only if a real analytics sink needs it
 
 ## Current Practical Rule
 - Do not add vendor-specific analytics logic in gameplay code
