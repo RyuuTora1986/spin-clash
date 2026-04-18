@@ -309,3 +309,798 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - added `npm run verify:release` to run preflight, build the static package, and validate the packaged output in one command
   - updated the Pages workflow to use `verify:release` directly so CI checks the same release path recommended locally
   - added `run-verify-release.cmd` so the full release verification path is one click from Windows Explorer
+
+- GitHub Pages host-validation closeout:
+  - published the current build to GitHub Pages and confirmed `persistenceMode === local`
+  - fixed the remaining user-visible red runtime banner on the main route by ignoring non-same-origin runtime noise in `src/runtime-audio-tools.js`
+  - added a concrete GitHub Pages host-validation report and moved the project state from host-validation focus to provider-phase focus
+  - added a first concrete provider recommendation document so the next phase can start from one narrowed reward path and one narrowed analytics path
+
+- Provider-phase scaffolding expansion:
+  - added explicit provider config for PostHog and AdSense-related live reward settings in `src/config-providers.js`
+  - upgraded `src/analytics-service.js` from local-only buffering to a safe adapter model with real PostHog loading/forwarding scaffolding while keeping local buffering as the default
+  - upgraded `src/reward-service.js` from a mock-only internal constant to an explicit adapter model with safe live-adapter capability probing for `adsense_rewarded`
+  - added `scripts/check-provider-services.js` and `npm run check:providers` so provider scaffolding is part of preflight validation
+  - added `docs/posthog-setup.md` and `docs/reward-live-adapter-status.md` so the next implementation slice can move straight into live provider integration instead of rediscovering setup details
+
+- Provider runtime-state hardening:
+  - expanded reward provider config to include GPT script and ad-unit placeholders for a real rewarded path
+  - refined `src/reward-service.js` so live reward adapter state is inspectable (`ready`, `loading`, `lastAvailabilityReason`) without side effects from debug inspection
+  - expanded `scripts/check-provider-services.js` to assert adapter readiness and safe fallback states for both analytics and reward providers
+  - updated provider docs and debug-operations docs so provider-state inspection is part of the normal workflow
+
+- Analytics runtime-state hardening:
+  - extended `src/analytics-service.js` so provider adapter info now exposes `ready`, `loading`, and `lastForwardReason`
+  - surfaced the new analytics provider-state fields through the debug panel for in-browser inspection
+  - tightened provider validation so PostHog loading state and local-buffer state are asserted explicitly in `scripts/check-provider-services.js`
+  - updated local/provider operations docs so future provider debugging starts from the visible runtime state rather than guesswork
+
+- Reward contract hardening:
+  - added `rewardService.wasGranted(result)` so gameplay callers no longer treat `granted:false` reward results as success
+  - updated live reward callers in match/result/loadout/debug flows to gate their success branches on the normalized grant helper
+  - expanded provider validation so mock deny and mock error modes are asserted explicitly, preventing future regressions in reward-result semantics
+
+- Provider runtime async-hardening:
+  - upgraded `src/provider-runtime-tools.js` from simple one-shot script injection to a reusable script-state layer with waitable script readiness
+  - upgraded `src/analytics-service.js` so PostHog events queued during first load auto-flush after the SDK becomes ready, instead of waiting for a second gameplay event
+  - upgraded `src/reward-service.js` so the first live reward request can wait through GPT script loading and still return a stable service-layer reason
+  - expanded `scripts/check-provider-services.js` to cover queued-event flush behavior, first-request reward waiting, and richer provider adapter state reporting
+  - updated provider/runtime docs so the current live-provider boundary and new debug-visible state are explicit
+
+- GPT rewarded lifecycle integration:
+  - replaced the old `provider_not_implemented` stopgap in `src/reward-service.js` with a real GPT rewarded slot request flow
+  - mapped `rewardedSlotReady`, `rewardedSlotGranted`, and `rewardedSlotClosed` into the shared reward result contract without changing gameplay callers
+  - added live-adapter cleanup and safe repeated-request guarding so slot listeners do not leak across reward attempts
+  - surfaced live reward request state in debug data and expanded provider docs to reflect that the repository now has a real rewarded lifecycle path, pending manual live validation
+
+- Deploy-time provider override support:
+  - added `src/config-providers-override.js` and `src/config-providers-runtime.js` so provider settings can be overridden without changing the committed base config
+  - upgraded `scripts/build-static-release.js` to generate packaged provider overrides from environment variables and fail fast on incomplete live reward/PostHog release config
+  - wired GitHub Pages workflow variables into the release build so live provider validation no longer requires editing `src/config-providers.js` by hand
+  - updated deploy/provider docs so the remaining manual work for live reward validation is now mostly GitHub variable entry plus browser testing
+
+- Reward failure UX hardening:
+  - added `rewardService.getFailureInfo(...)` so deny/loading/busy/unavailable/error states are normalized in one place
+  - updated match-result and arena-trial flows to show clear reward-failure messages instead of silently doing nothing when a reward is denied or unavailable
+  - added `COPY PROVIDERS` to the debug panel so live adapter state can be copied out in one step during future provider validation
+  - updated local/manual/provider docs so the new failure messages and provider-export action are part of the expected validation workflow
+
+- Enemy preset config closure:
+  - added `src/config-enemy-presets.js` as the live enemy preset table for Challenge Road
+  - changed Challenge Road nodes to reference `enemyPresetId` instead of hardcoded `enemyTopId`
+  - updated round setup, challenge panel display, battle AI tuning reads, and debug state so enemy preset data now flows through config instead of node-local hardcoding
+  - updated config/status/runtime docs so the remaining unblocked config work is now economy tuning rather than enemy preset extraction
+
+- Economy config closure:
+  - added `src/config-economy.js` for shared win/loss rewards, double-reward multiplier, default round timer, and Challenge Road continue limits
+  - changed match flow and round flow to read those values from config instead of hardcoded literals
+  - exposed the live economy snapshot in debug output so reward and continue tuning are inspectable without code reads
+
+- Result snapshot and share-moment hardening:
+  - added `scripts/check-match-flow.js` and wired it into `npm run preflight` so Challenge Road result-context regressions are now automatically caught
+  - fixed result-screen state so double reward and share actions keep the cleared node context even after Challenge Road progression advances
+  - upgraded share payloads from one generic text string to classified result moments (`road_clear`, `challenge_clear`, `ring_out`, `perfect_win`, `close_loss`, `victory`, `defeat`)
+  - updated analytics and commercialization docs so the implemented share surface matches runtime behavior
+
+- SVG result-card share output:
+  - added `src/share-card-tools.js` to generate lightweight static SVG result cards without new dependencies
+  - upgraded `src/share-service.js` so result shares now prefer file-share when supported, then text share, then SVG download plus copied text
+  - added `scripts/check-share-service.js` and wired it into `npm run preflight` so result-card generation and fallback behavior stay covered
+  - updated README and operations docs so the new share artifact path is reflected in local testing and release checks
+
+- Share completion analytics:
+  - upgraded `src/share-service.js` to emit `share_complete` with the resolved delivery method and artifact type
+  - extended share-service validation so fallback share flows now prove both `share_click` and `share_complete`
+  - updated analytics/service/release docs so share measurement now covers both attempt and completed delivery path
+
+- Enemy preset variation and share debug export:
+  - tuned `src/config-enemy-presets.js` so the shipped Challenge Road presets no longer share one identical AI profile
+  - tightened `scripts/check-config.js` so future preset regressions fail if AI variation collapses back to one signature
+  - exposed live enemy AI config in the debug panel
+  - added `COPY SHARE SVG` and `DOWNLOAD SHARE SVG` debug actions for offline result-card inspection
+  - exposed `shareService.downloadResultCard(...)` and extended share-service validation to cover direct SVG export
+
+- Analytics payload enrichment and validation hardening:
+  - preserved richer result-share analytics fields in `src/share-service.js`, including top labels, enemy preset identity, and score lines
+  - propagated enemy preset identity into `challenge_node_start`, `match_start`, and `match_end`
+  - exposed enemy preset labels through debug/runtime snapshots for easier inspection
+  - added `scripts/check-round-flow.js` and extended existing share/match-flow checks so the new analytics fields are regression-covered
+
+- Debug tuning path closure:
+  - added session-local debug tuning import/export/reset support for `economy` and `enemyPresets`
+  - kept tuning strictly behind `?debug=1` so the player path stays unchanged
+  - added `scripts/check-debug-tuning.js` and wired it into preflight so the tuning path stays regression-covered
+
+- Storage-service hardening:
+  - normalized legacy/top-level save fields into the current nested save shape inside `src/storage-service.js`
+  - preserved starter unlocks while deduping imported unlock arrays and discarding invalid analytics entries
+  - added `scripts/check-storage-service.js` and wired it into preflight so legacy-save regressions fail before release packaging
+
+- Debug panel error-handling hardening:
+  - fixed `src/debug-service.js` so synchronous action failures now surface in the panel status line instead of throwing uncaught errors
+  - added `scripts/check-debug-service.js` and wired it into preflight to protect debug import flows like `IMPORT SAVE` and `IMPORT TUNING`
+
+- Loadout analytics regression coverage:
+  - added `scripts/check-loadout-flow.js` to cover arena purchase, arena trial, and top purchase behavior plus their analytics payloads
+  - wired the new loadout flow check into preflight so unlock/trial analytics regressions fail before release packaging
+
+- Session analytics regression coverage:
+  - added `scripts/check-session-analytics.js` to cover first-session, return-session, and once-only `session_end` behavior
+  - fixed `src/debug-runtime-tools.js` so first boot no longer misclassifies as `return_session` due to a mutated save reference
+  - wired the new session analytics check into preflight so lifecycle analytics regressions fail before release packaging
+
+- Challenge clear unlock analytics hardening:
+  - extended `scripts/check-match-flow.js` so Challenge Road clear rewards now regression-cover arena/top `unlock_grant` payloads too
+  - fixed `src/match-flow-tools.js` so unlock analytics use the cleared node snapshot instead of the advanced next-node state
+
+2026-04-17
+- Phase 1 shell route refactor started:
+  - wrote `docs/superpowers/plans/2026-04-17-shell-route-refactor.md`
+  - created `docs/change-records/2026-04-17-ui-flow-combat-rework-log.md`
+  - next step is to add a failing route contract check before runtime edits
+
+- Phase 1 shell route refactor first slice complete:
+  - added explicit shell route state in `src/main.js` and `src/ui-entry-tools.js`
+  - title entries now route to `path`, `quick`, `workshop`, and `settings` instead of one overloaded loadout entry
+  - added route header/back UI plus a basic settings route surface without changing the overall visual direction
+  - added `scripts/check-shell-routes.js` and `npm run check:routes`
+  - validation passed:
+    - `npm run check:routes`
+    - `npm run check:ui`
+    - `npm run check:dom`
+    - `npm run check:shellpresentation`
+    - `npm run check:loadout`
+    - `npm run check:syntax`
+  - next TODOs:
+    - tighten route-specific layout cleanup through manual runtime validation
+    - route battle/result return fully through `battleReturnRoute`
+    - replace settings scaffold text with real music/SFX controls in a later isolated slice
+
+- Phase 1 shell route refactor second slice complete:
+  - carried `battleReturnRoute` through match start, result primary CTA, and swap-rematch return handlers
+  - changed result return behavior so `Battle -> Result` returns to the originating shell route instead of immediately starting another round
+  - updated result CTA copy to reflect the captured origin route for `Championship Path`, `Quick Battle`, and `Home`
+  - refined the secondary result CTA so `swapRematch` reads as a route-aware loadout-adjust action instead of the old immediate-rematch wording
+  - fixed a result-screen ordering bug where `updateModeUI()` could overwrite the origin-specific return CTA after reward grant
+  - added `scripts/check-route-return-flow.js` so the return-path contract is regression-covered across `ui-entry-tools` and `match-flow-tools`
+  - upgraded `Settings` into a real persisted route with `music` / `sfx` toggles wired to storage and runtime audio gates
+  - added `scripts/check-settings-flow.js` and extended storage/shell checks so settings persistence is part of `preflight`
+  - aligned older `check:workshop` and `check:roadrank` harnesses with the current explicit-route shell model so `preflight` stays green
+- Validation after the batch:
+  - `npm run preflight`
+  - `npm run check:matchflow`
+  - `npm run check:dom`
+  - `npm run check:routes`
+  - `npm run check:routeflow`
+  - `npm run check:settings`
+  - `npm run check:storage`
+  - `npm run check:shellpresentation`
+  - `npm run check:localization`
+  - `npm run check:ui`
+  - `npm run check:loadout`
+  - `npm run check:syntax`
+- Next TODOs:
+  - browser-level manual validation is still pending because local Playwright/browser launch is blocked in this environment with `spawn EPERM`
+  - if the next batch starts combat refactor, keep shell/settings persistence isolated and avoid pushing battle-state assumptions back into route code
+  - decide later whether `swapRematch` should stay as the same route-return action or become a more distinct loadout-adjust path
+  - keep combat-rule refactor deferred until the shell route pass is fully stabilized
+
+- Combat prep batch complete:
+  - added config-level combat schema on tops so every top now carries `dash`, `guard`, and `signature` action metadata plus collision-role and attrition hints
+  - added round-flow normalization/bridge logic so legacy templates still work while runtime tops now expose normalized `template.combat` and explicit `guarding` state
+  - extracted pure impact-role helpers from `src/battle-sim-tools.js` so future aggressor/defender collision work can move onto named contracts instead of one opaque `checkColl(...)` block
+  - kept live collision damage and spin loss behavior effectively unchanged in this slice; helper extraction is prep, not the actual rebalance yet
+  - updated action/HUD/debug readers to prefer the new signature-skill path and fallback to legacy `template.skill`
+  - added `scripts/check-combat-schema.js` and `scripts/check-collision-helpers.js`, and wired both into `npm run preflight`
+- Validation after the batch:
+  - `npm run check:combatschema`
+  - `npm run check:collisionhelpers`
+  - `npm run check:roundflow`
+  - `npm run check:debugruntime`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:syntax`
+- Next TODOs:
+  - use the new impact helper exports to convert collision resolution from symmetric damage application to explicit aggressor/defender outcome weighting
+  - decide whether passive hp attrition lands as the next isolated slice or together with the first collision rebalance slice
+  - activate `Guard` only after HUD/control copy and cooldown semantics are locked; the runtime state hook is now in place, but input/UI are not enabled yet
+  - browser-level manual validation remains bypassed for now because Chromium launch still fails in this environment with `spawn EPERM`
+
+- Collision + attrition slice complete:
+  - upgraded `src/battle-sim-tools.js` so collision outcomes now pass through a role-aware `buildCollisionOutcome(...)` helper instead of applying only the old symmetric post-hit damage numbers
+  - clear aggressor advantage now reduces recoil on the aggressor side and increases hp/spin punishment on the defender side, while unresolved head-on impacts stay effectively symmetric
+  - added live passive `hp` decay from `template.combat.attrition.hpDecayPerSec` inside `movTop(...)`, keeping it intentionally light so hits still matter more than passive breakdown
+  - extended `scripts/check-collision-helpers.js` to prove both the new directional collision weighting and the family-based passive durability ordering
+- Validation after the batch:
+  - `npm run check:collisionhelpers`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Next TODOs:
+  - tune the new aggressor/defender weighting with real runtime feel checks once browser launch is possible again
+  - activate universal `Guard` in a separate slice: input, cooldown/readiness state, and player-facing copy are still intentionally deferred
+  - if passive hp attrition feels too flat later, consider a small rank/mode or arena modulation, but do not mix that with the first Guard implementation pass
+  - browser-level manual validation is still bypassed for now because Chromium launch remains blocked in this environment with `spawn EPERM`
+
+- Guard activation slice complete:
+  - activated universal `Guard` across config/runtime/UI: `E` key, HUD guard button, localized label/icon/hint text, cooldown/duration state, and guard SFX
+  - updated battle sim so guarding reduces incoming hp/spin damage and expires over time; enemy AI also has a light guard trigger under close threat windows
+  - enabled guard by default in the combat schema for all current tops and surfaced guard state in runtime/debug text snapshots
+  - kept the current visual style intact; this is a control/HUD extension, not a shell redesign
+- Validation after the batch:
+  - `npm run check:guard`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:routes`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Next TODOs:
+  - manual feel-check current guard cooldown/duration and AI guard timing once browser launch is possible again
+  - the next clean slice should address skill-structure overlap, especially `Armor` still using `Shield` while `Guard` is now universal
+  - if needed, separate later tuning between `Guard` mitigation numbers and collision role-weighting numbers instead of mixing both into one rebalance pass
+  - browser-level manual validation is still bypassed for now because Chromium launch remains blocked in this environment with `spawn EPERM`
+
+- Approved next-phase design direction after the static MVP shell reached practical completion for local iteration.
+- Locked one authoritative next-step product direction:
+  - expand `Challenge Road` into a `10`-node `Championship Path`
+  - prioritize encounter depth over larger systems
+  - add `Workshop Research` and `Road Rank` before any heavier meta layer
+  - upgrade title, loadout, challenge, HUD, and result presentation as the main shell polish pass
+- Added authoritative next-phase docs:
+  - `docs/superpowers/specs/2026-04-17-next-phase-gameplay-expansion-design.md`
+  - `docs/superpowers/plans/2026-04-17-next-phase-gameplay-expansion.md`
+- The next execution rule is explicit:
+  - subagents may propose drafts
+  - final project docs must be centrally reconciled and authored as one consistent source of truth
+
+- Championship Path foundation batch complete:
+  - expanded `src/config-challenge-road.js` from `6` nodes to `10` nodes with chapter, tier, preview, checkpoint, and first-clear metadata
+  - added persistent `challenge.checkpointNodeIndex` support in `src/storage-service.js`
+  - updated `src/progression-tools.js` so challenge progress derives the latest valid checkpoint resume node
+  - updated `src/match-flow-tools.js` so checkpoint clears persist checkpoint progress and first-clear bonuses are included in base reward calculation
+  - updated `src/loadout-ui-tools.js` to surface chapter/tier/checkpoint preview information without changing the existing visual style
+  - updated `src/debug-runtime-tools.js` to expose checkpoint state and retarget the `FINAL NODE` debug action to the new 10-node path
+  - updated challenge-facing copy to `CHAMPIONSHIP PATH` while keeping internal `challenge*` runtime naming intact
+- Added new regression coverage:
+  - `scripts/check-next-phase-config.js`
+  - extended `scripts/check-storage-service.js`
+  - extended `scripts/check-match-flow.js`
+  - wired `npm run check:nextphase` into `preflight`
+- Validation after the batch:
+  - `npm run check:nextphase`
+  - `npm run check:storage`
+  - `npm run check:matchflow`
+  - `npm run preflight`
+  - `npm run verify:release`
+
+- Expanded roster shell batch complete:
+  - added `scripts/check-roster-shell.js` and wired `npm run check:roster` into `preflight`
+  - expanded `src/config-tops.js` from `3` to `5` tops
+  - added derived player tops `impact_breaker` and `trick_raider`
+  - added low-intrusion roster metadata on tops: `family`, `variant`, `unlockSource`, `meshFamily`
+  - expanded `src/config-text.js` card text entries from `3` to `5`
+  - expanded `index.html` loadout card DOM from `3` to `5`
+  - kept the existing visual style while adjusting small-screen landscape wrapping so 5 cards still fit
+  - updated `src/top-render-tools.js` and `src/round-flow-tools.js` so derived tops can reuse the correct visual family instead of falling into the old `else` branch
+  - added debug actions for `UNLOCK BREAKER` and `UNLOCK RAIDER`
+- Validation after the batch:
+  - `npm run check:roster`
+  - `npm run check:config`
+  - `npm run check:dom`
+  - `npm run check:ui`
+  - `npm run check:loadout`
+  - `npm run preflight`
+
+- Encounter depth config batch complete:
+  - added `scripts/check-encounter-pack.js` and wired `npm run check:encounter` into `preflight`
+  - expanded `src/config-enemy-presets.js` from `3` to `6` presets
+  - added elite presets `armor_ram`, `trick_drifter`, and `impact_blitz`
+  - expanded `src/config-modifiers.js` from `6` to `9` modifiers
+  - added lightweight modifiers `launchSurge`, `grindCore`, and `lowSpin`
+  - rewired multiple `Championship Path` nodes to use the new presets and modifiers so encounter variety is real, not shelf-only data
+- Validation after the batch:
+  - `npm run check:encounter`
+  - `npm run check:config`
+  - `npm run check:nextphase`
+  - `npm run check:roundflow`
+  - `npm run check:matchflow`
+
+- Workshop Research batch complete:
+  - added `src/config-research.js` with `Spin Core`, `Guard Frame`, and `Burst Relay`, each with `4` conservative permanent levels
+  - extended `src/storage-service.js` so existing saves gain normalized persistent `research.levels` defaults without breaking older data
+  - extended `src/progression-tools.js` with research level lookup, aggregated player research bonuses, and SCRAP purchase handling
+  - updated `src/round-flow-tools.js` so player-only research bonuses are applied through template shaping before round spawn instead of one-off battle hacks
+  - updated `index.html`, `css/game.css`, `src/loadout-ui-tools.js`, and `src/ui-entry-tools.js` to add a small in-loadout Workshop panel while preserving the current visual language
+  - updated `src/debug-runtime-tools.js` to expose research levels and live aggregated bonuses in debug snapshots
+  - added `research_purchase` analytics coverage and documentation
+  - added `scripts/check-workshop-flow.js`, extended `scripts/check-next-phase-config.js`, and extended `scripts/check-storage-service.js`
+  - wired `npm run check:workshop` into `preflight`
+- Validation after the batch:
+  - `npm run check:syntax`
+  - `npm run check:nextphase`
+  - `npm run check:storage`
+  - `npm run check:workshop`
+  - `npm run check:analytics`
+  - `npm run check:loadout`
+  - `npm run check:roundflow`
+
+- Road Rank batch complete:
+  - wired `src/config-road-ranks.js` into `index.html` and `src/main.js` so rank data now participates in the live runtime instead of only isolated checks
+  - extended `src/loadout-ui-tools.js`, `src/ui-entry-tools.js`, and `css/game.css` with a small Championship Path rank strip that preserves the current visual language
+  - added player-facing Road Rank copy in `src/config-text.js` and descriptive metadata in `src/config-road-ranks.js`
+  - updated `src/debug-runtime-tools.js` so unlocked and selected rank state is visible and can be forced to `RANK II` or `RANK III` in debug mode
+  - added `scripts/check-road-rank-ui.js` and wired `npm run check:roadrank` into `preflight` so rank UI regressions fail before release verification
+  - updated README, local operations, and analytics docs so Road Rank runtime behavior matches the repo guidance
+- Validation after the batch:
+  - `node scripts/check-road-rank-ui.js`
+  - `npm run check:roadrank`
+  - `npm run check:ui`
+  - `npm run preflight`
+  - `npm run verify:release`
+
+- Shell presentation upgrade batch complete:
+  - updated the title screen so the primary route is `CONTINUE PATH`, with direct `QUICK BATTLE` and `WORKSHOP` side entries
+  - added dynamic title progress and goal lines tied to current save state
+  - added a featured selected-top panel in loadout so the chosen top reads like a product card instead of only a small tile selection
+  - upgraded the Championship Path preview with a node strip that marks cleared, current, boss/final, and checkpoint nodes
+  - added a compact pre-fight battle intro banner plus stronger HUD danger states for low HP and low spin
+  - upgraded the result screen with reward breakdown text and explicit next-step guidance
+  - added `scripts/check-shell-presentation.js` and wired `npm run check:shellpresentation` into `preflight`
+- Validation after the batch:
+  - `node scripts/check-shell-presentation.js`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:dom`
+  - `npm run verify:release`
+
+- Analytics and debug closeout batch complete:
+  - extended `src/match-flow-tools.js` so Championship Path result analytics now carry chapter/tier/checkpoint context, reward breakdown fields, and emit `championship_checkpoint` plus `road_rank_unlock`
+  - extended `src/round-flow-tools.js` so `challenge_node_start` now includes chapter/tier/reward/rank metadata
+  - extended `src/loadout-ui-tools.js` and `src/progression-tools.js` so workshop purchases now report richer payloads and rank changes emit `road_rank_select`
+  - extended `src/debug-runtime-tools.js` with explicit progression/runtime snapshot builders plus `COPY PROGRESSION` and `COPY RUNTIME`
+  - added `scripts/check-debug-runtime-snapshots.js` and wired `npm run check:debugruntime` into `preflight`
+  - updated analytics and local-ops docs so the documented event surface and debug panel actions match the runtime
+- Validation after the batch:
+  - `node scripts/check-workshop-flow.js`
+  - `node scripts/check-road-rank-flow.js`
+  - `node scripts/check-road-rank-ui.js`
+  - `node scripts/check-match-flow.js`
+  - `node scripts/check-round-flow.js`
+  - `node scripts/check-debug-runtime-snapshots.js`
+
+- Manual QA batch prep update:
+  - extended `docs/manual-test-batches.md` with a dedicated Championship Path / Workshop / Road Rank / snapshot-export regression batch so the next human playtest can validate the connected progression shell in one pass
+
+- Tri-language localization batch complete:
+  - added player-facing runtime localization for `English`, `中文`, and `日本語` without changing the current shell art direction
+  - added saved-locale bootstrap with browser-locale fallback so player language persists across reloads and defaults cleanly on first visit
+  - localized title, loadout, Workshop, Championship Path, HUD, result, share, arena/top/modifier/enemy/challenge content, and reward failure messaging
+  - added lightweight locale switchers on the title and loadout shells while keeping developer/debug-facing text in English/ASCII
+  - added `scripts/check-localization.js`, wired `npm run check:localization` into `preflight`, and reran `npm run verify:release`
+
+- Debug tuning expansion batch complete:
+  - expanded `COPY TUNING / IMPORT TUNING / RESET TUNING` support beyond `economy` and `enemyPresets`
+  - tuning import/export now covers `arenas`, `tops`, `research`, `roadRanks`, and `challengeRoad` as session-local full-table overrides
+  - added compact tuning summary visibility in the debug panel for unlock costs, research spend, reward totals, and rank multipliers
+  - updated debug tuning/runtime snapshot checks and local/manual operation docs so the wider tuning surface is regression-covered and documented
+
+- Balance pass batch complete:
+  - split runtime reward bases so `Quick Battle` now uses lower practice payouts while `Championship Path` keeps its own win/loss baseline
+  - tightened early and mid-path economy by lowering early node rewards, lowering `HEX BOWL` / `Trick` entry costs, and raising `Breaker` / `Raider` late-goal costs
+  - smoothed research pricing so first levels stay accessible while full-track completion backloads more SCRAP
+  - reduced `RANK II` / `RANK III` reward inflation and softened the harshest elite-preset and modifier spikes in nodes `4-6`
+  - added `docs/balance-pass-2026-04-17.md` as the explicit tuning baseline, expected UX impact record, and next-playtest retro checklist
+
+- UI flow and combat rework progression update:
+  - completed the explicit shell-route split into `Home`, `Championship Path`, `Quick Battle`, `Workshop`, and `Settings`, with battle/result flows now returning to the originating route
+  - shipped persisted `Settings` toggles for `music` and `sfx` without changing the existing static architecture or visual language
+  - refactored combat toward the approved baseline: role-aware aggressor/defender collision outcomes, light top-based `hp` attrition, and universal `Dash + Guard + Signature`
+  - replaced Armor's overlapping `Shield` signature with `Fortress Pulse`, updated its tri-language text/audio/runtime handling, and added `scripts/check-signature-skills.js`
+  - added `src/config-signature-skills.js` so signature HUD icon metadata and audio-style routing are now config-driven instead of duplicated in runtime files
+  - aligned HUD default skill labeling with the currently selected top so the non-battle state no longer assumes `Fly Charge`
+  - extended signature registry metadata into flash/message telegraph behavior, reducing hardcoded per-skill presentation branches in `combat-action-tools.js`
+  - added localized active-battle ready hints so full `BURST` now surfaces a clearer `Q READY · <skill>` prompt instead of relying only on the ring/button state
+  - extended signature registry again into HUD accent colors so the ready ring and ready hint can telegraph different signature identities without a visual redesign
+  - moved guard baseline tuning into combat action metadata and updated runtime consumers to read `guard.cooldown` and `guard.duration` from the normalized combat schema
+  - made a conservative gameplay polish pass on the current baseline: `Armor` core `roleBias` raised to `0.95`, guard became shorter-but-clearer, and `Fortress Pulse` now stabilizes the user more while slightly reducing its push and damage output
+  - upgraded battle readability again so the left/right role labels now surface live `READY` and `GUARD` status instead of leaving enemy readiness mostly implicit
+  - aligned those role labels with the existing accent system so signature-ready and guard states read more clearly without changing the shell art direction
+- Validation after the update:
+  - `npm run check:signatures`
+  - `npm run check:combatschema`
+  - `npm run check:roster`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+- Current known limit:
+  - browser/manual click validation is still blocked in this environment because Chromium launch fails with `spawn EPERM`; no browser verification has been claimed for this slice
+
+- Combat intent + variant polish update:
+  - added enemy AI intent lead-ins for `skill`, `guard`, and `dash`, so the CPU now telegraphs those actions before committing instead of snapping straight into them
+  - initialized explicit runtime intent fields on spawned tops and exposed them through `renderGameToText()` / debug runtime snapshots for easier manual QA and future tuning
+  - upgraded battle HUD role labels so enemy lead-ins now surface as live `SKILL`, `DASH`, and `GUARD` reads with the same restrained accent language already used elsewhere
+  - extended `src/config-signature-skills.js` from presentation metadata into light tuning metadata, so derived tops can diverge without inventing new signature ids
+  - made `Breaker` feel more explosive by giving its `Fly Charge` a stronger/faster line break and a short collision-role bias window
+  - made `Raider` feel more predatory by giving its `Phantom` a longer phantom window, stronger push, and visible lateral drift
+  - added `scripts/check-combat-intent-telegraph.js`, extended `scripts/check-signature-skills.js`, and wired `npm run check:combatintent` into `preflight`
+- Validation after the update:
+  - `npm run check:signatures`
+  - `npm run check:combatintent`
+  - `npm run check:localization`
+  - `npm run check:shellpresentation`
+  - `npm run check:debugruntime`
+  - `npm run check:roundflow`
+  - `npm run preflight`
+- Manual route smoke update:
+  - the user manually tested the current local build in an existing Chrome session on `2026-04-18`
+  - no visible issues were found across the main shell/return paths:
+    - `Home -> Championship Path -> Battle -> Result -> Championship Path`
+    - `Home -> Quick Battle -> Battle -> Result -> Quick Battle`
+    - `Home -> Workshop -> Back -> Home`
+    - `Championship Path -> Workshop -> Back -> Championship Path`
+    - `Quick Battle -> Settings -> Back -> Quick Battle`
+  - this closes the earlier browser-validation gap for shell route flow, but does not yet count as a full combat-balance or homepage-presentation signoff
+- Current known limit:
+  - direct agent-controlled Chromium launch/attachment is still not established in this environment, so browser validation currently depends on user-driven Chrome testing rather than an agent-run browser loop
+
+- Home showcase polish batch complete:
+  - upgraded the title/home shell with a dedicated current-top showcase panel instead of only progress lines and route buttons
+  - added left/right home-cycle controls that rotate only through unlocked tops and keep using the same `playerTopId` state consumed by loadout and battle flow
+  - mirrored current-top pitch and trait text into `Home`, so the player can identify the active top before entering `Championship Path` or `Quick Battle`
+  - added a light selected-top normalization pass at route entry so debug/save resets do not leave the shell focused on a locked top
+  - extended `scripts/check-shell-presentation.js` to cover the new home showcase DOM and bindings
+- Validation after the batch:
+  - `npm run check:syntax`
+  - `npm run check:ui`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+- Current follow-up:
+  - manual Chrome smoke still useful for the new home showcase spacing, arrow affordance clarity, and unlocked-top cycling feel
+
+- Home model showcase batch complete:
+  - replaced the interim text-first home top panel with a dedicated model-first stage inside `Home`
+  - added `src/home-top-showcase-tools.js` as an isolated home-only Three.js renderer that reuses the existing `mkTop(...)` model factory
+  - added a lightweight pedestal, transparent stage, idle spin/bob animation, and route-bound visibility so the selected top now reads visually on the home screen
+  - kept home selection bound to the same `playerTopId` and unlocked-top cycle logic already used by route entry and match start
+  - reduced home copy to supporting text so the model becomes the primary identity surface
+  - added `docs/superpowers/plans/2026-04-18-home-top-showcase-model.md` as the implementation plan snapshot for this slice
+- Validation after the batch:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run preflight`
+- Current follow-up:
+  - manual Chrome smoke is needed specifically for stage centering, desktop/mobile fit, and whether the model presence now matches the intended “display stand” feel
+
+- Home model showcase hotfix:
+  - fixed a real runtime error on the live page: `Cannot access 'playerTopId' before initialization`
+  - root cause was init order in `src/main.js`: the home showcase renderer was initialized before `playerTopId` finished declaration
+  - moved `homeTopShowcaseTools.initialize()` to the first safe point after `let gameState='title', playerTopId=0, ...`
+  - attached to the user's existing Chrome session through the available local CDP bridge, reloaded the current `Spin Clash` tab, and confirmed:
+    - no `runtime-error-box`
+    - `#home-top-stage` present
+    - one showcase canvas mounted
+- Validation after the hotfix:
+  - `npm run check:syntax`
+  - `npm run preflight`
+
+- Home showcase layout alignment update:
+  - attached to the user's current Chrome tab again and captured the live home page before/after screenshots into:
+    - `output/home-layout-analysis.png`
+    - `output/home-layout-analysis-fixed.png`
+  - diagnosed the visible layout drift as CSS grid auto-placement, not model/render logic: the right nav button had fallen out of the intended third column and was stacking on the left below the stage
+  - locked the home showcase panel into explicit grid areas so the layout now renders as `left nav / model stage / right nav` with the description copy centered below
+  - preserved the existing shell art direction and only tightened layout structure in `css/game.css`
+- Validation after the alignment update:
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - live geometry check on the attached Chrome page confirmed the right nav moved from `x=79` to `x=723`
+
+- Home showcase frame-fit update:
+  - attached to the same Chrome page after the layout pass because the user reported the selected top still looked like it extended below the visible inner display frame
+  - traced the issue to the visible frame inset depth in `css/game.css`, not to renderer overflow or model initialization
+  - adjusted the home showcase inner-frame inset from `14px 8px 22px` to `10px 8px 8px`, so the pedestal and glow now sit inside the visible stage plate
+  - captured the updated live page to `output/home-frame-fit-pass1.png`
+- Validation after the frame-fit update:
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+
+- Home showcase simplification update:
+  - after another live screenshot review, shifted from "keep adjusting frame fit" to the cleaner fix the user approved: remove the hard backdrop frame and reduce the side nav buttons
+  - removed the showcase pseudo-frame entirely in `css/game.css`, so the model no longer reads as pressing against a rectangular inner box
+  - slimmed the side nav controls into centered pill buttons and reduced their visual weight from tall bars to small `30x84` controls
+  - attached to the current Chrome page and captured the result to `output/home-showcase-simplified.png`
+- Validation after the simplification update:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+
+- Home preview roster + lock-shadow update:
+  - split `Home` preview state from equipped battle state so the title screen can cycle across the full roster, including locked tops, without breaking battle-entry rules
+  - removed the old `已解锁 X/N` count from the home preview and replaced it with direct state chips plus lock-state teaser copy
+  - kept locked top names and types visible, but suppressed full ability disclosure in favor of unlock guidance tied to each top's unlock source
+  - added a home-only locked-preview rendering pass and then iterated it through multiple live screenshots:
+    - first pass proved the feature but still looked like a dimmed normal model
+    - later passes progressively removed material detail, darkened lighting, narrowed the shadow mask, and pushed the model toward a more intentional silhouette reveal
+  - live screenshot trail for this iteration batch:
+    - `output/home-preview-unlocked.png`
+    - `output/home-preview-locked.png`
+    - `output/home-preview-locked-pass2.png`
+    - `output/home-preview-locked-pass3.png`
+    - `output/home-preview-locked-pass4.png`
+  - the temporary save narrowing used to verify locked states in the live page was restored immediately after each pass, and the attached Chrome tab was returned to the original unlocked save
+- Validation in this batch:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+
+- Home preview visual-regression follow-up:
+  - continued the lock-preview pass with a stricter visual-review standard: not only whether the locked state functioned, but whether the entire showcase block still looked coherent on the full page
+  - identified and removed two design regressions found only by screenshot review:
+    - the large egg-shaped dark backdrop made the showcase area look dirty and overdesigned
+    - the duplicate locked labels created redundant hierarchy inside the same panel
+  - shifted the lock-preview strategy away from backdrop-heavy masking and toward darker home-only lighting, lower pedestal energy, reduced accent visibility, and clearer subject-vs-pedestal separation
+  - latest screenshot progression for this refinement pass:
+    - `output/home-preview-locked-pass5.png`
+    - `output/home-preview-locked-pass6.png`
+  - restored the user's original local save after each live locked-state verification pass
+- Validation in this follow-up:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+
+- Home showcase whole-block cleanup follow-up:
+  - moved from locked-state-only polish into full-block regression review, comparing the unlocked showcase screenshot against the locked silhouette screenshot instead of judging each state in isolation
+  - removed another layer of visual noise that only became obvious in full-page screenshots:
+    - unlocked state no longer shows a duplicated type line when the localized type text and top name are effectively the same
+    - unlocked state chip styling was softened so it stops fighting the top name for attention
+  - latest whole-page unlocked regression screenshot:
+    - `output/home-current-regression-pass2.png`
+- Validation in this cleanup:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+
+- Quick Battle arena-showcase batch complete:
+  - added `docs/superpowers/plans/2026-04-18-quick-battle-arena-showcase-plan.md` as the plan snapshot for the new route-specific layout
+  - rebuilt `Quick Battle` into an arena-first route with:
+    - large top-stage arena preview
+    - left/right arena cycling
+    - arena name/status/description copy
+    - a lower ready strip with a small deployed-top model and a dedicated start area
+  - added `src/quick-battle-preview-tools.js` as a second isolated showcase renderer so arena and mini-top previews do not couple back into battle rendering or the home showcase renderer
+  - changed quick arena browsing from “unlock while selecting” to “preview while browsing, resolve unlock/trial on start”, which better matches the approved route hierarchy
+  - added a blocked start state for locked-top edge cases with warning-colored button treatment and explicit hint copy
+  - attached to the user's current Chrome session and captured:
+    - `output/quick-battle-pass2.png`
+    - `output/quick-battle-locked-arena-pass1.png`
+    - `output/quick-battle-locked-arena-pass3.png`
+  - verified in the attached tab that an unlocked quick-battle start still reaches battle state without runtime error
+- Validation after the batch:
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:syntax`
+  - `npm run preflight`
+
+- Home locked-preview route-guard hotfix complete:
+  - fixed a logic mismatch where `Home` could preview a locked top but still let the player enter `Quick Battle` or `Championship Path`
+  - added failing assertions first in:
+    - `scripts/check-shell-routes.js`
+    - `scripts/check-shell-presentation.js`
+  - fixed it in two layers:
+    - home route buttons now disable when the previewed top is locked
+    - route actions themselves also refuse `goQuick / goPath` from `Home` if the current preview top is locked
+  - attached to the existing Chrome tab after reload and verified:
+    - `冲击 / 装甲` keep route buttons enabled
+    - `诡步 / 破阵 / 掠袭` now disable both route buttons
+- Validation after the hotfix:
+  - `npm run check:routes`
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+
+2026-04-18 local resume update
+- Added `docs/session-handoff-2026-04-18.md` as the new repo-local recovery entrypoint for this project.
+- The shell route split is now largely implemented and should not be treated as only planned work anymore:
+  - `Home`
+  - `Championship Path`
+  - `Quick Battle`
+  - `Workshop`
+  - `Settings`
+  - route-aware `Battle` / `Result`
+- Recent work completed on top of the route split:
+  - `Home` locked/unlocked roster preview and silhouette treatment
+  - `Home` route-entry guard while previewing locked tops
+  - `Quick Battle` arena-first layout
+  - lower quick-battle strip cleanup
+  - explicit 3-state locked-arena CTA semantics
+  - heart arena preview geometry-source fix
+  - screenshot-driven heart preview presentation tuning
+  - cross-arena preview thickness/scale alignment
+- Latest useful screenshot references for quick resume:
+  - `output/quick-battle-circle-current-pass3.png`
+  - `output/quick-battle-heart-current-pass7.png`
+  - `output/quick-battle-hex-current-pass3.png`
+- Latest local validation at session end:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - all green
+- Resume rule:
+  - use repository docs and current code as the source of truth
+  - do not rely on the shared global `AI-Memory` pointer for this project if multiple sessions are active
+- Recommended next resume order:
+  1. `docs/session-handoff-2026-04-18.md`
+  2. `docs/change-records/2026-04-17-ui-flow-combat-rework-log.md`
+  3. `docs/superpowers/specs/2026-04-17-ui-flow-combat-feedback-design.md`
+  4. `docs/superpowers/specs/2026-04-17-next-phase-gameplay-expansion-design.md`
+  5. `docs/project-status-2026-04-17.md`
+  6. `docs/balance-pass-2026-04-17.md`
+  7. `progress.md`
+
+2026-04-18 Task 4 manual acceptance follow-up
+- Continued browser smoke through the attachable Chrome CDP proxy against `file:///C:/Users/29940/spin-clash/index.html` because local static-server spawn is still constrained in this environment.
+- Reconfirmed route-shell behavior under `file://`:
+  - `Home -> Quick Battle` still enters the route cleanly
+  - `Quick Battle -> Start Match` hides loadout, shows HUD, and enters `mode:"prepare"` without runtime error
+  - `mode:"prepare"` after `START MATCH` is expected behavior, not a regression; code and live interaction both confirmed the player must drag to launch
+  - one synthetic drag launch moved the runtime into `mode:"active"` with the expected combat hint text and enemy intent telegraph present
+  - advancing the fight resolved `ROUND 1 -> ROUND 2`, then a second launch/advance resolved to `mode:"matchResult"`
+  - result `PLAY AGAIN` returned to `Quick Battle` without surfacing a runtime error
+- Localization smoke under `file://`:
+  - `Quick Battle` route copy switched cleanly across `English / 中文 / 日本語`
+  - Japanese locale persisted after reload on the title screen
+  - fresh screenshots captured:
+    - `output/task4-enter-quick-pass2.png`
+    - `output/task4-start-match-prepare-pass2.png`
+    - `output/task4-after-drag-active-pass1.png`
+    - `output/task4-match-result-pass1.png`
+    - `output/task4-result-return-quick-pass1.png`
+    - `output/task4-locale-ja-quick-pass1.png`
+    - `output/task4-title-safe-area-fixed-ja-pass6.png`
+- Acceptance bug found during this pass:
+  - the title/home shell could vertically overflow on shorter desktop heights, which pushed the `SPIN CLASH` heading off-screen and made the lower title actions require scroll
+  - root cause: the title overlay had no explicit top-safe spacing contract while the home/title block had grown taller than the centered viewport budget
+  - added a new shell-presentation regression guard for dedicated `#ov-title` top-safe spacing
+  - added compact `max-height:900px` title-shell CSS adjustments in `css/game.css`
+  - tightened the short-height contract again by giving the home showcase stage an explicit reduced height inside the short-viewport block, instead of relying on `min-height` only
+- Verification after the title-shell fix:
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run preflight`
+  - all green on this pass
+- Short-height desktop recheck:
+  - at `1274x849` with the storage warning visible, the title heading now sits below the warning instead of behind it
+  - all four title actions, including `SETTINGS`, now fit inside the first viewport without relying on overlay scrolling
+  - treat this specific short-height title-shell regression as closed for the current local/browser baseline
+- Remaining Task 4 caveat:
+  - acceptance evidence is still from `file://` plus the attached local Chrome session, not the recommended local static-server URL
+  - keep final Task 4 signoff conditional on one normal local-server browser pass when the environment allows it
+
+2026-04-18 Task 5 quick-battle visual closure follow-up
+- Reviewed the latest `circle / heart / hex` quick-battle screenshots side by side before changing code again.
+- Chosen micro-slice stayed aligned with the release plan default target:
+  - improve locked `Hex Bowl` readability only
+  - keep the current quick-battle route layout and unlocked-arena direction intact
+  - do not touch combat arena math
+- Added a source-level regression guard in `scripts/check-shell-presentation.js` so the locked hex preview now has an explicit readability contract instead of relying only on subjective screenshot memory.
+- Narrow preview-only pass landed in `src/quick-battle-preview-tools.js`:
+  - added a dedicated locked-hex top plate
+  - added a locked-hex inset top guide line
+  - slightly separated locked hex shell/floor materials so the top surface reads apart from the side wall
+- Fresh screenshot evidence from a new attached `file://` tab:
+  - `output/task5-locked-hex-readability-pass4.png`
+- Verification after the micro-pass:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+- Current read:
+  - locked hex still stays intentionally subdued, but it no longer depends only on one flat dark silhouette; there is now a clearer top-vs-side read
+  - this is a narrow readability pass, not a redesign
+
+2026-04-18 Task 6 localization readability closure
+- Continued attached-browser validation through the local Chrome CDP proxy against `file:///C:/Users/29940/spin-clash/index.html`.
+- Focused the pass on the highest-risk CJK surfaces from Batch 6:
+  - title / loadout shell heading stack
+  - settings and workshop explanatory copy
+  - championship path roster card naming
+- Real issues confirmed before code changes:
+  - `#ov-loadout` could pin its heading stack too close to the top edge, which let the persistent storage warning sit on top of the route title/subtitle area in `冠军之路 / チャンピオンロード`
+  - Japanese roster cards repeated the same label twice for name/type pairs such as `インパクト / インパクト`, which weakened quick readability in the featured-top and card grid
+- Minimal fixes landed:
+  - added a dedicated `#ov-loadout` top-safe spacing contract in `css/game.css`, with top anchoring plus explicit top padding so route headings no longer render under the storage warning
+  - tightened Japanese card type labels in `src/config-text.js` so they now read as category words instead of duplicating the top names:
+    - `衝撃型`
+    - `装甲型`
+    - `奇策型`
+    - `破陣型`
+    - `襲撃型`
+  - added regression guards:
+    - `scripts/check-shell-presentation.js` now asserts a dedicated `#ov-loadout` safe-area contract exists
+    - `scripts/check-localization.js` now asserts Japanese card type labels stay distinct from localized top names
+- Fresh screenshot evidence:
+  - before:
+    - `output/task6-ja-path.png`
+    - `output/task6-zh-path.png`
+  - after:
+    - `output/task6-ja-path-fixed.png`
+    - `output/task6-zh-path-fixed.png`
+    - `output/task6-ja-title.png`
+    - `output/task6-ja-settings.png`
+    - `output/task6-zh-title.png`
+    - `output/task6-zh-settings.png`
+    - `output/task6-zh-workshop.png`
+- Verification after the Task 6 pass:
+  - `npm run check:localization`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - all green
+- Current read:
+  - Task 6 is closed for the current local/browser baseline
+  - no new combat-feel blocker was surfaced during this localization pass
+  - default next move is `Task 8: Release Closure And Ship Gate`, unless the user explicitly wants the optional combat-feel pass first
+
+2026-04-18 Task 8 release closure and ship gate
+- Synced release-facing docs to the actual current repository state:
+  - `docs/release-checklist.md`
+  - `docs/launch-blockers.md`
+  - `docs/deployment-notes.md`
+  - `docs/github-pages-deploy.md`
+- Important release-state clarification now recorded in docs:
+  - reward and analytics service integrations exist and are config-driven
+  - committed base config still defaults to safe local/manual operation:
+    - `reward.adapter = mock`
+    - `analytics.adapter = local_buffer`
+  - live rewarded ads and live PostHog forwarding remain deploy-time override features, not the default shipped baseline
+- Final local release gate run:
+  - `npm run verify:release`
+  - result: green
+- Final release decision for the current repository state:
+  - safe for `limited external test`
+  - not yet safe to call a final monetized public release
+- Remaining true blocker:
+  - live/manual rewarded-ad validation on the deployed target host/browser
+  - live/manual PostHog forwarding validation on the deployed target host/browser
+- Recommended next practical step:
+  - deploy or reuse the GitHub Pages build with the intended provider overrides
+  - run the live provider closeout pass and upgrade `docs/provider-phase-report-2026-04-18-partial.md` into a final closeout artifact
+
+2026-04-18 provider closeout attempt follow-up
+- Began the next post-Task-8 step: inspect the currently deployed GitHub Pages target as the expected provider-closeout baseline.
+- Used a fresh attached-browser background tab against:
+  - `https://ryuutora1986.github.io/spin-clash/?debug=1`
+- Confirmed a new operational blocker:
+  - the current public Pages deployment is not the latest provider-aware release package
+  - deployed script list does not include:
+    - `src/config-providers.js`
+    - `src/config-providers-runtime.js`
+    - `src/config-providers-override.js`
+  - direct deployed fetch checks for those files returned `404`
+  - local `dist-static/` built by `npm run verify:release` does contain all three files
+- Practical conclusion:
+  - current public Pages cannot yet serve as the final provider validation target
+  - next required move is redeploy the current release package before attempting real rewarded-ad or PostHog closeout
+- Evidence:
+  - screenshot:
+    - `output/task8-pages-debug-current.png`
+
+2026-04-18 GitHub Pages redeploy recovery
+- Continued from the failed provider-closeout baseline and recovered the deployed host without using local `git push`, because this environment still cannot write `.git/index.lock`.
+- Synced the current release/runtime/workflow files to remote `main` through the GitHub API in batches until the critical provider/runtime set was current.
+- Diagnosed and cleared the actual GitHub Pages workflow blockers in sequence:
+  - first failure: remote `main` still had an older `config-challenge-road.js`, so `check:nextphase` failed on Linux CI
+  - second failure: remote `docs/analytics-events.md` was stale, so `check:analytics` failed on Linux CI
+- Final successful deploy evidence:
+  - GitHub Actions run: `24606760465`
+  - deployed commit: `2112a971bba669594d60db2109887d3001450aaa`
+- Fresh deployed-host verification after the successful Pages run:
+  - opened cache-busted live URLs through the attached browser proxy:
+    - `https://ryuutora1986.github.io/spin-clash/?debug=1`
+    - `https://ryuutora1986.github.io/spin-clash/`
+  - confirmed the deployed script list now includes:
+    - `src/config-providers.js`
+    - `src/config-providers-override.js`
+    - `src/config-providers-runtime.js`
+    - `src/provider-runtime-tools.js`
+  - direct in-page fetch checks for those four files returned `200`
+  - `?debug=1` mounted the debug panel successfully
+  - no visible runtime error banner was present in that fresh deployed check
+- Current practical state after recovery:
+  - the public GitHub Pages URL is now current enough to use as the provider-closeout baseline
+  - the remaining blocker is real rewarded-ad validation plus real PostHog forwarding validation under deploy-time overrides, not stale host package mismatch
+  - docs updated:
+    - `docs/provider-phase-report-2026-04-18-partial.md`
+    - `docs/launch-blockers.md`
