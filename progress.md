@@ -1901,3 +1901,25 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the next conversation no longer needs to reconstruct today’s state from chat history alone
   - re-entry can start from `progress.md` plus `docs/session-handoff-2026-04-21.md`
+
+2026-04-21 mobile round-result takeover pass completed
+- Context:
+  - mobile round settlement still read too much like battle HUD
+- Main runtime files changed:
+  - `scripts/check-shell-presentation.js`
+  - `src/round-flow-tools.js`
+  - `css/game.css`
+- Main UI outcomes:
+  - mobile portrait `roundResult` now activates a dedicated takeover state
+  - top rails, skill cluster, swap, and hint/message surfaces are hidden during settlement
+  - the round-result card now reads as the dominant settlement panel
+- Verification:
+  - `npm run check:shellpresentation`
+  - `npm run check:dom`
+  - `npm run check:ui`
+  - `npm run preflight`
+  - `node scripts/proxy-visual-flow-capture.js --profile mobile`
+- Trusted visual evidence:
+  - `output/proxy-visual-flow-video-mobile-2026-04-20T17-43-25/`
+- Visual conclusion:
+  - trusted mobile replay now shows the round-result card as the first visual anchor, with the top status rails, bottom skill buttons, swap, and hint/message surfaces cleared out of `roundResult`; the arena remains only as weak background context, and `12-match-result.png` still reads as a correct full-screen match-settlement screen.
