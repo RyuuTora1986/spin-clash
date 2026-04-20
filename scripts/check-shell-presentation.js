@@ -947,41 +947,56 @@ function checkMobileRoundResultTakeoverContract() {
   assert(mobilePortraitMatch, 'Expected game.css to define a mobile portrait result contract block.');
   const mobilePortraitBlock = mobilePortraitMatch[0];
 
+  function escapeRegex(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function getMobilePortraitRuleBlock(selectors) {
+    const selectorList = Array.isArray(selectors) ? selectors : [selectors];
+    const pattern = new RegExp(
+      selectorList.map(escapeRegex).join('\\s*,\\s*') + '\\s*\\{[\\s\\S]*?\\}',
+      'm'
+    );
+    const match = mobilePortraitBlock.match(pattern);
+    assert(
+      match,
+      `Expected game.css to define a mobile portrait rule block for ${selectorList.join(', ')}.`
+    );
+    return match[0];
+  }
+
+  function assertRuleBlockIncludes(selectors, expectedTokens, message) {
+    const ruleBlock = getMobilePortraitRuleBlock(selectors);
+    expectedTokens.forEach((token) => {
+      assert(ruleBlock.includes(token), message);
+    });
+  }
+
   assert(
     css.includes('body.round-result-takeover'),
     'Expected game.css to define a body.round-result-takeover hook for mobile round settlement.'
   );
-  assert(
-    mobilePortraitBlock.includes('body.round-result-takeover #skill-panel')
-      && mobilePortraitBlock.includes('display:none'),
-    'Expected the mobile round-result takeover contract to hide the bottom skill cluster.'
+
+  assertRuleBlockIncludes(
+    [
+      'body.round-result-takeover #p-panel',
+      'body.round-result-takeover #e-panel',
+      'body.round-result-takeover #skill-panel',
+      'body.round-result-takeover #act-swap',
+      'body.round-result-takeover #hint-bar',
+      'body.round-result-takeover #msg-txt'
+    ],
+    ['display:none', 'visibility:hidden', 'opacity:0'],
+    'Expected the mobile round-result takeover contract to hide the battle HUD surfaces.'
   );
-  assert(
-    mobilePortraitBlock.includes('body.round-result-takeover #p-panel')
-      && mobilePortraitBlock.includes('body.round-result-takeover #e-panel')
-      && mobilePortraitBlock.includes('display:none')
-      && mobilePortraitBlock.includes('visibility:hidden'),
-    'Expected the mobile round-result takeover contract to hide both top status rails.'
-  );
-  assert(
-    mobilePortraitBlock.includes('body.round-result-takeover #act-swap')
-      && mobilePortraitBlock.includes('body.round-result-takeover #hint-bar')
-      && mobilePortraitBlock.includes('display:none')
-      && mobilePortraitBlock.includes('opacity:0'),
-    'Expected the mobile round-result takeover contract to remove swap and hint surfaces during settlement.'
-  );
-  assert(
-    mobilePortraitBlock.includes('body.round-result-takeover #ov-round.result-overlay')
-      && mobilePortraitBlock.includes('justify-content:flex-start')
-      && mobilePortraitBlock.includes('background:'),
+  assertRuleBlockIncludes(
+    'body.round-result-takeover #ov-round.result-overlay',
+    ['justify-content:flex-start', 'background:'],
     'Expected the mobile round-result takeover contract to strengthen the round-result overlay background.'
   );
-  assert(
-    mobilePortraitBlock.includes('body.round-result-takeover .round-result-shell')
-      && mobilePortraitBlock.includes('padding:')
-      && mobilePortraitBlock.includes('box-shadow:')
-      && mobilePortraitBlock.includes('border-radius:')
-      && mobilePortraitBlock.includes('background:'),
+  assertRuleBlockIncludes(
+    'body.round-result-takeover .round-result-shell',
+    ['padding:', 'box-shadow:', 'border-radius:', 'background:'],
     'Expected the mobile round-result takeover contract to strengthen the dedicated round-result shell.'
   );
 }
