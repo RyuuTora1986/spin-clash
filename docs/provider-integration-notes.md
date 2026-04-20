@@ -9,18 +9,23 @@ The runtime must stay fully playable without live ad, share-card, or remote anal
 Implemented today:
 - local save persistence
 - local analytics event buffer
+- PostHog forwarding adapter behind `analyticsService`
 - mock reward completion path
 - browser-native share fallback
+- explicit provider config in `src/config-providers.js`
 
 Not implemented today:
-- live rewarded ad SDK
-- remote analytics sink
 - generated result-card image pipeline
 
 ## Reward Boundary
 
 Current runtime entry:
 - `src/reward-service.js`
+- current provider config:
+  - `src/config-providers.js`
+  - optional deploy-time override:
+    - `src/config-providers-override.js`
+    - `src/config-providers-runtime.js`
 
 Current gameplay callers:
 - `double_reward`
@@ -29,6 +34,7 @@ Current gameplay callers:
 
 Architectural rule:
 - gameplay code calls `rewardService.request(...)`
+- reward-success branches must confirm `rewardService.wasGranted(result)`
 - gameplay code does not talk to SDK globals directly
 - provider-specific logic stays inside the reward service layer
 
@@ -48,6 +54,41 @@ Current mock behavior:
   - `resultValue`
   - `mockMode`
 
+Current adapter config direction:
+- `mock`
+- reserved future path:
+  - `adsense_rewarded`
+- deploy-time override support now exists for static release packaging, so Pages deployments can switch providers without changing the committed base config
+- committed prep-level placement allowlist now exists under:
+  - `config.providers.reward.livePlacements`
+- current approved live rewarded placements remain:
+  - `double_reward`
+  - `continue_once`
+  - `trial_unlock_arena`
+
+Current live-adapter behavior:
+- first reward request can trigger GPT script loading and wait through that first load attempt
+- if GPT cannot become usable, the service rejects cleanly with:
+  - `provider_unavailable`
+- if a placement is not allowlisted for live rewarded, the service now rejects cleanly with:
+  - `placement_not_enabled`
+- if GPT becomes reachable, the adapter now opens a real rewarded GPT slot request
+- current live result mapping:
+  - `rewardedSlotGranted` remembered until `rewardedSlotClosed`
+  - `rewardedSlotClosed` after grant -> resolve `granted:true`
+  - `rewardedSlotClosed` without grant -> resolve `granted:false`
+  - unexpected provider/setup failures -> reject with a safe error
+- debug/runtime inspection now exposes:
+  - `rewardEnabled`
+  - `allowedPlacements`
+  - `rewardedAdUnitConfigured`
+  - `lastAvailabilityReason`
+  - `lastRequestReason`
+  - `activePlacement`
+- gameplay/UI callers can now use:
+  - `rewardService.getFailureInfo(...)`
+  - to normalize deny/loading/busy/unavailable/error states without duplicating provider-specific reason logic
+
 If a real provider is added later, preserve this contract:
 
 ```js
@@ -57,8 +98,15 @@ rewardService.request(placement, context) -> Promise<{
   granted,
   context,
   resultValue,
+  reward?,
   reason?
 }>
+```
+
+Success check helper:
+
+```js
+rewardService.wasGranted(result) -> boolean
 ```
 
 ## Share Boundary
@@ -80,11 +128,36 @@ Architectural rule:
 
 Current runtime entry:
 - `src/analytics-service.js`
+- current provider config:
+  - `src/config-providers.js`
 
 Current behavior:
 - appends events into local save data
 - keeps the latest `200`
 - logs to console when debug mode is enabled
+- supports explicit adapter selection:
+  - `local_buffer`
+  - `posthog`
+- exposes runtime adapter state for debug inspection:
+  - `ready`
+  - `loading`
+  - `lastForwardReason`
+  - `initialized`
+  - `queuedEvents`
+- when PostHog forwarding is enabled but the SDK is not ready yet:
+  - events stay locally buffered
+  - the forward adapter can queue them in memory temporarily
+  - the queue auto-flushes after the script loads and `posthog.init(...)` succeeds
+- when PostHog load/init cannot become usable:
+  - the service reports `posthog_unavailable`
+  - the transient remote queue is cleared
+  - the local event buffer remains the fallback source of truth
+- each stored analytics event also carries a normalized forwarding result:
+  - `local_only`
+  - `posthog_loading`
+  - `posthog_config_missing`
+  - `posthog_unavailable`
+  - or `{ forwarded:true }`
 
 Architectural rule:
 - gameplay and services emit normalized events through `analyticsService.track(...)`
@@ -108,6 +181,12 @@ Operational references:
 - `docs/provider-phase-report-template.md`
 - `docs/reward-provider-evaluation-sheet.md`
 - `docs/analytics-sink-evaluation-sheet.md`
+
+Validation references:
+- `scripts/check-provider-services.js`
+- `scripts/check-config.js`
+- `scripts/check-debug-runtime-snapshots.js`
+- `npm run check:providers`
 
 ## Unlock Boundary
 

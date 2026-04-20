@@ -60,23 +60,27 @@ If deployment testing shows `session`, `window_name`, or `memory`:
 ## Reward And Provider Expectations
 
 Current state:
-- no live rewarded ad SDK
-- mock reward abstraction only
+- mock reward abstraction remains the default repository config
+- a live GPT rewarded adapter path now exists behind `RewardService`
 
 That means:
-- the build is structurally ready for provider integration
-- monetization validation without a real provider is limited to UX and analytics flow validation
-- production monetization still requires a platform/provider decision later
+- the build is no longer mock-only at the service layer
+- production monetization still requires:
+  - a real eligible provider/account configuration
+  - host/browser validation of the live rewarded path
+  - policy-fit confirmation for the chosen platform
 
 ## Analytics Expectations
 
 Current state:
 - analytics are stored locally in save data
-- no remote sink is enabled
+- a PostHog forwarding adapter now exists behind `analyticsService`
+- committed base config still defaults to local-only buffering
 
 That means:
 - funnel surface and event schema can be validated now
-- production reporting still requires a later forwarding adapter
+- deploy-time remote forwarding is possible through provider overrides
+- production reporting still requires final deployed-host validation with a real configured PostHog project
 
 ## Share Expectations
 
@@ -94,10 +98,11 @@ Treat the current build as:
 - structurally ready for continued static-web iteration
 - suitable for closed/manual testing
 - suitable for host validation
+- suitable for limited external testing with default safe provider config
 - not yet a final monetized release until:
   - durable `local` persistence is confirmed on the target host/browser
-  - real reward provider strategy is chosen
-  - remote analytics sink decision is made
+  - live rewarded-ad validation is completed on the target host/browser
+  - live PostHog forwarding is validated on the target host/browser
 
 See also:
 - `docs/deployment-preflight.md`

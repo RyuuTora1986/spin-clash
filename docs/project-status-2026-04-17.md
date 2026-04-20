@@ -10,16 +10,15 @@ Current status:
 - the main remaining uncertainty is release readiness, not gameplay shell completeness
 
 Estimated completion:
-- static iterable MVP shell: about `85%`
-- public commercial launch readiness: about `65%`
+- static iterable MVP shell: about `96%`
+- public commercial launch readiness: about `78%`
 
 Why the gap exists:
 - core gameplay preservation, progression shell, persistence, debug tooling, analytics abstraction, and mock commercialization surfaces are already implemented
 - public release conditions are still open around:
-  - target-host persistence validation
   - real reward provider strategy
   - remote analytics sink choice
-  - final host/runtime hardening
+  - provider-phase integration hardening
 
 ## What Is Already Done
 
@@ -36,12 +35,16 @@ Why the gap exists:
 - third arena `Hex Bowl` implemented
 - lightweight unlock loop implemented
 - one soft currency loop implemented
+- tri-language player-facing localization implemented for `English`, `中文`, and `日本語`
 
 ### Progression And Content
 - arena unlocks implemented
 - `Trick` top unlock implemented
 - Challenge Road top reward implemented
 - Challenge Road node progression persists locally
+- enemy presets now separated into their own config table
+- enemy presets now apply differentiated AI tuning across Challenge Road nodes
+- shared economy/runtime tuning now lives in `src/config-economy.js`
 
 ### Services Layer
 - `StorageService`
@@ -52,7 +55,13 @@ Why the gap exists:
 
 ### Debug And Verification Tooling
 - save export/import
+- save migration/normalization regression check
+- locale persistence and locale-table parity regression check
 - analytics export/clear
+- tuning export/import/reset for economy and enemy presets
+- debug action failure handling regression check
+- loadout purchase/trial regression check
+- session lifecycle regression check
 - reward mock mode switching
 - storage diagnostics
 - grouped manual test batches
@@ -61,19 +70,19 @@ Why the gap exists:
 ## What Is Not Done Yet
 
 ### Launch Blockers
-1. durable `local` persistence must be confirmed on the chosen target host/browser
-2. reward flow is still mock-only
-3. remote analytics sink is not selected or integrated
-4. final host validation pass has not been completed
+1. reward flow has a live adapter path but is not yet live-validated
+2. remote analytics sink is not selected or integrated
+3. provider-phase integration work has not been completed
 
 Reference:
 - `docs/launch-blockers.md`
+- `docs/host-validation-report-2026-04-17-github-pages.md`
 
 ### Lower-Priority Incomplete Areas
-- enemy preset layer is not yet fully separated as its own config abstraction
-- economy config is still lighter than the original Phase A target architecture
-- polished image-card share output is not implemented
-- no real provider adapters are integrated yet
+- lightweight SVG result-card share output is implemented, but polished raster/social-card output is not
+- enemy preset tuning now varies meaningfully, but more post-playtest balance iteration is still possible
+- real provider adapters exist, but live validation and provider-specific hardening are not finished
+- tri-language support is implemented, but still benefits from one grouped manual overflow/readability pass across all three languages
 
 ## Milestone Assessment
 
@@ -85,13 +94,12 @@ Reference:
 - note: `src/main.js` still acts as the orchestrator, which is acceptable for the current scope
 
 ### Milestone 3: Config Layer
-- status: mostly complete
-- note: tops, arenas, modifiers, challenge nodes, and text are config-driven
-- remaining gap: enemy presets/economy are not fully separated
+- status: complete for the current MVP boundary
+- note: tops, arenas, modifiers, enemy presets, challenge nodes, text, and shared economy/runtime values are now config-driven
 
 ### Milestone 4: Services Foundation
 - status: functionally complete for MVP shell
-- note: real providers are not connected yet
+- note: real provider paths now exist, but final live validation is still pending
 
 ### Milestone 5: Challenge Road
 - status: complete for MVP scope
@@ -110,29 +118,34 @@ Reference:
 Goal:
 - prove the current static build behaves correctly on the real chosen host
 
-Do next:
-1. choose the actual static host target
-2. deploy the current build there
-3. run the grouped manual host validation batches
-4. record real persistence mode and asset/runtime behavior
+Status:
+- complete for current baseline host
+
+Closed result:
+- GitHub Pages passed host validation
+- `persistenceMode === local`
+- current baseline host is now acceptable for provider-phase work
 
 ### Phase C2: Provider Decision Layer
 Goal:
 - turn the current shell into a monetization-ready integration surface
 
 Do after host validation:
-1. choose the reward provider/platform path
-2. choose the remote analytics sink
+1. validate the recommended reward provider path
+2. validate the recommended remote analytics sink
 3. integrate both only through existing service layers
+
+Reference:
+- `docs/provider-recommendation-2026-04-17.md`
 
 ### Phase C3: Final Config Closure
 Goal:
 - reduce future content expansion cost without expanding scope
 
 Do after provider decisions:
-1. separate enemy presets more explicitly
-2. separate economy tuning more explicitly
-3. keep gameplay kernel changes minimal
+1. enemy preset extraction is complete
+2. economy/runtime extraction is complete
+3. keep gameplay kernel changes minimal when adding future content
 
 ## What Should Not Be Prioritized Now
 - more content before host validation
@@ -145,8 +158,8 @@ Do after provider decisions:
 
 The project should now be treated as:
 - ready for continued iteration
-- ready for host validation
+- ready for provider-phase implementation
 - not yet ready to be called a final public commercial release
 
-The highest-value next step is not more gameplay scope.
-The highest-value next step is closing the release-environment uncertainty.
+The highest-value blocked next step is still converting the existing mock provider surfaces into one real reward path and one real analytics forwarding path.
+The highest-value optional unblocked next step is tuning enemy preset variation, because the lightweight result-card share layer is now already in place.

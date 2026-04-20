@@ -6,6 +6,21 @@ Companion reference:
 - `docs/manual-test-batches.md`
 - `docs/host-validation-plan.md`
 
+## Current Release Interpretation
+- The repository is currently suitable for:
+  - local/manual iteration
+  - deployed host validation
+  - limited external testing with the safe default provider configuration
+- The repository is not yet ready for:
+  - a final monetized public release with live rewarded ads and remote analytics treated as production-ready
+
+Reason:
+- reward and analytics service-layer integrations now exist
+- committed base config still defaults to:
+  - `reward.adapter = 'mock'`
+  - `analytics.adapter = 'local_buffer'`
+- live provider use remains deploy-time override driven and still needs final live/manual closeout
+
 ## Runtime Gate
 - `npm install`
 - `npm run verify:release`
@@ -15,10 +30,14 @@ Companion reference:
 - `npm run check:dom`
 - `npm run check:config`
 - `npm run check:analytics`
+- `npm run check:storage`
+- `npm run check:debugservice`
+- `npm run check:loadout`
+- `npm run check:session`
 - `npm run check:ui`
 - `npm run serve`
-- open `http://127.0.0.1:8000/index.html`
-- open `http://127.0.0.1:8000/index.html?debug=1`
+- open the exact `Open:` URL printed in the terminal
+- open the exact `Debug:` URL printed in the terminal
 - if persistence mode is not `local`, verify the runtime warning banner is visible and accurate
 - verify runtime entry files do not depend on remote Google Fonts
 
@@ -45,10 +64,11 @@ Companion reference:
 - unlocked arena persists after reload
 
 ## Service Gate
-- share action opens browser share or fallback copy path
+- share action opens browser share or falls back to result-card SVG download plus copied text
 - double reward path completes without breaking result flow
 - continue reward path retries the current Challenge Road node
 - debug panel actions mutate state as expected
+- debug panel action failures surface as readable status messages
 - debug `COPY SAVE`, `IMPORT SAVE`, `COPY EVENTS`, `REWARD GRANT`, `REWARD DENY`, `REWARD ERROR`, `CLEAR EVENTS`, `MOCK SHARE`, and `MOCK REWARD` actions behave as expected
 - save reset works
 
@@ -74,6 +94,7 @@ Inspect local analytics buffer or debug console and confirm these event families
   - `continue_used`
 - share:
   - `share_click`
+  - `share_complete`
 - unlock:
   - `unlock_grant`
   - `unlock_purchase`
@@ -85,6 +106,17 @@ Reference:
 - build remains fully playable with mock services only
 - no gameplay code calls provider SDK globals directly
 - reward/share/analytics integration still routes through service modules
+- if enabling live rewarded ads for a release build:
+  - `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
+  - `SPIN_CLASH_REWARD_ENABLED=true`
+  - `SPIN_CLASH_REWARDED_AD_UNIT_PATH` is set
+- if enabling PostHog forwarding for a release build:
+  - `SPIN_CLASH_ANALYTICS_ADAPTER=posthog`
+  - `SPIN_CLASH_ANALYTICS_ENABLE_FORWARDING=true`
+  - `SPIN_CLASH_POSTHOG_ENABLED=true`
+  - `SPIN_CLASH_POSTHOG_PROJECT_API_KEY` is set
+- if any live provider override is enabled:
+  - validate it on the real deployed host/browser before treating it as launch-ready
 
 Reference:
 - `docs/launch-blockers.md`

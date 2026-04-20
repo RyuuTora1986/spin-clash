@@ -5,7 +5,7 @@
       winBase:16,
       lossBase:6,
       challengeWinBase:20,
-      challengeLossBase:10,
+      challengeLossBase:12,
       doubleRewardMultiplier:2
     },
     runtime:{

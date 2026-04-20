@@ -59,8 +59,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'UNLOCK MATCH',
-      previewDesc:'A harder armor variant uses the heart bowl to force heavier line commitment.',
-      unlockTopId:'trick'
+      previewDesc:'A harder armor variant uses the heart bowl to force heavier line commitment.'
     },
     {
       id:'node-5',
@@ -99,13 +98,13 @@
       chapterLabel:'RIVAL SERIES',
       tier:'normal',
       arenaIndex:0,
-      enemyPresetId:'armor_standard',
-      modifierId:'burstRush',
-      reward:44,
+      enemyPresetId:'armor_bastion',
+      modifierId:'heavyFloor',
+      reward:42,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'RIVAL PRESSURE',
-      previewDesc:'Return to the circle bowl with less room to drift and more need to hold center.'
+      previewLabel:'CENTER LOCK',
+      previewDesc:'A bastion armor preset and heavier footing force you to win the circle before the duel slows down.'
     },
     {
       id:'node-8',
@@ -114,13 +113,13 @@
       chapterLabel:'RIVAL SERIES',
       tier:'normal',
       arenaIndex:1,
-      enemyPresetId:'trick_standard',
-      modifierId:'standard',
-      reward:50,
+      enemyPresetId:'trick_duelist',
+      modifierId:'suddenDeath',
+      reward:48,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'REVENGE DUEL',
-      previewDesc:'A cleaner rematch that tests whether the player truly learned the trick matchup.'
+      previewLabel:'KNIFE EDGE',
+      previewDesc:'A sudden-death rematch versus an all-in trick duelist leaves almost no room for a bad launch.'
     },
     {
       id:'node-9',
@@ -129,13 +128,13 @@
       chapterLabel:'CHAMPIONSHIP',
       tier:'normal',
       arenaIndex:2,
-      enemyPresetId:'armor_ram',
+      enemyPresetId:'impact_reaper',
       modifierId:'grindCore',
-      reward:58,
+      reward:62,
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'SEMIFINAL',
-      previewDesc:'A grinding semifinal duel that tests ring control before the final collision sprint.'
+      previewDesc:'The semifinal shifts into a brutal impact chase where every grounded mistake turns into a punish route.'
     },
     {
       id:'node-10',

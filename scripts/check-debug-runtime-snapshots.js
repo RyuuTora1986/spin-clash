@@ -125,11 +125,14 @@ function main() {
       getAdapterInfo() {
         return {
           adapter: 'adsense_rewarded',
+          rewardEnabled: true,
           ready: false,
           loading: false,
           lastAvailabilityReason: 'provider_unavailable',
           lastRequestReason: 'provider_timeout',
-          activePlacement: 'continue_once'
+          activePlacement: 'continue_once',
+          allowedPlacements: ['double_reward', 'continue_once', 'trial_unlock_arena'],
+          rewardedAdUnitConfigured: true
         };
       }
     },
@@ -286,9 +289,15 @@ function main() {
   assert(labels.includes('COPY RUNTIME'), 'Expected debug panel to expose COPY RUNTIME.');
   assert(captured.panelInfo && captured.panelInfo.rewardAdapter === 'adsense_rewarded', 'Expected debug panel info to preserve the live reward adapter id under failure conditions.');
   assert(captured.panelInfo && captured.panelInfo.rewardReady === false, 'Expected debug panel info to show the reward adapter not ready during failure-state inspection.');
+  assert(captured.panelInfo && captured.panelInfo.rewardEnabled === true, 'Expected debug panel info to expose whether live reward is enabled.');
   assert(captured.panelInfo && captured.panelInfo.rewardAvailabilityReason === 'provider_unavailable', 'Expected debug panel info to expose reward availability failure reason.');
   assert(captured.panelInfo && captured.panelInfo.rewardRequestReason === 'provider_timeout', 'Expected debug panel info to expose reward request failure reason.');
   assert(captured.panelInfo && captured.panelInfo.rewardActivePlacement === 'continue_once', 'Expected debug panel info to expose the active reward placement during failure-state inspection.');
+  assert(Array.isArray(captured.panelInfo && captured.panelInfo.rewardAllowedPlacements), 'Expected debug panel info to expose reward allowedPlacements.');
+  assert(captured.panelInfo.rewardAllowedPlacements.includes('double_reward'), 'Expected debug panel info to preserve double_reward in rewardAllowedPlacements.');
+  assert(captured.panelInfo.rewardAllowedPlacements.includes('continue_once'), 'Expected debug panel info to preserve continue_once in rewardAllowedPlacements.');
+  assert(captured.panelInfo.rewardAllowedPlacements.includes('trial_unlock_arena'), 'Expected debug panel info to preserve trial_unlock_arena in rewardAllowedPlacements.');
+  assert(captured.panelInfo && captured.panelInfo.rewardedAdUnitConfigured === true, 'Expected debug panel info to expose whether a rewarded ad unit is configured.');
   assert(captured.panelInfo && captured.panelInfo.analyticsAdapter === 'posthog', 'Expected debug panel info to preserve the configured analytics adapter during forwarding failure.');
   assert(captured.panelInfo && captured.panelInfo.analyticsForwardingEnabled === true, 'Expected debug panel info to show analytics forwarding remained enabled during failure-state inspection.');
   assert(captured.panelInfo && captured.panelInfo.analyticsForwardReason === 'posthog_unavailable', 'Expected debug panel info to expose analytics forwarding failure reason.');

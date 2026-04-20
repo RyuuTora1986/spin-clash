@@ -1,26 +1,200 @@
 (function(){
-  const root = window.SpinClash;
+  const root = window.SpinClash || (window.SpinClash = {});
+  root.state = root.state || {};
+
   root.config.arenas = [
     {
       id:'circle_bowl',
       label:'CIRCLE BOWL',
       type:'circle',
       hazardSpinThreshold:6.5,
-      unlockCost:0
+      unlockCost:0,
+      geometry:{
+        bowlHeight:0.58,
+        scratchBowlHeight:0.78,
+        hazardStart:6.5,
+        markerScales:[0.25, 0.5, 0.75]
+      },
+      physics:{
+        slopeForce:5.5,
+        radialPull:1,
+        safeWallInset:0.18,
+        wallPush:0.42
+      },
+      renderer:{
+        floorColor:0x070710,
+        floorEmissive:0x010118,
+        rimColor:0x0055ff,
+        hazardColor:0xff2200,
+        centerColor:0x00ffcc,
+        accentColor:0x1a3355,
+        deepAccentColor:0x0e1a2e
+      }
     },
     {
       id:'heart_bowl',
       label:'HEART BOWL',
       type:'heart',
       hazardSpinThreshold:null,
-      unlockCost:0
+      unlockCost:0,
+      shape:{
+        scaleX:1,
+        scaleZ:1,
+        pinch:0
+      },
+      geometry:{
+        bowlHeight:0.58,
+        scratchBowlHeight:0.78,
+        hazardScale:0.84,
+        nearWallScale:0.94,
+        outerScale:1.14
+      },
+      physics:{
+        slopeForce:4.8,
+        radialPull:0.6,
+        wallPush:0.42
+      },
+      renderer:{
+        floorColor:0x07050f,
+        floorEmissive:0x010008,
+        rimColor:0xff2288,
+        hazardColor:0xff1166,
+        centerColor:0xff44aa,
+        accentColor:0x3a0a44,
+        deepAccentColor:0x1a0520
+      }
     },
     {
       id:'hex_bowl',
       label:'HEX BOWL',
       type:'hex',
       hazardSpinThreshold:null,
-      unlockCost:120
+      unlockCost:120,
+      shape:{
+        sides:6,
+        radiusScale:1,
+        rotation:Math.PI / 6
+      },
+      geometry:{
+        bowlHeight:0.62,
+        scratchBowlHeight:0.78,
+        hazardScale:0.82,
+        outerScale:1.12
+      },
+      physics:{
+        slopeForce:5.0,
+        radialPull:0.6,
+        wallPush:0.42
+      },
+      renderer:{
+        floorColor:0x0b0d11,
+        floorEmissive:0x071119,
+        rimColor:0xffb000,
+        hazardColor:0xffd266,
+        centerColor:0xffd266,
+        accentColor:0x4a3410,
+        deepAccentColor:0x1f1808
+      }
+    },
+    {
+      id:'cyclone_bowl',
+      label:'CYCLONE BOWL',
+      type:'circle',
+      hazardSpinThreshold:5.9,
+      unlockCost:180,
+      geometry:{
+        bowlHeight:0.7,
+        scratchBowlHeight:0.9,
+        hazardStart:5.9,
+        markerScales:[0.2, 0.4, 0.62, 0.82]
+      },
+      physics:{
+        slopeForce:6.25,
+        radialPull:1.05,
+        safeWallInset:0.22,
+        wallPush:0.46
+      },
+      renderer:{
+        floorColor:0x071018,
+        floorEmissive:0x041629,
+        rimColor:0x4ad7ff,
+        hazardColor:0xff7a18,
+        centerColor:0xb5fff2,
+        accentColor:0x16466d,
+        deepAccentColor:0x0d2238
+      }
+    },
+    {
+      id:'rose_bowl',
+      label:'ROSE BOWL',
+      type:'heart',
+      hazardSpinThreshold:null,
+      unlockCost:210,
+      shape:{
+        scaleX:1.08,
+        scaleZ:0.92,
+        pinch:0.22
+      },
+      geometry:{
+        bowlHeight:0.66,
+        scratchBowlHeight:0.86,
+        hazardScale:0.78,
+        nearWallScale:0.9,
+        outerScale:1.16
+      },
+      physics:{
+        slopeForce:5.1,
+        radialPull:0.68,
+        wallPush:0.48
+      },
+      renderer:{
+        floorColor:0x140712,
+        floorEmissive:0x2a091f,
+        rimColor:0xff5aa6,
+        hazardColor:0xff2e7a,
+        centerColor:0xffb0d2,
+        accentColor:0x61203c,
+        deepAccentColor:0x2d0d1e
+      }
+    },
+    {
+      id:'octa_bowl',
+      label:'OCTA BOWL',
+      type:'hex',
+      hazardSpinThreshold:null,
+      unlockCost:240,
+      shape:{
+        sides:8,
+        radiusScale:0.97,
+        rotation:Math.PI / 8
+      },
+      geometry:{
+        bowlHeight:0.68,
+        scratchBowlHeight:0.88,
+        hazardScale:0.78,
+        outerScale:1.16
+      },
+      physics:{
+        slopeForce:5.45,
+        radialPull:0.66,
+        wallPush:0.48
+      },
+      renderer:{
+        floorColor:0x101119,
+        floorEmissive:0x171f36,
+        rimColor:0x9f8cff,
+        hazardColor:0xffc857,
+        centerColor:0xfff0b8,
+        accentColor:0x50437d,
+        deepAccentColor:0x27213f
+      }
     }
   ];
+
+  if(typeof root.state.currentArenaIndex !== 'number'){
+    root.state.currentArenaIndex = 0;
+  }
+  if(!root.state.currentArenaId && root.config.arenas[0]){
+    root.state.currentArenaId = root.config.arenas[0].id;
+  }
 })();

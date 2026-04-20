@@ -47,8 +47,9 @@ npm run serve
 ```
 
 Open:
-- `http://127.0.0.1:8000/index.html`
-- `http://127.0.0.1:8000/index.html?debug=1`
+- read the exact `Open:` and `Debug:` URLs printed by `npm run serve`
+- default start target: `http://127.0.0.1:4173/index.html`
+- default debug target: `http://127.0.0.1:4173/index.html?debug=1`
 
 Pass condition:
 - title screen loads

@@ -46,6 +46,7 @@ function main() {
   const rewardProvider = providers.reward || {};
   const analyticsProvider = providers.analytics || {};
   const adsense = rewardProvider.adsense || {};
+  const livePlacements = rewardProvider.livePlacements || {};
   const posthog = analyticsProvider.posthog || {};
 
   if (!Array.isArray(tops) || tops.length === 0) {
@@ -217,6 +218,16 @@ function main() {
 
   if (!['mock', 'adsense_rewarded'].includes(rewardProvider.adapter)) {
     fail(`config.providers.reward.adapter is invalid: ${rewardProvider.adapter}`);
+  }
+
+  if (!livePlacements || typeof livePlacements !== 'object' || Array.isArray(livePlacements)) {
+    fail('config.providers.reward.livePlacements is missing');
+  } else {
+    ['double_reward', 'continue_once', 'trial_unlock_arena'].forEach((placementId) => {
+      if (livePlacements[placementId] !== true) {
+        fail(`config.providers.reward.livePlacements.${placementId} must default to true`);
+      }
+    });
   }
 
   if (!['local_buffer', 'posthog'].includes(analyticsProvider.adapter)) {

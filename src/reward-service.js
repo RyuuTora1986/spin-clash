@@ -3,6 +3,7 @@
   const analytics = () => root.services.analytics;
   const providerRuntime = root.services.providerRuntime || null;
   const providerConfig = (root.config && root.config.providers && root.config.providers.reward) || {};
+  const livePlacements = providerConfig.livePlacements || {};
   const adsenseConfig = providerConfig.adsense || {};
   const SCRIPT_LOAD_TIMEOUT_MS = 4000;
   let mockMode = providerConfig.mockMode === 'deny' || providerConfig.mockMode === 'error'
@@ -52,6 +53,7 @@
     }else if(
       reason === 'provider_unavailable'
       || reason === 'provider_disabled'
+      || reason === 'placement_not_enabled'
       || reason === 'ad_unit_missing'
       || reason === 'provider_misconfigured'
       || reason === 'posthog_missing'
@@ -128,16 +130,24 @@
     }
 
     function getPlacementConfig(placement){
-      if(placement === 'double_reward' || placement === 'continue_once' || placement === 'trial_unlock_arena'){
+      if(livePlacements[placement] === true){
         return {
           kind:'rewarded',
-          adUnitPath:adsenseConfig.rewardedAdUnitPath || ''
+          adUnitPath:adsenseConfig.rewardedAdUnitPath || '',
+          enabled:true
         };
       }
       return {
         kind:'unknown',
-        adUnitPath:''
+        adUnitPath:'',
+        enabled:false
       };
+    }
+
+    function getAllowedPlacements(){
+      return Object.keys(livePlacements).filter(function(placementId){
+        return livePlacements[placementId] === true;
+      });
     }
 
     function loadScriptOnce(){
@@ -169,6 +179,10 @@
         return { available:false, reason:'provider_disabled' };
       }
       const placementConfig = getPlacementConfig(placement);
+      if(placementConfig.enabled !== true){
+        state.lastAvailabilityReason = 'placement_not_enabled';
+        return { available:false, reason:'placement_not_enabled' };
+      }
       if(!placementConfig.adUnitPath){
         state.lastAvailabilityReason = 'ad_unit_missing';
         return { available:false, reason:'ad_unit_missing' };
@@ -201,6 +215,7 @@
       }
       if(
         initialAvailability.reason === 'provider_disabled'
+        || initialAvailability.reason === 'placement_not_enabled'
         || initialAvailability.reason === 'ad_unit_missing'
       ){
         return Promise.reject(new Error(initialAvailability.reason));
@@ -456,11 +471,14 @@
       getState(){
         const scriptState = getScriptState();
         return {
+          rewardEnabled:adsenseConfig.enabled === true,
           ready:hasRewardedApi(),
           loading:!!(scriptState && scriptState.loading) || state.providerWaitInFlight || state.activeRequestInFlight,
           lastAvailabilityReason:state.lastAvailabilityReason,
           lastRequestReason:state.lastRequestReason,
-          activePlacement:state.activePlacement
+          activePlacement:state.activePlacement,
+          allowedPlacements:getAllowedPlacements(),
+          rewardedAdUnitConfigured:!!adsenseConfig.rewardedAdUnitPath
         };
       }
     };
@@ -536,18 +554,25 @@
       const adapterState = typeof adapter.getState === 'function'
         ? adapter.getState()
         : null;
+      const allowedPlacements = Object.keys(livePlacements).filter(function(placementId){
+        return livePlacements[placementId] === true;
+      });
       return {
         adapter:adapter.name,
         mockMode,
-        rewardEnabled:adapter.name === 'mock'
-          ? true
-          : (adapterState && typeof adapterState.rewardEnabled === 'boolean'
-            ? adapterState.rewardEnabled
-            : (adsenseConfig.enabled === true)),
+        rewardEnabled:adapterState && typeof adapterState.rewardEnabled === 'boolean'
+          ? adapterState.rewardEnabled
+          : (adapter.name === 'adsense_rewarded' && adsenseConfig.enabled === true),
         ready:adapter.name === 'mock'
           ? true
           : !!(adapterState && adapterState.ready),
         loading:!!(adapterState && adapterState.loading),
+        allowedPlacements:adapterState && Array.isArray(adapterState.allowedPlacements)
+          ? adapterState.allowedPlacements.slice()
+          : allowedPlacements,
+        rewardedAdUnitConfigured:adapterState && typeof adapterState.rewardedAdUnitConfigured === 'boolean'
+          ? adapterState.rewardedAdUnitConfigured
+          : !!adsenseConfig.rewardedAdUnitPath,
         lastAvailabilityReason:adapter.name === 'mock'
           ? null
           : (adapterState && adapterState.lastAvailabilityReason ? adapterState.lastAvailabilityReason : null),

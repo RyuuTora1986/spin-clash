@@ -2,13 +2,17 @@
 
 This is the current provider-phase outcome artifact for the repository as of `2026-04-18`.
 
-It is intentionally partial. It records what is already proven by local automation and current host validation, and it does not claim live provider validation that has not happened.
+It remains intentionally partial. It records what is already proven by local automation and current host validation, and it does not claim reward-provider validation that has not happened yet.
 
 ## Summary
 - Date: `2026-04-18`
 - Integrator: Codex
 - Target host baseline: GitHub Pages
 - Target browser/device baseline: Windows desktop browser
+- Company-branded host alias prepared on `2026-04-19`:
+  - `play.hakurokudo.com`
+  - `http://play.hakurokudo.com/` already serves the live site
+  - GitHub Pages DNS verification / HTTPS issuance is still pending
 - Evidence sources:
   - `docs/host-validation-report-2026-04-17-github-pages.md`
   - `docs/reward-live-adapter-status.md`
@@ -46,14 +50,14 @@ It is intentionally partial. It records what is already proven by local automati
 ## Analytics Sink
 - Sink selected:
   - PostHog JavaScript SDK behind `analyticsService`
-- Adapter status before full live validation:
+- Adapter status after live validation:
   - selected and integrated
   - committed base config still defaults to `local_buffer`
   - remote forwarding remains config-driven and optional
 - Forwarded event families:
   - current gameplay/service events emitted through `analyticsService.track(...)`
   - automation proves PostHog queueing/flush/failure handling at the service layer
-  - this report does not claim a real credentialed PostHog project send on the deployed host yet
+  - deployed-host validation on `2026-04-18` confirmed real credentialed forwarding on GitHub Pages after provider override deployment
 - Local buffering still enabled:
   - yes, and it remains the fallback source of truth
 - Failure behavior:
@@ -69,6 +73,39 @@ It is intentionally partial. It records what is already proven by local automati
 - Secret-safe confirmation:
   - adapter/debug surfaces expose state and normalized reasons only
   - current debug automation does not expose provider credentials or rewarded ad unit paths
+
+### Live PostHog Validation On 2026-04-18
+- Repository Actions variables created for live PostHog forwarding:
+  - `SPIN_CLASH_ANALYTICS_ADAPTER=posthog`
+  - `SPIN_CLASH_ANALYTICS_ENABLE_FORWARDING=true`
+  - `SPIN_CLASH_POSTHOG_ENABLED=true`
+  - `SPIN_CLASH_POSTHOG_PROJECT_API_KEY=<configured in repo variables>`
+  - `SPIN_CLASH_POSTHOG_API_HOST=https://us.i.posthog.com`
+  - `SPIN_CLASH_POSTHOG_SCRIPT_URL=https://us-assets.i.posthog.com/static/array.js`
+- Deploy runs used during closeout:
+  - `24607190399`
+  - `24607227795`
+- Live host validation target:
+  - `https://ryuutora1986.github.io/spin-clash/?debug=1`
+- Proven results:
+  - the deployed `config-providers-override.js` served the expected live PostHog override payload
+  - runtime adapter state switched to:
+    - `adapter: "posthog"`
+    - `forwardingEnabled: true`
+  - first validation event hit the expected transitional state:
+    - `forwarded: false`
+    - `reason: "posthog_loading"`
+  - after SDK bootstrap, runtime state became:
+    - `ready: true`
+    - `initialized: true`
+    - `queuedEvents: 0`
+    - `lastForwardReason: null`
+  - second validation event returned:
+    - `forwarded: true`
+- Validation note:
+  - the current implementation effectively requires `SPIN_CLASH_POSTHOG_SCRIPT_URL` for deployed live validation
+  - without that variable, the adapter can switch to `posthog` mode while remaining runtime-unavailable
+  - a browser tab that already cached older provider scripts may require a hard refresh before it reflects the newly deployed override file
 
 ## Contract Preservation
 - `rewardService.request(...)` callers unchanged:
@@ -87,8 +124,8 @@ It is intentionally partial. It records what is already proven by local automati
 | reward success | local automation proven | `scripts/check-provider-services.js` covers mock grant and live rewarded grant mapping; `npm run check:providers` passed on `2026-04-18` | real rewarded completion on the deployed target host/browser with an eligible GPT/AdSense setup |
 | reward deny | local automation proven | `scripts/check-provider-services.js` covers mock deny and live slot-close-without-grant mapping; `npm run check:providers` passed on `2026-04-18` | real user-visible deny/close behavior on the deployed target host/browser |
 | reward timeout/error | local automation proven | `scripts/check-provider-services.js` covers timeout, disabled/misconfigured provider, GPT bootstrap failure, and synchronous provider/setup failures; `npm run check:providers` passed on `2026-04-18` | real environment confirmation for provider timeout/unavailable handling on the deployed target host/browser |
-| analytics send success | local automation proven | `scripts/check-provider-services.js` covers queued PostHog send flush after SDK readiness; `npm run check:providers` passed on `2026-04-18` | real PostHog event arrival from the deployed target host/browser into a configured project |
-| analytics send fail | local automation proven | `scripts/check-provider-services.js` covers config-missing, script-failure, and top-level runtime fallback to local buffer; `npm run check:providers` passed on `2026-04-18` | real deployed-host confirmation that forwarding failure leaves local buffering intact without gameplay impact |
+| analytics send success | live deployed-host proven | deployed GitHub Pages validation on `2026-04-18` confirmed SDK bootstrap and forwarded validation event after runtime readiness; service-layer automation also passed via `scripts/check-provider-services.js` | no additional blocker for first PostHog sink validation |
+| analytics send fail | local automation proven | `scripts/check-provider-services.js` covers config-missing, script-failure, and top-level runtime fallback to local buffer; deployed-host validation also surfaced the missing-script-url failure mode before the fix | optional additional hostile-network validation only |
 
 ### Proven By Local Automation / Repo Verification
 - reward success path:
@@ -140,10 +177,14 @@ It is intentionally partial. It records what is already proven by local automati
 ### Not Yet Proven Live
 - rewarded flow against a real production-capable ad unit on the target deployed host/browser:
   - not yet validated
-- PostHog forwarding from the deployed host into a real configured project:
-  - not yet validated
 - provider policy/account eligibility and placement-fit for the actual monetization account:
   - not yet validated
+- fresh account-access detail on `2026-04-19`:
+  - `hakurokudo2024@gmail.com` currently lands on the public Ad Manager marketing page rather than an inventory workspace, and signup currently reports that an AdSense account is required first
+  - `ryuushinyu0305@gmail.com` is blocked by a supervised/age-restricted service gate
+  - `liuyinzg@gmail.com` did not produce a confirmed usable Ad Manager workspace yet, but its signup path currently reports a pending AdSense review rather than a hard ineligible-state error
+  - details recorded in:
+    - `docs/admanager-access-check-2026-04-19.md`
 
 ## Commands Run For This Report
 - `npm run check:providers`
@@ -157,10 +198,12 @@ It is intentionally partial. It records what is already proven by local automati
 - Notes:
   - provider-phase implementation proof exists locally and is now recorded
   - the public Pages host is now serving the current provider-aware runtime package again
-  - the remaining unresolved work is live/manual validation, not missing reporting or host staleness
-  - this repository now has a concrete provider-phase outcome artifact, but it is not the final launch signoff
+- live PostHog forwarding validation is now complete on the deployed GitHub Pages host
+- the remaining unresolved work is rewarded-ad live validation, not missing reporting or host staleness
+- the remaining unresolved work also still includes obtaining a real usable Ad Manager workspace/ad unit path for the intended publisher account
+- this repository now has a concrete provider-phase outcome artifact, but it is not the final launch signoff
 
 ## Follow-Up Actions
 1. Run manual rewarded-ad validation on the deployed host/browser with a real eligible GPT/AdSense configuration.
-2. Run one real PostHog forwarding validation on the deployed host with production-like provider config while preserving local-buffer fallback.
-3. Update this partial report to a final provider-phase closeout report once the live/manual checks are complete.
+2. Record the real rewarded-ad result and any account/policy constraints.
+3. Upgrade this partial report to a final provider-phase closeout report once reward validation is complete.

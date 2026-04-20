@@ -563,7 +563,14 @@
         );
       }
       if(debugService && debugService.enabled){
-        debugPanelHandle = debugService.mount(()=>({
+        debugPanelHandle = debugService.mount(function(){
+          const rewardInfo = rewardService && typeof rewardService.getAdapterInfo === 'function'
+            ? rewardService.getAdapterInfo()
+            : null;
+          const analyticsInfo = analyticsService && typeof analyticsService.getAdapterInfo === 'function'
+            ? analyticsService.getAdapterInfo()
+            : null;
+          return {
           saveVersion:storageService ? storageService.version : null,
           storagePersistent:storageService ? storageService.isPersistent() : null,
           persistenceMode:storageService && typeof storageService.getPersistenceMode === 'function'
@@ -603,50 +610,60 @@
           rewardMockMode:rewardService && typeof rewardService.getMockMode === 'function'
             ? rewardService.getMockMode()
             : null,
-          rewardAdapter:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().adapter
+          rewardAdapter:rewardInfo
+            ? rewardInfo.adapter
             : null,
-          rewardReady:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().ready
+          rewardEnabled:rewardInfo
+            ? rewardInfo.rewardEnabled
             : null,
-          rewardLoading:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().loading
+          rewardReady:rewardInfo
+            ? rewardInfo.ready
             : null,
-          rewardAvailabilityReason:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().lastAvailabilityReason
+          rewardLoading:rewardInfo
+            ? rewardInfo.loading
             : null,
-          analyticsAdapter:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().adapter
+          rewardAvailabilityReason:rewardInfo
+            ? rewardInfo.lastAvailabilityReason
             : null,
-          analyticsForwardingEnabled:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().forwardingEnabled
+          rewardAllowedPlacements:rewardInfo && Array.isArray(rewardInfo.allowedPlacements)
+            ? rewardInfo.allowedPlacements.slice()
+            : [],
+          rewardedAdUnitConfigured:rewardInfo
+            ? rewardInfo.rewardedAdUnitConfigured
             : null,
-          analyticsReady:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().ready
+          analyticsAdapter:analyticsInfo
+            ? analyticsInfo.adapter
             : null,
-          analyticsLoading:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().loading
+          analyticsForwardingEnabled:analyticsInfo
+            ? analyticsInfo.forwardingEnabled
             : null,
-          analyticsForwardReason:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().lastForwardReason
+          analyticsReady:analyticsInfo
+            ? analyticsInfo.ready
             : null,
-          analyticsInitialized:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().initialized
+          analyticsLoading:analyticsInfo
+            ? analyticsInfo.loading
             : null,
-          analyticsQueuedEvents:analyticsService && typeof analyticsService.getAdapterInfo === 'function'
-            ? analyticsService.getAdapterInfo().queuedEvents
+          analyticsForwardReason:analyticsInfo
+            ? analyticsInfo.lastForwardReason
             : null,
-          rewardRequestReason:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().lastRequestReason
+          analyticsInitialized:analyticsInfo
+            ? analyticsInfo.initialized
             : null,
-          rewardActivePlacement:rewardService && typeof rewardService.getAdapterInfo === 'function'
-            ? rewardService.getAdapterInfo().activePlacement
+          analyticsQueuedEvents:analyticsInfo
+            ? analyticsInfo.queuedEvents
+            : null,
+          rewardRequestReason:rewardInfo
+            ? rewardInfo.lastRequestReason
+            : null,
+          rewardActivePlacement:rewardInfo
+            ? rewardInfo.activePlacement
             : null,
           analyticsCount:analyticsService ? analyticsService.list().length : 0,
           lastAnalyticsEvent:analyticsService && analyticsService.list().length
             ? analyticsService.list()[analyticsService.list().length - 1].name
             : null
-        }),[
+        };
+        },[
           { label:'+200 SCRAP', run(){ addCurrency(200); return 'SCRAP ADDED'; } },
           { label:'UNLOCK HEX', run(){ unlockArenaById('hex_bowl'); return 'HEX UNLOCKED'; } },
           { label:'UNLOCK TRICK', run(){ unlockTopById('trick'); return 'TRICK UNLOCKED'; } },

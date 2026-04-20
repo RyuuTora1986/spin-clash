@@ -2,6 +2,7 @@
   const root = window.SpinClash || (window.SpinClash = {});
 
   root.createProgressionTools = function createProgressionTools(options){
+    const state = options.state || root.state || (root.state = {});
     const storageService = options.storageService || null;
     const challengeRoad = options.challengeRoad || [];
     const researchTracks = options.researchTracks || [];
@@ -234,6 +235,8 @@
       }
       getSessionTrialArenaIds().clear();
       setMode('quick');
+      state.currentArenaIndex = 0;
+      state.currentArenaId = 'circle_bowl';
       setCurrentArena(0);
       setSelectedArenaIndex(0);
       setActiveChallengeIndex(0);

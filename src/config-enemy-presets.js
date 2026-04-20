@@ -96,6 +96,54 @@
         dashCooldownScaleMax:1.08,
         useSkillOnBurstReady:true
       }
+    },
+    armor_bastion:{
+      id:'armor_bastion',
+      label:'ARMOR BASTION',
+      topId:'armor',
+      ai:{
+        seekForce:5.7,
+        speedCapScale:0.85,
+        inwardBiasRadius:4.8,
+        inwardBiasForce:9.1,
+        dashRange:3.2,
+        dashScale:1.82,
+        dashCooldownScaleMin:0.94,
+        dashCooldownScaleMax:1.18,
+        useSkillOnBurstReady:true
+      }
+    },
+    trick_duelist:{
+      id:'trick_duelist',
+      label:'TRICK DUELIST',
+      topId:'trick',
+      ai:{
+        seekForce:7.9,
+        speedCapScale:1.08,
+        inwardBiasRadius:6.0,
+        inwardBiasForce:5.3,
+        dashRange:5.1,
+        dashScale:2.62,
+        dashCooldownScaleMin:0.6,
+        dashCooldownScaleMax:0.9,
+        useSkillOnBurstReady:true
+      }
+    },
+    impact_reaper:{
+      id:'impact_reaper',
+      label:'IMPACT REAPER',
+      topId:'impact',
+      ai:{
+        seekForce:7.5,
+        speedCapScale:1.02,
+        inwardBiasRadius:5.1,
+        inwardBiasForce:7.2,
+        dashRange:4.8,
+        dashScale:2.92,
+        dashCooldownScaleMin:0.76,
+        dashCooldownScaleMax:1.0,
+        useSkillOnBurstReady:true
+      }
     }
   };
 })();

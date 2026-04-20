@@ -30,6 +30,7 @@ Output:
 
 Evaluation reference:
 - `docs/reward-provider-evaluation-sheet.md`
+- `docs/provider-recommendation-2026-04-17.md`
 
 ### Step 2: Choose Analytics Sink
 Decide:
@@ -42,6 +43,7 @@ Output:
 
 Evaluation reference:
 - `docs/analytics-sink-evaluation-sheet.md`
+- `docs/provider-recommendation-2026-04-17.md`
 
 ### Step 3: Preserve Existing Contracts
 Do not change gameplay callers.

@@ -38,8 +38,20 @@ Even during real integration:
 - mock reward mode should stay available
 - local analytics inspection should stay available
 
+### 6. Validate Provider Scaffolding First
+Run:
+
+```powershell
+npm run check:providers
+npm run verify:release
+```
+
+This must pass before any live provider path is treated as a valid base.
+
 ## What Comes Next
 - `docs/provider-phase-plan.md`
 - `docs/provider-phase-report-template.md`
 - `docs/reward-provider-evaluation-sheet.md`
 - `docs/analytics-sink-evaluation-sheet.md`
+- `docs/posthog-setup.md`
+- `docs/reward-live-adapter-status.md`

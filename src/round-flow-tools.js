@@ -2,6 +2,7 @@
   const root = window.SpinClash || (window.SpinClash = {});
 
   root.createRoundFlowTools = function createRoundFlowTools(options){
+    const state = options.state || root.state || (root.state = {});
     const uiText = options.uiText || {};
     const tops = options.tops || [];
     const economy = options.economy || {};
@@ -16,6 +17,9 @@
     const getCurrentChallengeNode = typeof options.getCurrentChallengeNode === 'function' ? options.getCurrentChallengeNode : function(){ return null; };
     const getModifierById = typeof options.getModifierById === 'function' ? options.getModifierById : function(){ return { id:'standard', player:{}, enemy:{}, rules:{} }; };
     const getArenaLabel = typeof options.getArenaLabel === 'function' ? options.getArenaLabel : function(){ return 'ARENA'; };
+    const getArenaConfig = typeof options.getArenaConfig === 'function' ? options.getArenaConfig : function(index){
+      return { id:index === 0 ? 'circle_bowl' : 'unknown_arena' };
+    };
     const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
     const getCurrentArena = typeof options.getCurrentArena === 'function' ? options.getCurrentArena : function(){ return 0; };
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
@@ -185,6 +189,9 @@
         if(node){
           currentEnemyPreset = getEnemyPresetById(node.enemyPresetId);
           const enemyTopIndex = currentEnemyPreset ? findTopIndexById(currentEnemyPreset.topId) : -1;
+          const arenaConfig = getArenaConfig(node.arenaIndex);
+          state.currentArenaIndex = node.arenaIndex;
+          state.currentArenaId = arenaConfig && arenaConfig.id ? arenaConfig.id : null;
           setCurrentArena(node.arenaIndex);
           setSelectedArenaIndex(node.arenaIndex);
           setCurrentEnemyPresetId(currentEnemyPreset ? currentEnemyPreset.id : null);

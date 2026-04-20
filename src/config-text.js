@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   const root = window.SpinClash;
 
   function cloneLocale(value){
@@ -34,6 +34,12 @@
     homeTopCountLabel:'UNLOCKED',
     homeTopUnlocked:'UNLOCKED',
     homeTopLocked:'LOCKED',
+    topSourceStarter:'STARTER',
+    topSourceRoadReward:'ROAD REWARD',
+    topSourceWorkshop:'WORKSHOP',
+    topSourceRoadShop:'ROAD REWARD / WORKSHOP',
+    topUnlockRoadRank:'Clear {rank} to unlock',
+    topUnlockShopCost:'Unlock for {cost} {currency}',
     homeTopLockedSkill:'Silhouette only. Full ability data unlocks later.',
     homeTopLockedHint:'Unlock this top to reveal its full shape and material finish.',
     homeTopLockedHintRoad:'Clear deeper Championship Path nodes to reveal this top.',
@@ -49,7 +55,10 @@
     quickArenaDescriptions:{
       circle_bowl:'Balanced circular bowl with the cleanest center-control reads.',
       heart_bowl:'Heart bowl that exaggerates angle pressure and edge decisions.',
-      hex_bowl:'Hex bowl with harsher rebounds and tighter escape lanes.'
+      hex_bowl:'Hex bowl with harsher rebounds and tighter escape lanes.',
+      cyclone_bowl:'Steeper circle bowl with an earlier hot rim and faster center collapse.',
+      rose_bowl:'Pinched heart bowl that rewards angled launches and punishes loose recoveries.',
+      octa_bowl:'Eight-wall bowl with chained redirects and shorter hazard-safe lanes.'
     },
     quickTopTitle:'DEPLOYED TOP',
     quickTopLocked:'LOCKED',
@@ -65,7 +74,7 @@
     quickStartArenaTrialButton:'WATCH AD TRIAL',
     quickStartArenaTrialHint:'SCRAP is short. Watch an ad to activate a session trial for this arena.',
     challengeSubtitle:'CHAMPIONSHIP PATH',
-    arenaOptions:['CIRCLE BOWL','HEART BOWL','HEX BOWL'],
+    arenaOptions:['CIRCLE BOWL','HEART BOWL','HEX BOWL','CYCLONE BOWL','ROSE BOWL','OCTA BOWL'],
     fightButton:'START MATCH',
     challengeButton:'ENTER PATH',
     roundNext:'Next round starts shortly',
@@ -129,6 +138,7 @@
     roadRankUnlocked:'UNLOCKED',
     roadRankHint:'Select a higher rank for stronger enemies and better rewards.',
     roadRankRewardLabel:'Reward',
+    roadRankRewardTopLabel:'Top',
     challengeLocked:'Clear the current node to unlock the next duel.',
     challengeComplete:'Road clear complete. Replay for better rewards.',
     challengeFail:'Challenge failed. Use one continue or retry the node.',
@@ -281,6 +291,86 @@
         skill:'☄ Phantom · Sharper edge hunting and burst tempo.',
         pitch:'Predatory drift variant built for arena abuse and clutch scrambles.',
         traits:['Best on risky walls','Excellent comeback pressure','Lowest durability']
+      },
+      {
+        icon:'🜂',
+        type:'VANGUARD',
+        stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
+        skill:'🜂 Fly Charge · Lower angle speed, stronger lane hold.',
+        pitch:'Stable impact frame that keeps its nose buried in center contact.',
+        traits:['Wider launch window','Keeps contact longer','Lower burst pace']
+      },
+      {
+        icon:'✺',
+        type:'NOVA',
+        stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
+        skill:'✺ Fly Charge · Hyper-fast strike with a short burnout window.',
+        pitch:'Glass-cannon charger that explodes through one clean line and fades if stalled.',
+        traits:['Fastest impact entry','Short dash window','Needs decisive angles']
+      },
+      {
+        icon:'⛏',
+        type:'TREMOR',
+        stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
+        skill:'⛏ Fly Charge · Heavy slam that keeps collision pressure active longer.',
+        pitch:'Dense impact shell that trades some tempo for brutal sustained contact.',
+        traits:['Heavy collision grip','Great versus guards','Slowest impact recovery']
+      },
+      {
+        icon:'⛨',
+        type:'BASTION',
+        stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
+        skill:'⛨ Fortress Pulse · Deep anchor pulse with extra outward force.',
+        pitch:'Full-wall defender built to survive rushes and reset the center every time.',
+        traits:['Most stable pulse','Huge anti-rush window','Very low chase speed']
+      },
+      {
+        icon:'⬡',
+        type:'AEGIS',
+        stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
+        skill:'⬡ Fortress Pulse · Cleaner counter-pulse with faster re-entry.',
+        pitch:'Mobile armor hybrid that converts defense into an immediate retake line.',
+        traits:['Balanced armor frame','Fast center retakes','Lower stall power']
+      },
+      {
+        icon:'🗿',
+        type:'MAMMOTH',
+        stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
+        skill:'🗿 Fortress Pulse · Massive shock pulse with extreme self-anchor.',
+        pitch:'Maximum-weight control body that dares the rival to collide first.',
+        traits:['Highest raw walling','Massive knockback','Weakest pursuit']
+      },
+      {
+        icon:'✧',
+        type:'MIRROR',
+        stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
+        skill:'✧ Fortress Pulse · Flexible pulse timing with smoother carry-through.',
+        pitch:'Reflective armor shell that slides out of bad contact and answers back.',
+        traits:['Best armor mobility','Safer resets','Less pure stopping power']
+      },
+      {
+        icon:'☣',
+        type:'VENOM',
+        stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
+        skill:'☣ Phantom · Toxic drift burst that keeps clipping the flank.',
+        pitch:'Needle-like trick variant that wins by repeated edge bites and poison tempo.',
+        traits:['Relentless flank pressure','Very fast edge loops','Punishes hesitation']
+      },
+      {
+        icon:'◎',
+        type:'ORBIT',
+        stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
+        skill:'◎ Phantom · Longer orbit phase with cleaner wall resets.',
+        pitch:'Control-minded trick shell that circles wider and chooses safer return lines.',
+        traits:['Longest phantom uptime','Strong arena resets','Lower burst impact']
+      },
+      {
+        icon:'⌁',
+        type:'GLITCH',
+        stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
+        skill:'⌁ Phantom · Chaotic side-cut with the sharpest lateral break.',
+        pitch:'Unstable duel thief that wins by making its own impossible angle.',
+        traits:['Wildest drift break','Hardest to read','Zero forgiveness']
       }
     ]
   };
@@ -306,6 +396,12 @@
     homeTopCountLabel:'已解锁',
     homeTopUnlocked:'已解锁',
     homeTopLocked:'未解锁',
+    topSourceStarter:'初始',
+    topSourceRoadReward:'道路奖励',
+    topSourceWorkshop:'工坊',
+    topSourceRoadShop:'道路奖励 / 工坊',
+    topUnlockRoadRank:'通关 {rank} 后解锁',
+    topUnlockShopCost:'花费 {cost} {currency} 解锁',
     homeTopLockedSkill:'当前仅显示暗影预览，完整能力信息将在解锁后公开。',
     homeTopLockedHint:'解锁后可查看它的完整材质、轮廓与能力说明。',
     homeTopLockedHintRoad:'继续推进冠军之路更深节点后可解锁这只陀螺。',
@@ -321,7 +417,10 @@
     quickArenaDescriptions:{
       circle_bowl:'标准圆形碗场，最容易看清中圈争夺。',
       heart_bowl:'心形碗场会放大角度压迫与边缘决策。',
-      hex_bowl:'六角碗场反弹更硬，脱离路线更紧。'
+      hex_bowl:'六角碗场反弹更硬，脱离路线更紧。',
+      cyclone_bowl:'更陡的圆碗场，危险外圈更早开始，中圈塌缩更快。',
+      rose_bowl:'收腰后的心形碗场更吃斜角发射，也更惩罚松散回收。',
+      octa_bowl:'八边折返碗场会连续折射，安全走线更短。'
     },
     quickTopTitle:'出战陀螺',
     quickTopLocked:'未解锁',
@@ -337,7 +436,7 @@
     quickStartArenaTrialButton:'广告试玩',
     quickStartArenaTrialHint:'当前 SCRAP 不足，可看广告开启该场地的本次会话试用。',
     challengeSubtitle:'冠军之路',
-    arenaOptions:['圆形碗场','心形碗场','六角碗场'],
+    arenaOptions:['圆形碗场','心形碗场','六角碗场','旋风碗场','玫心碗场','八棱碗场'],
     fightButton:'开始对战',
     challengeButton:'进入征途',
     roundNext:'下一回合即将开始',
@@ -401,6 +500,7 @@
     roadRankUnlocked:'已解锁',
     roadRankHint:'提高段位可遭遇更强的敌人，并获得更高奖励。',
     roadRankRewardLabel:'奖励',
+    roadRankRewardTopLabel:'奖励陀螺',
     challengeLocked:'先通过当前节点，才能解锁下一场对决。',
     challengeComplete:'冠军之路已通关，可重复挑战以获取更高奖励。',
     challengeFail:'挑战失败。你可以使用一次继续，或重试当前节点。',
@@ -553,6 +653,86 @@
         skill:'☄ 幻袭 · 更锐利的边线猎杀与爆发节奏。',
         pitch:'为风险边墙而生的漂移掠食者，残局反扑尤其凶狠。',
         traits:['危险墙面表现最佳','残局压迫力极强','耐久最低']
+      },
+      {
+        icon:'🜂',
+        type:'先锋型',
+        stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
+        skill:'🜂 飞冲 · 角度速度更稳，贴线咬合更强。',
+        pitch:'稳控型冲击机体，擅长把正面对撞留在自己熟悉的中圈里。',
+        traits:['发射窗口更宽','更能咬住碰撞','爆发节奏偏慢']
+      },
+      {
+        icon:'✺',
+        type:'新星型',
+        stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
+        skill:'✺ 飞冲 · 极高速突击，但燃尽窗口很短。',
+        pitch:'玻璃大炮式冲击壳，只要线路够干净，就会在一瞬间完成兑现。',
+        traits:['冲击起速最快','突击时间最短','非常吃发射角度']
+      },
+      {
+        icon:'⛏',
+        type:'震岳型',
+        stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
+        skill:'⛏ 飞冲 · 重压式撞击，碰撞压迫维持更久。',
+        pitch:'高密度冲击壳，用持续贴身压制换取更残暴的正面收益。',
+        traits:['重碰撞压制强','打盾能力优秀','恢复节奏最慢']
+      },
+      {
+        icon:'⛨',
+        type:'堡垒型',
+        stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
+        skill:'⛨ 堡垒脉冲 · 更深站桩，外震力更强。',
+        pitch:'全壁垒防御机体，专门用来吃掉冲脸并一次次夺回中心。',
+        traits:['脉冲最稳','反冲窗口最大','追击速度极低']
+      },
+      {
+        icon:'⬡',
+        type:'圣盾型',
+        stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
+        skill:'⬡ 堡垒脉冲 · 更利落的反震节奏，回收更快。',
+        pitch:'机动化装甲分支，能把防守顺势接成下一次抢中。',
+        traits:['装甲里最均衡','回中速度快','站桩能力较低']
+      },
+      {
+        icon:'🗿',
+        type:'巨象型',
+        stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
+        skill:'🗿 堡垒脉冲 · 极重震波，自身锚定也最强。',
+        pitch:'最大重量的控场机体，逼对手先撞上来再把节奏全部拿走。',
+        traits:['纯硬度最高','击退最凶','追击最差']
+      },
+      {
+        icon:'✧',
+        type:'镜盾型',
+        stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
+        skill:'✧ 堡垒脉冲 · 释放更灵活，滑出碰撞后能继续接线。',
+        pitch:'镜面装甲壳能从坏接触里滑开，再立刻回身反震。',
+        traits:['装甲里最灵活','重置更安全','纯阻停稍弱']
+      },
+      {
+        icon:'☣',
+        type:'毒牙型',
+        stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
+        skill:'☣ 幻袭 · 带毒性的切侧漂移，会不断啃咬外线。',
+        pitch:'像针一样的诡步分支，靠连续外线小咬口把局面拖进自己的节奏。',
+        traits:['侧翼压迫持续','边线循环极快','专治犹豫']
+      },
+      {
+        icon:'◎',
+        type:'环轨型',
+        stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
+        skill:'◎ 幻袭 · 轨道阶段更长，贴墙回收更稳。',
+        pitch:'偏控场的诡步机体，会绕更大的圈再选择更安全的回切线。',
+        traits:['幻袭持续最长','场地重置能力强','爆发冲击偏弱']
+      },
+      {
+        icon:'⌁',
+        type:'乱频型',
+        stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
+        skill:'⌁ 幻袭 · 最激进的横切漂移，切线几乎无法预读。',
+        pitch:'不稳定的偷局怪物，专门靠自己制造离谱角度来赢。',
+        traits:['横漂断线最狠','最难被读懂','几乎没有容错']
       }
     ]
   };
@@ -578,6 +758,12 @@
     homeTopCountLabel:'解放済み',
     homeTopUnlocked:'解放済み',
     homeTopLocked:'未解放',
+    topSourceStarter:'スターター',
+    topSourceRoadReward:'ロード報酬',
+    topSourceWorkshop:'ワークショップ',
+    topSourceRoadShop:'ロード報酬 / ワークショップ',
+    topUnlockRoadRank:'{rank} クリアで解放',
+    topUnlockShopCost:'{cost} {currency} で解放',
     homeTopLockedSkill:'現在はシルエットのみ。能力詳細は解放後に表示される。',
     homeTopLockedHint:'解放すると素材感、輪郭、能力説明の全体が見えるようになる。',
     homeTopLockedHintRoad:'チャンピオンロードをさらに進めるとこのトップを解放できる。',
@@ -593,7 +779,10 @@
     quickArenaDescriptions:{
       circle_bowl:'中央制圧の読みが最も素直に出る標準ボウル。',
       heart_bowl:'角度圧と外周判断を強く問うハートボウル。',
-      hex_bowl:'反射が硬く、逃げ道が狭いヘックスボウル。'
+      hex_bowl:'反射が硬く、逃げ道が狭いヘックスボウル。',
+      cyclone_bowl:'傾斜が強く、危険帯も早く始まる高速サークルボウル。',
+      rose_bowl:'くびれたハート形が斜め射出と復帰判断を強く問う変形ボウル。',
+      octa_bowl:'八面の返りが連鎖し、逃げ道がさらに短い多角ボウル。'
     },
     quickTopTitle:'出撃トップ',
     quickTopLocked:'未解放',
@@ -609,7 +798,7 @@
     quickStartArenaTrialButton:'広告でトライアル',
     quickStartArenaTrialHint:'SCRAP が不足しているため、広告視聴でこのアリーナのセッショントライアルを開始する。',
     challengeSubtitle:'チャンピオンロード',
-    arenaOptions:['サークルボウル','ハートボウル','ヘックスボウル'],
+    arenaOptions:['サークルボウル','ハートボウル','ヘックスボウル','サイクロンボウル','ローズボウル','オクタボウル'],
     fightButton:'対戦開始',
     challengeButton:'ロード開始',
     roundNext:'次のラウンドがまもなく始まる',
@@ -673,6 +862,7 @@
     roadRankUnlocked:'解放済み',
     roadRankHint:'高いランクを選ぶほど敵は強くなり、報酬も増える。',
     roadRankRewardLabel:'報酬',
+    roadRankRewardTopLabel:'報酬トップ',
     challengeLocked:'次の対戦を解放するには現在のノードを突破する必要がある。',
     challengeComplete:'ロード制覇済み。繰り返し挑戦して報酬を伸ばせる。',
     challengeFail:'挑戦失敗。1回だけコンティニューするか、ノードを再挑戦できる。',
@@ -825,6 +1015,86 @@
         skill:'☄ ファントム · さらに鋭い外周狩りとバースト展開。',
         pitch:'危険な壁際を獲物に変える、終盤の切り返しが凶悪なドリフト捕食者。',
         traits:['危険な壁面で最強','逆転圧が非常に高い','耐久は最も低い']
+      },
+      {
+        icon:'🜂',
+        type:'先鋒型',
+        stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
+        skill:'🜂 フライチャージ · 角度速度を抑え、ライン保持を強める。',
+        pitch:'安定した衝撃フレームで、正面接触を自分の中央戦へ固定しやすい。',
+        traits:['発射許容が広い','接触維持が長い','バースト速度は遅め']
+      },
+      {
+        icon:'✺',
+        type:'ノヴァ型',
+        stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
+        skill:'✺ フライチャージ · 超高速の一撃だが、燃え尽きまでが短い。',
+        pitch:'一度のきれいな侵入で成果を奪う、ガラス砲寄りの衝撃シェル。',
+        traits:['衝撃の初速が最速','突進時間が最短','角度精度が必須']
+      },
+      {
+        icon:'⛏',
+        type:'震動型',
+        stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
+        skill:'⛏ フライチャージ · 重い叩き付けで接触圧を長く残す。',
+        pitch:'高密度な衝撃シェルで、テンポを落としてでも正面の継続圧を取る。',
+        traits:['重接触が強い','ガード破り向き','立て直しは最遅']
+      },
+      {
+        icon:'⛨',
+        type:'堡塁型',
+        stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
+        skill:'⛨ フォートレスパルス · 深く踏ん張り、外への押し出しを強める。',
+        pitch:'全面防壁の守備機で、突進を受け止めて中央を取り返し続ける。',
+        traits:['パルス安定度最大','迎撃窓が広い','追撃速度は極低']
+      },
+      {
+        icon:'⬡',
+        type:'イージス型',
+        stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
+        skill:'⬡ フォートレスパルス · 切り返しが軽く、再進入も速い。',
+        pitch:'機動寄りの装甲派生で、防御からそのまま中央奪還へつなげやすい。',
+        traits:['装甲内で最も均衡','中央へ戻るのが速い','停滞力はやや低い']
+      },
+      {
+        icon:'🗿',
+        type:'マンモス型',
+        stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
+        skill:'🗿 フォートレスパルス · 最大級の衝撃波と自己固定力。',
+        pitch:'重量最大の制圧機体で、相手に先にぶつからせてから全部を奪い返す。',
+        traits:['純粋な硬さが最大','吹き飛ばし最強','追撃性能は最低']
+      },
+      {
+        icon:'✧',
+        type:'鏡盾型',
+        stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
+        skill:'✧ フォートレスパルス · 柔らかく受け流し、返しの滑りも残す。',
+        pitch:'鏡面装甲で悪い接触から滑り抜け、すぐに反撃へ転じる。',
+        traits:['装甲で最も軽快','仕切り直しが安全','停止力は控えめ']
+      },
+      {
+        icon:'☣',
+        type:'毒牙型',
+        stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
+        skill:'☣ ファントム · 側面を噛み続ける毒のようなドリフト。',
+        pitch:'針のような奇策派生で、何度も外周を削って相手のテンポを壊す。',
+        traits:['側圧が止まらない','外周ループが非常に速い','迷いを咎める']
+      },
+      {
+        icon:'◎',
+        type:'軌道型',
+        stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
+        skill:'◎ ファントム · 周回時間が長く、壁際リセットが安定する。',
+        pitch:'やや制圧寄りの奇策シェルで、大きく回ってから安全な戻り線を選ぶ。',
+        traits:['ファントム時間が最長','場面の作り直しが得意','瞬間火力は弱め']
+      },
+      {
+        icon:'⌁',
+        type:'乱調型',
+        stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
+        skill:'⌁ ファントム · 横切りが最も鋭く、軌道が読まれにくい。',
+        pitch:'自分で不条理な角度を作って勝つ、不安定な盗み勝ち特化機。',
+        traits:['横漂いが最凶','読みづらさ最大','許容ミスはゼロに近い']
       }
     ]
   };
@@ -842,14 +1112,27 @@
       arenas:{
         circle_bowl:{ label:'圆形碗场' },
         heart_bowl:{ label:'心形碗场' },
-        hex_bowl:{ label:'六角碗场' }
+        hex_bowl:{ label:'六角碗场' },
+        cyclone_bowl:{ label:'旋风碗场' },
+        rose_bowl:{ label:'玫心碗场' },
+        octa_bowl:{ label:'八棱碗场' }
       },
       tops:{
         impact:{ name:'冲击' },
         armor:{ name:'装甲' },
         trick:{ name:'诡步' },
         impact_breaker:{ name:'破阵' },
-        trick_raider:{ name:'掠袭' }
+        trick_raider:{ name:'掠袭' },
+        impact_vanguard:{ name:'先锋' },
+        impact_nova:{ name:'新星' },
+        impact_tremor:{ name:'震岳' },
+        armor_bastion:{ name:'堡垒' },
+        armor_aegis:{ name:'圣盾' },
+        armor_mammoth:{ name:'巨象' },
+        armor_mirror:{ name:'镜盾' },
+        trick_venom:{ name:'毒牙' },
+        trick_orbit:{ name:'环轨' },
+        trick_glitch:{ name:'乱频' }
       },
       research:{
         spin_core:{
@@ -888,8 +1171,8 @@
       },
       roadRanks:{
         rank_i:{ label:'RANK I', description:'基础赛事调校与标准奖励。' },
-        rank_ii:{ label:'RANK II', description:'敌方续航更强，SCRAP 奖励更高。' },
-        rank_iii:{ label:'RANK III', description:'最高压力的征途段位，同时拥有最高奖励倍率。' }
+        rank_ii:{ label:'RANK II', description:'敌方调校更锋利，但 SCRAP 奖励加成仍保持克制。' },
+        rank_iii:{ label:'RANK III', description:'最终征途压力更高，敌方爬升更强，但不会变成失控刷钱档。' }
       },
       enemyPresets:{
         armor_standard:{ label:'装甲锚点' },
@@ -897,7 +1180,10 @@
         impact_standard:{ label:'冲击重拳' },
         armor_ram:{ label:'装甲冲槌' },
         trick_drifter:{ label:'诡步漂移' },
-        impact_blitz:{ label:'冲击闪击' }
+        impact_blitz:{ label:'冲击闪击' },
+        armor_bastion:{ label:'装甲堡垒' },
+        trick_duelist:{ label:'诡步决斗手' },
+        impact_reaper:{ label:'冲击收割者' }
       },
       modifiers:{
         standard:{ label:'标准', description:'没有额外规则。' },
@@ -917,9 +1203,9 @@
         'node-4':{ name:'破甲试炼', chapterLabel:'场地巡回', previewLabel:'解锁战', previewDesc:'更硬的装甲变体会借心形碗场逼你做出更重的走线承诺。' },
         'node-5':{ name:'紧迫时限', chapterLabel:'场地巡回', previewLabel:'六角漂移', previewDesc:'漂移型诡步预设加上更低转储备，会严惩凌乱的贴墙脱出。' },
         'node-6':{ name:'压地强攻', chapterLabel:'场地巡回', previewLabel:'检查点首领', previewDesc:'第二场检查点对决。更快的爆发压力，会把六角碗场变成一场短跑战。' },
-        'node-7':{ name:'争夺中圈', chapterLabel:'宿敌连战', previewLabel:'宿敌压迫', previewDesc:'回到圆形碗场后，漂移空间更少，你必须更稳地咬住中心。' },
-        'node-8':{ name:'破线复仇', chapterLabel:'宿敌连战', previewLabel:'复仇战', previewDesc:'一场更干净的再战，用来检验你是否真的读懂了诡步对局。' },
-        'node-9':{ name:'半决强碰', chapterLabel:'冠军决赛', previewLabel:'半决赛', previewDesc:'先经受一场偏控场的半决赛，再迎来最终的撞击冲刺。' },
+        'node-7':{ name:'争夺中圈', chapterLabel:'宿敌连战', previewLabel:'锁定中圈', previewDesc:'堡垒型装甲预设加上更重的脚感，会逼你先赢下圆形碗场中心，再谈后续节奏。' },
+        'node-8':{ name:'破线复仇', chapterLabel:'宿敌连战', previewLabel:'刀锋对决', previewDesc:'骤死规则下对上全压型诡步决斗手，任何一次糟糕发射都会立刻付出代价。' },
+        'node-9':{ name:'半决强碰', chapterLabel:'冠军决赛', previewLabel:'半决赛', previewDesc:'半决赛会变成一场残酷的冲击追猎，只要贴地失误就会被立刻连段惩罚。' },
         'node-10':{ name:'王冠决战', chapterLabel:'冠军决赛', previewLabel:'决赛', previewDesc:'最终冠军战。节奏更快、路线更险，没有任何安全余量。' }
       }
     },
@@ -927,14 +1213,27 @@
       arenas:{
         circle_bowl:{ label:'サークルボウル' },
         heart_bowl:{ label:'ハートボウル' },
-        hex_bowl:{ label:'ヘックスボウル' }
+        hex_bowl:{ label:'ヘックスボウル' },
+        cyclone_bowl:{ label:'サイクロンボウル' },
+        rose_bowl:{ label:'ローズボウル' },
+        octa_bowl:{ label:'オクタボウル' }
       },
       tops:{
         impact:{ name:'インパクト' },
         armor:{ name:'アーマー' },
         trick:{ name:'トリック' },
         impact_breaker:{ name:'ブレイカー' },
-        trick_raider:{ name:'レイダー' }
+        trick_raider:{ name:'レイダー' },
+        impact_vanguard:{ name:'ヴァンガード' },
+        impact_nova:{ name:'ノヴァ' },
+        impact_tremor:{ name:'トレマー' },
+        armor_bastion:{ name:'バスティオン' },
+        armor_aegis:{ name:'イージス' },
+        armor_mammoth:{ name:'マンモス' },
+        armor_mirror:{ name:'ミラー' },
+        trick_venom:{ name:'ヴェノム' },
+        trick_orbit:{ name:'オービット' },
+        trick_glitch:{ name:'グリッチ' }
       },
       research:{
         spin_core:{
@@ -973,8 +1272,8 @@
       },
       roadRanks:{
         rank_i:{ label:'RANK I', description:'基本の大会調整と標準報酬。' },
-        rank_ii:{ label:'RANK II', description:'敵の持久力が増し、SCRAP の配当も重くなる。' },
-        rank_iii:{ label:'RANK III', description:'最大報酬倍率と引き換えに、終盤級の圧力が常にかかる。' }
+        rank_ii:{ label:'RANK II', description:'敵の調整は鋭くなるが、SCRAP ボーナスは抑制されたまま。' },
+        rank_iii:{ label:'RANK III', description:'最終ロード級の圧力と敵成長がかかるが、報酬効率は暴走させない。' }
       },
       enemyPresets:{
         armor_standard:{ label:'アーマーアンカー' },
@@ -982,7 +1281,10 @@
         impact_standard:{ label:'インパクトブルーザー' },
         armor_ram:{ label:'アーマーラム' },
         trick_drifter:{ label:'トリックドリフター' },
-        impact_blitz:{ label:'インパクトブリッツ' }
+        impact_blitz:{ label:'インパクトブリッツ' },
+        armor_bastion:{ label:'アーマーバスティオン' },
+        trick_duelist:{ label:'トリックデュエリスト' },
+        impact_reaper:{ label:'インパクトリーパー' }
       },
       modifiers:{
         standard:{ label:'スタンダード', description:'特別なルールなし。' },
@@ -1002,9 +1304,9 @@
         'node-4':{ name:'ガードブレイク', chapterLabel:'アリーナサーキット', previewLabel:'アンロック戦', previewDesc:'さらに硬いアーマー派生が、ハートボウルで重いライン選択を迫る。' },
         'node-5':{ name:'タイトクロック', chapterLabel:'アリーナサーキット', previewLabel:'ヘックスドリフト', previewDesc:'ドリフト型トリックと低スピン備蓄が、壁際の雑な離脱を罰する。' },
         'node-6':{ name:'フロアプレス', chapterLabel:'アリーナサーキット', previewLabel:'チェックポイントボス', previewDesc:'二つ目のチェックポイント戦。速いバースト圧がヘックスボウルを短距離戦に変える。' },
-        'node-7':{ name:'センタークレーム', chapterLabel:'ライバルシリーズ', previewLabel:'ライバル圧力', previewDesc:'サークルボウルへ戻ると、漂う余地は少なく、中央維持の精度が問われる。' },
-        'node-8':{ name:'ブレイクライン', chapterLabel:'ライバルシリーズ', previewLabel:'リベンジデュエル', previewDesc:'より純度の高い再戦。トリック対面を本当に理解したかが試される。' },
-        'node-9':{ name:'セミクラッシュ', chapterLabel:'チャンピオンシップ', previewLabel:'準決勝', previewDesc:'最終衝突スプリントの前に、リング支配を問う準決勝が待つ。' },
+        'node-7':{ name:'センタークレーム', chapterLabel:'ライバルシリーズ', previewLabel:'センターロック', previewDesc:'要塞型アーマーと重い足回りが、まず中央を奪い切れるかを厳しく問う。' },
+        'node-8':{ name:'ブレイクライン', chapterLabel:'ライバルシリーズ', previewLabel:'ナイフエッジ', previewDesc:'サドンデス下で全振りのトリックデュエリストと再戦。雑な発射は即座に致命傷になる。' },
+        'node-9':{ name:'セミクラッシュ', chapterLabel:'チャンピオンシップ', previewLabel:'準決勝', previewDesc:'準決勝は苛烈なインパクト追撃戦へ変わり、地上での小さなミスがそのまま被弾ルートになる。' },
         'node-10':{ name:'クラウンクラッシュ', chapterLabel:'チャンピオンシップ', previewLabel:'ファイナル', previewDesc:'最終決戦。テンポは速く、ルートは不安定で、逃げ場はない。' }
       }
     }

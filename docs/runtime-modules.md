@@ -16,18 +16,28 @@ This document maps the current runtime split so future work can target the right
   - Arena definitions and unlock data
 - `src/config-modifiers.js`
   - Match modifier definitions
+- `src/config-enemy-presets.js`
+  - Enemy preset table mapping Challenge Road nodes to enemy tops and AI tuning
+- `src/config-economy.js`
+  - Shared reward, continue, and default runtime tuning values
 - `src/config-challenge-road.js`
-  - Challenge Road node sequence
+  - Challenge Road node sequence referencing `enemyPresetId`
+- `src/config-providers.js`
+  - Provider adapter defaults and live-integration config surface
 
 ## Services
+- `src/provider-runtime-tools.js`
+  - Shared third-party script loading, readiness checks, and provider capability probes
 - `src/storage-service.js`
   - Local save read/write and versioned persistence
 - `src/analytics-service.js`
-  - Inspectable analytics event buffer abstraction
+  - Inspectable analytics event buffer plus optional PostHog forwarding adapter
 - `src/reward-service.js`
-  - Rewarded flow abstraction and mock completion path
+  - Rewarded flow abstraction, mock adapter, and live AdSense/GPT boundary
 - `src/share-service.js`
   - Share abstraction with browser fallback
+- `src/share-card-tools.js`
+  - Lightweight SVG result-card generation for result-share artifacts
 - `src/debug-service.js`
   - Debug query detection and lightweight debug helpers
 

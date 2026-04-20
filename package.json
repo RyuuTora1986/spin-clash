@@ -12,6 +12,7 @@
     "check:localserver": "node scripts/check-local-server.js",
     "check:dom": "node scripts/check-dom-contract.js",
     "check:config": "node scripts/check-config.js",
+    "check:arenas": "node scripts/check-arena-expansion.js",
     "check:nextphase": "node scripts/check-next-phase-config.js",
     "check:analytics": "node scripts/check-analytics-events.js",
     "check:storage": "node scripts/check-storage-service.js",
@@ -39,7 +40,7 @@
     "check:matchflow": "node scripts/check-match-flow.js",
     "check:share": "node scripts/check-share-service.js",
     "check:ui": "node scripts/check-ui-actions.js",
-    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui",
+    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:arenas && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui",
     "verify:release": "npm run preflight && npm run build:static && npm run check:static"
   },
   "repository": {

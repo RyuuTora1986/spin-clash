@@ -219,6 +219,19 @@ function main() {
     signatureSkills['Phantom'].variants && signatureSkills['Phantom'].variants.raider,
     'Expected Phantom registry to define a Raider variant tuning block.'
   );
+  tops
+    .filter((top) => top && top.variant && top.variant !== 'core')
+    .forEach((top) => {
+      const skillId = top.combat && top.combat.actions && top.combat.actions.signature
+        ? top.combat.actions.signature.skillId
+        : top.skill;
+      const registryEntry = signatureSkills[skillId];
+      assert(registryEntry, `Expected signature registry entry for ${skillId}.`);
+      assert(
+        registryEntry.variants && registryEntry.variants[top.variant],
+        `Expected ${skillId} registry to define a ${top.variant} variant tuning block for ${top.id}.`
+      );
+    });
   tops.forEach((top) => {
     const skillId = top && top.combat && top.combat.actions && top.combat.actions.signature
       ? top.combat.actions.signature.skillId
@@ -317,6 +330,78 @@ function main() {
   assert(raiderUser.phantomT > 1.2, 'Expected Raider Phantom to extend the phantom window beyond the base skill.');
   assert(Math.abs(raiderUser.vz) > 0.5, 'Expected Raider Phantom to add a visible lateral drift component.');
   assert(raiderTarget.vx > 4.5, 'Expected Raider Phantom to push harder than the base Phantom knockback.');
+
+  const novaTarget = { x: 2, z: 0, vx: 0, vz: 0 };
+  const novaUser = {
+    isPlayer: true,
+    x: 0,
+    z: 0,
+    vx: 0,
+    vz: 0,
+    template: {
+      id: 'impact_nova',
+      variant: 'nova',
+      spd: 10,
+      skill: 'Fly Charge',
+      combat: {
+        actions: {
+          signature: { skillId: 'Fly Charge' }
+        }
+      }
+    }
+  };
+  variantTools.fireSkill(novaUser, novaTarget);
+  assert(novaUser.vx > 24, 'Expected Nova Fly Charge to exceed the base charge speed.');
+  assert(novaUser.dashT < 0.28, 'Expected Nova Fly Charge to shorten the direct dash window.');
+
+  const mammothTarget = { x: 2, z: 0, vx: 0, vz: 0, spin: 100, hp: 40 };
+  const mammothUser = {
+    isPlayer: true,
+    x: 0,
+    z: 0,
+    vx: 8,
+    vz: 0,
+    tiltVX: 1,
+    tiltVZ: 0,
+    template: {
+      id: 'armor_mammoth',
+      variant: 'mammoth',
+      spd: 10,
+      skill: 'Fortress Pulse',
+      combat: {
+        actions: {
+          signature: { skillId: 'Fortress Pulse' }
+        }
+      }
+    }
+  };
+  variantTools.fireSkill(mammothUser, mammothTarget);
+  assert(mammothTarget.vx > 6.8, 'Expected Mammoth Fortress Pulse to knock harder than the base pulse.');
+  assert(Math.abs(mammothUser.vx) < 2.08, 'Expected Mammoth Fortress Pulse to anchor the user harder than the base pulse.');
+
+  const glitchTarget = { x: 2, z: 0, vx: 0, vz: 0 };
+  const glitchUser = {
+    isPlayer: true,
+    x: 0,
+    z: 0,
+    vx: 0,
+    vz: 0,
+    template: {
+      id: 'trick_glitch',
+      variant: 'glitch',
+      spd: 10,
+      skill: 'Phantom',
+      combat: {
+        actions: {
+          signature: { skillId: 'Phantom' }
+        }
+      }
+    }
+  };
+  variantTools.fireSkill(glitchUser, glitchTarget);
+  assert(glitchUser.phantomT > 1.2, 'Expected Glitch Phantom to extend the phantom window beyond the base skill.');
+  assert(Math.abs(glitchUser.vz) > 1.2, 'Expected Glitch Phantom to add a stronger lateral drift component.');
+  assert(glitchTarget.vx > 4.8, 'Expected Glitch Phantom to push harder than the base Phantom knockback.');
 
   console.log('Signature skill check passed.');
 }

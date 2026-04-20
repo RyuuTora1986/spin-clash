@@ -1,22 +1,49 @@
 (function(){
   const root = window.SpinClash;
+
+  function createActions(skillId){
+    return {
+      dash:{ id:'dash', key:'Space', universal:true },
+      guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
+      signature:{ id:'signature', key:'KeyQ', skillId:skillId }
+    };
+  }
+
+  function createTop(definition){
+    return {
+      id:definition.id,
+      name:definition.name,
+      family:definition.family,
+      variant:definition.variant,
+      unlockSource:definition.unlockSource,
+      skill:definition.skill,
+      combat:{
+        actions:createActions(definition.skill),
+        collision:{ roleBias:definition.roleBias },
+        attrition:{ hpDecayPerSec:definition.hpDecayPerSec }
+      },
+      meshFamily:definition.meshFamily,
+      color:definition.color,
+      emi:definition.emi,
+      hp:definition.hp,
+      maxSpin:definition.maxSpin,
+      spd:definition.spd,
+      mass:definition.mass,
+      brate:definition.brate,
+      unlockCost:definition.unlockCost
+    };
+  }
+
   root.config.tops = [
-    {
+    createTop({
       id:'impact',
       name:'Impact',
       family:'impact',
       variant:'core',
       unlockSource:'starter',
       skill:'Fly Charge',
-      combat:{
-        actions:{
-          dash:{ id:'dash', key:'Space', universal:true },
-          guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
-          signature:{ id:'signature', key:'KeyQ', skillId:'Fly Charge' }
-        },
-        collision:{ roleBias:1.08 },
-        attrition:{ hpDecayPerSec:0.08 }
-      },
+      roleBias:1.08,
+      hpDecayPerSec:0.08,
       meshFamily:'impact',
       color:0xff4400,
       emi:0x551100,
@@ -26,23 +53,16 @@
       mass:0.80,
       brate:1.2,
       unlockCost:0
-    },
-    {
+    }),
+    createTop({
       id:'armor',
       name:'Armor',
       family:'armor',
       variant:'core',
       unlockSource:'starter',
       skill:'Fortress Pulse',
-      combat:{
-        actions:{
-          dash:{ id:'dash', key:'Space', universal:true },
-          guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
-          signature:{ id:'signature', key:'KeyQ', skillId:'Fortress Pulse' }
-        },
-        collision:{ roleBias:0.95 },
-        attrition:{ hpDecayPerSec:0.05 }
-      },
+      roleBias:0.95,
+      hpDecayPerSec:0.05,
       meshFamily:'armor',
       color:0x4488ff,
       emi:0x001133,
@@ -52,23 +72,16 @@
       mass:0.95,
       brate:1.0,
       unlockCost:0
-    },
-    {
+    }),
+    createTop({
       id:'trick',
       name:'Trick',
       family:'trick',
       variant:'core',
-      unlockSource:'road_or_shop',
+      unlockSource:'road',
       skill:'Phantom',
-      combat:{
-        actions:{
-          dash:{ id:'dash', key:'Space', universal:true },
-          guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
-          signature:{ id:'signature', key:'KeyQ', skillId:'Phantom' }
-        },
-        collision:{ roleBias:1.02 },
-        attrition:{ hpDecayPerSec:0.11 }
-      },
+      roleBias:1.02,
+      hpDecayPerSec:0.11,
       meshFamily:'trick',
       color:0xaa44ff,
       emi:0x220044,
@@ -77,25 +90,18 @@
       spd:34,
       mass:0.70,
       brate:1.4,
-      unlockCost:90
-    },
-    {
+      unlockCost:0
+    }),
+    createTop({
       id:'impact_breaker',
       name:'Breaker',
       family:'impact',
       variant:'breaker',
       unlockSource:'shop',
       skill:'Fly Charge',
-      combat:{
-        actions:{
-          dash:{ id:'dash', key:'Space', universal:true },
-          guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
-          signature:{ id:'signature', key:'KeyQ', skillId:'Fly Charge' }
-        },
-        collision:{ roleBias:1.16 },
-        attrition:{ hpDecayPerSec:0.10 }
-      },
-      meshFamily:'impact',
+      roleBias:1.16,
+      hpDecayPerSec:0.10,
+      meshFamily:'impact_breaker',
       color:0xff8855,
       emi:0x662200,
       hp:130,
@@ -103,25 +109,18 @@
       spd:31,
       mass:0.74,
       brate:1.38,
-      unlockCost:250
-    },
-    {
+      unlockCost:240
+    }),
+    createTop({
       id:'trick_raider',
       name:'Raider',
       family:'trick',
       variant:'raider',
       unlockSource:'shop',
       skill:'Phantom',
-      combat:{
-        actions:{
-          dash:{ id:'dash', key:'Space', universal:true },
-          guard:{ id:'guard', key:'KeyE', universal:true, enabled:true, cooldown:4.0, duration:0.82 },
-          signature:{ id:'signature', key:'KeyQ', skillId:'Phantom' }
-        },
-        collision:{ roleBias:1.1 },
-        attrition:{ hpDecayPerSec:0.13 }
-      },
-      meshFamily:'trick',
+      roleBias:1.10,
+      hpDecayPerSec:0.13,
+      meshFamily:'trick_raider',
       color:0xff66cc,
       emi:0x441122,
       hp:108,
@@ -129,7 +128,197 @@
       spd:36,
       mass:0.66,
       brate:1.52,
+      unlockCost:300
+    }),
+    createTop({
+      id:'impact_vanguard',
+      name:'Vanguard',
+      family:'impact',
+      variant:'vanguard',
+      unlockSource:'shop',
+      skill:'Fly Charge',
+      roleBias:1.04,
+      hpDecayPerSec:0.07,
+      meshFamily:'impact_vanguard',
+      color:0xff5533,
+      emi:0x4a1200,
+      hp:150,
+      maxSpin:3200,
+      spd:26,
+      mass:0.86,
+      brate:1.08,
+      unlockCost:140
+    }),
+    createTop({
+      id:'impact_nova',
+      name:'Nova',
+      family:'impact',
+      variant:'nova',
+      unlockSource:'road',
+      skill:'Fly Charge',
+      roleBias:1.18,
+      hpDecayPerSec:0.12,
+      meshFamily:'impact_nova',
+      color:0xffaa33,
+      emi:0x663300,
+      hp:118,
+      maxSpin:3800,
+      spd:35,
+      mass:0.72,
+      brate:1.48,
+      unlockCost:0
+    }),
+    createTop({
+      id:'impact_tremor',
+      name:'Tremor',
+      family:'impact',
+      variant:'tremor',
+      unlockSource:'shop',
+      skill:'Fly Charge',
+      roleBias:1.12,
+      hpDecayPerSec:0.09,
+      meshFamily:'impact_tremor',
+      color:0xdd6622,
+      emi:0x3a1600,
+      hp:165,
+      maxSpin:3000,
+      spd:24,
+      mass:0.92,
+      brate:1.02,
+      unlockCost:440
+    }),
+    createTop({
+      id:'armor_bastion',
+      name:'Bastion',
+      family:'armor',
+      variant:'bastion',
+      unlockSource:'road',
+      skill:'Fortress Pulse',
+      roleBias:0.88,
+      hpDecayPerSec:0.04,
+      meshFamily:'armor_bastion',
+      color:0x2d7cff,
+      emi:0x001b44,
+      hp:220,
+      maxSpin:2480,
+      spd:20,
+      mass:1.00,
+      brate:0.96,
+      unlockCost:0
+    }),
+    createTop({
+      id:'armor_aegis',
+      name:'Aegis',
+      family:'armor',
+      variant:'aegis',
+      unlockSource:'shop',
+      skill:'Fortress Pulse',
+      roleBias:0.97,
+      hpDecayPerSec:0.07,
+      meshFamily:'armor_aegis',
+      color:0x66bbff,
+      emi:0x003355,
+      hp:176,
+      maxSpin:3050,
+      spd:24,
+      mass:0.87,
+      brate:1.18,
       unlockCost:320
-    }
+    }),
+    createTop({
+      id:'armor_mammoth',
+      name:'Mammoth',
+      family:'armor',
+      variant:'mammoth',
+      unlockSource:'shop',
+      skill:'Fortress Pulse',
+      roleBias:0.90,
+      hpDecayPerSec:0.035,
+      meshFamily:'armor_mammoth',
+      color:0x5a8cff,
+      emi:0x111a44,
+      hp:240,
+      maxSpin:2380,
+      spd:19,
+      mass:1.08,
+      brate:0.92,
+      unlockCost:540
+    }),
+    createTop({
+      id:'armor_mirror',
+      name:'Mirror',
+      family:'armor',
+      variant:'mirror',
+      unlockSource:'shop',
+      skill:'Fortress Pulse',
+      roleBias:1.00,
+      hpDecayPerSec:0.06,
+      meshFamily:'armor_mirror',
+      color:0x8ad9ff,
+      emi:0x113355,
+      hp:162,
+      maxSpin:3180,
+      spd:26,
+      mass:0.82,
+      brate:1.20,
+      unlockCost:380
+    }),
+    createTop({
+      id:'trick_venom',
+      name:'Venom',
+      family:'trick',
+      variant:'venom',
+      unlockSource:'shop',
+      skill:'Phantom',
+      roleBias:1.08,
+      hpDecayPerSec:0.14,
+      meshFamily:'trick_venom',
+      color:0x7dff88,
+      emi:0x113311,
+      hp:102,
+      maxSpin:4200,
+      spd:37,
+      mass:0.64,
+      brate:1.56,
+      unlockCost:180
+    }),
+    createTop({
+      id:'trick_orbit',
+      name:'Orbit',
+      family:'trick',
+      variant:'orbit',
+      unlockSource:'shop',
+      skill:'Phantom',
+      roleBias:1.00,
+      hpDecayPerSec:0.10,
+      meshFamily:'trick_orbit',
+      color:0x7aa6ff,
+      emi:0x1a2244,
+      hp:112,
+      maxSpin:4050,
+      spd:33,
+      mass:0.69,
+      brate:1.46,
+      unlockCost:340
+    }),
+    createTop({
+      id:'trick_glitch',
+      name:'Glitch',
+      family:'trick',
+      variant:'glitch',
+      unlockSource:'shop',
+      skill:'Phantom',
+      roleBias:1.14,
+      hpDecayPerSec:0.15,
+      meshFamily:'trick_glitch',
+      color:0xff44aa,
+      emi:0x330022,
+      hp:96,
+      maxSpin:4320,
+      spd:38,
+      mass:0.62,
+      brate:1.62,
+      unlockCost:620
+    })
   ];
 })();

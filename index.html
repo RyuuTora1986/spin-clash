@@ -122,8 +122,8 @@
   <div class="tagline" id="title-tagline"></div>
   <div class="locale-switcher title-locale-switcher" id="locale-title-switcher">
     <button class="locale-btn" id="locale-title-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
-    <button class="locale-btn" id="locale-title-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">涓枃</button>
-    <button class="locale-btn" id="locale-title-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">鏃ユ湰瑾?/button>
+    <button class="locale-btn" id="locale-title-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">中文</button>
+    <button class="locale-btn" id="locale-title-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">日本語</button>
   </div>
   <div class="title-status">
     <div class="title-status-line" id="title-progress"></div>
@@ -159,8 +159,8 @@
   <div class="sub2" id="loadout-subtitle"></div>
   <div class="locale-switcher loadout-locale-switcher" id="locale-loadout-switcher">
     <button class="locale-btn" id="locale-loadout-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
-    <button class="locale-btn" id="locale-loadout-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">涓枃</button>
-    <button class="locale-btn" id="locale-loadout-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">鏃ユ湰瑾?/button>
+    <button class="locale-btn" id="locale-loadout-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">中文</button>
+    <button class="locale-btn" id="locale-loadout-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">日本語</button>
   </div>
   <div class="shell-route-bar" id="shell-route-bar">
     <button class="route-back-btn" id="btn-route-back" type="button" onclick="return window.__spinClashInvoke('goBack')"></button>
@@ -290,38 +290,7 @@
     <div class="arena-opt" data-arena="1" id="arena-opt-1" onclick="return window.__spinClashInvoke('selectArena',1)"></div>
     <div class="arena-opt" data-arena="2" id="arena-opt-2" onclick="return window.__spinClashInvoke('selectArena',2)"></div>
   </div>
-  <div class="cards">
-    <div class="card sel" data-id="0" onclick="return window.__spinClashInvoke('selectTop',0)">
-      <div class="card-icon" style="background:radial-gradient(circle,#cc6622,#ccff12)" id="card-icon-0"></div>
-      <h3 id="card-name-0"></h3><div class="card-type" id="card-type-0"></div>
-      <div class="card-stats" id="card-stats-0"></div>
-      <div class="card-skill-tag" id="card-skill-0"></div>
-    </div>
-    <div class="card" data-id="1" onclick="return window.__spinClashInvoke('selectTop',1)">
-      <div class="card-icon" style="background:radial-gradient(circle,#4499ff,#2255cc)" id="card-icon-1"></div>
-      <h3 id="card-name-1"></h3><div class="card-type" id="card-type-1"></div>
-      <div class="card-stats" id="card-stats-1"></div>
-      <div class="card-skill-tag" id="card-skill-1"></div>
-    </div>
-    <div class="card" data-id="2" onclick="return window.__spinClashInvoke('selectTop',2)">
-      <div class="card-icon" style="background:radial-gradient(circle,#cc44ff,#8800cc)" id="card-icon-2"></div>
-      <h3 id="card-name-2"></h3><div class="card-type" id="card-type-2"></div>
-      <div class="card-stats" id="card-stats-2"></div>
-      <div class="card-skill-tag" id="card-skill-2"></div>
-    </div>
-    <div class="card" data-id="3" onclick="return window.__spinClashInvoke('selectTop',3)">
-      <div class="card-icon" style="background:radial-gradient(circle,#ff9966,#ff5522)" id="card-icon-3"></div>
-      <h3 id="card-name-3"></h3><div class="card-type" id="card-type-3"></div>
-      <div class="card-stats" id="card-stats-3"></div>
-      <div class="card-skill-tag" id="card-skill-3"></div>
-    </div>
-    <div class="card" data-id="4" onclick="return window.__spinClashInvoke('selectTop',4)">
-      <div class="card-icon" style="background:radial-gradient(circle,#ff88dd,#cc2299)" id="card-icon-4"></div>
-      <h3 id="card-name-4"></h3><div class="card-type" id="card-type-4"></div>
-      <div class="card-stats" id="card-stats-4"></div>
-      <div class="card-skill-tag" id="card-skill-4"></div>
-    </div>
-  </div>
+  <div class="cards" id="top-card-list"></div>
   <button class="big-btn path-fight-btn" id="btn-path-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
 </div>
 <div class="battle-intro hide" id="battle-intro">
@@ -414,3 +383,5 @@ window.__spinClashEnterBattle=function(){
 <script defer src="./src/main.js"></script>
 </body>
 </html>
+
+

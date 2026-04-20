@@ -1,0 +1,698 @@
+# UI Flow Combat Rework Change Log
+
+## Scope
+- Approved direction:
+  - split the overloaded shell into real routes
+  - preserve the current UI visual style
+  - keep the static HTML/CSS/JS architecture
+  - keep rollback records per phase
+- Phase isolation:
+  - `Phase 1`: shell route refactor
+  - `Phase 2`: battle/result return logic
+  - `Phase 3`: collision and durability refactor
+  - `Phase 4`: skill structure refactor
+
+## Baseline
+- Date: `2026-04-17`
+- Local commit base: `dc241d2 chore: reset repo and establish static shell baseline`
+- Worktree status: intentionally dirty before this task; unrelated changes must not be reverted
+- Repo source of truth for this task:
+  - `docs/session-handoff-2026-04-17.md`
+  - `docs/superpowers/specs/2026-04-17-ui-flow-combat-feedback-design.md`
+  - `docs/superpowers/specs/2026-04-17-next-phase-gameplay-expansion-design.md`
+
+## Planned Checkpoints
+- `before_ui_route_refactor`
+- `after_route_state_contract`
+- `after_route_surface_split`
+- `after_route_back_navigation`
+- `after_battle_return_refactor`
+- `after_combat_schema_bridge_prep`
+- `after_collision_attrition_refactor`
+- `after_guard_activation_refactor`
+- `after_skill_structure_refactor`
+
+## before_ui_route_refactor
+- Status: recorded before production code edits
+- Scope:
+  - write Phase 1 implementation plan
+  - create rollback log scaffold
+  - add failing route verification before route code changes
+- Validation:
+  - pending
+- Notes:
+  - do not use `AI-Memory\tasks\codex\CURRENT.md` as the recovery source for this project
+  - use repo docs and this log for future continuation
+
+## Checkpoint Template
+- Checkpoint:
+- Summary:
+- Files:
+- Validation:
+- Rollback note:
+- Follow-up:
+
+## after_route_surface_split
+- Summary:
+  - added explicit shell route state for `home`, `path`, `quick`, `workshop`, and `settings`
+  - replaced title-screen entry actions with route actions
+  - added shell route header/back DOM and a basic settings route surface
+  - updated shell verification to cover the new route contract
+- Files:
+  - `index.html`
+  - `css/game.css`
+  - `src/main.js`
+  - `src/ui-entry-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `scripts/check-shell-routes.js`
+  - `scripts/check-shell-presentation.js`
+  - `package.json`
+- Validation:
+  - `npm run check:routes`
+  - `npm run check:ui`
+  - `npm run check:dom`
+  - `npm run check:shellpresentation`
+  - `npm run check:loadout`
+  - `npm run check:syntax`
+- Rollback note:
+  - this checkpoint is shell-only and does not include collision, durability, or skill-structure changes
+- Follow-up:
+  - finish route-specific layout cleanup and manual play validation
+  - carry `battleReturnRoute` through result/replay flows in the next isolated step
+  - add real settings controls for music and SFX instead of the current shell scaffold
+
+## after_battle_return_refactor
+- Summary:
+  - captured `battleReturnRoute` at match start so battle/result flow preserves the originating shell route
+  - changed result primary CTA to return to `Championship Path`, `Quick Battle`, or `Home` based on the captured origin
+  - changed result replay/swap-rematch handlers to clear result state and return to the originating shell route without immediately re-initializing a new round
+  - fixed result CTA ordering so a shell `updateModeUI()` refresh cannot overwrite the origin-specific return label after reward grant
+  - added `scripts/check-route-return-flow.js` and `npm run check:routeflow` to cover path/quick result-return flow plus `swapRematch` through a Node-level integration harness
+  - refined the secondary result CTA wording so `swapRematch` now reads as a route-aware loadout-adjust action instead of the old immediate-rematch wording
+  - upgraded `Settings` from a static shell surface to a real persisted route with `music` and `sfx` toggles wired into storage and runtime audio gates
+  - added `scripts/check-settings-flow.js` plus storage/settings assertions so the new settings route is covered by automated verification and `preflight`
+  - aligned older `workshop` and `roadrank` verification stubs with the current explicit-route shell model so `preflight` remains authoritative after the route split
+- Files:
+  - `package.json`
+  - `src/main.js`
+  - `src/ui-entry-tools.js`
+  - `src/match-flow-tools.js`
+  - `src/config-text.js`
+  - `src/storage-service.js`
+  - `src/runtime-audio-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `index.html`
+  - `css/game.css`
+  - `scripts/check-shell-routes.js`
+  - `scripts/check-route-return-flow.js`
+  - `scripts/check-settings-flow.js`
+  - `scripts/check-shell-presentation.js`
+  - `scripts/check-storage-service.js`
+  - `scripts/check-workshop-flow.js`
+  - `scripts/check-road-rank-ui.js`
+- Validation:
+  - `npm run preflight`
+  - `npm run check:matchflow`
+  - `npm run check:dom`
+  - `npm run check:routes`
+  - `npm run check:routeflow`
+  - `npm run check:settings`
+  - `npm run check:storage`
+  - `npm run check:shellpresentation`
+  - `npm run check:localization`
+  - `npm run check:ui`
+  - `npm run check:loadout`
+  - `npm run check:syntax`
+- Rollback note:
+  - this checkpoint only changes shell/result return behavior and does not alter combat formulas, collision resolution, durability decay, or the planned skill structure refactor
+- Follow-up:
+  - browser-level manual validation is still desirable when the environment allows launching Chromium; current sandbox returns `spawn EPERM`
+  - if combat refactor starts next, keep using the now-stable shell/settings persistence layer as a non-combat boundary instead of reintroducing route-state coupling into battle code
+  - decide in a later isolated slice whether `swapRematch` should keep the same return target or become a more differentiated loadout-adjust action
+
+## after_combat_schema_bridge_prep
+- Summary:
+  - added top-level combat schema scaffolding in `config-tops` so each top now carries `dash`, `guard`, and `signature` action metadata plus collision/attrition hints
+  - added round-flow normalization so legacy top templates bridge into the new combat schema before spawn, and runtime tops now initialize explicit `guarding` state
+  - extracted pure collision helper exports in `battle-sim-tools` for impact profiling and aggressor/defender role resolution while keeping current collision damage/spin outcomes on the legacy symmetric formula
+  - updated runtime consumers to prefer the new signature-skill path with legacy `template.skill` fallback, reducing future refactor coupling
+  - added automated checks for combat schema and collision helper behavior, and wired them into `preflight`
+- Files:
+  - `src/config-tops.js`
+  - `src/round-flow-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/combat-action-tools.js`
+  - `src/ui-shell-tools.js`
+  - `src/debug-runtime-tools.js`
+  - `scripts/check-combat-schema.js`
+  - `scripts/check-collision-helpers.js`
+  - `scripts/check-round-flow.js`
+  - `package.json`
+- Validation:
+  - `npm run check:combatschema`
+  - `npm run check:collisionhelpers`
+  - `npm run check:roundflow`
+  - `npm run check:debugruntime`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:syntax`
+- Rollback note:
+  - this slice is a combat-contract preparation batch only; it does not yet introduce the planned aggressor/defender damage split, live hp attrition drain, guard input, or HUD expansion
+- Follow-up:
+  - use the new helper exports to move `checkColl(...)` from symmetric post-hit damage into explicit aggressor/defender outcomes in an isolated next slice
+  - decide whether passive hp attrition should land first as a config-only rollout by family or together with the first collision rebalance
+  - when the guard action is activated later, reuse the new runtime `guarding` state instead of adding another ad hoc flag
+
+## after_collision_attrition_refactor
+- Summary:
+  - changed collision outcome resolution from one fully symmetric post-hit damage application to a role-aware outcome builder that preserves even head-on collisions while making clear aggressor/defender impacts punish the defender more
+  - wired light passive `hp` attrition into live battle movement tick using the per-top `combat.attrition.hpDecayPerSec` values prepared in the previous slice
+  - kept the refactor conservative: impulse physics, ring-out flow, wall handling, burst gain, and overall HUD structure remain intact
+  - extended collision verification so automated checks now prove role-weighted damage and family-differentiated passive durability decay
+- Files:
+  - `src/battle-sim-tools.js`
+  - `scripts/check-collision-helpers.js`
+- Validation:
+  - `npm run check:collisionhelpers`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice changes collision/durability rules only; it still does not activate universal `Guard`, expand the battle HUD, or remap player controls beyond the existing `Dash + Signature` runtime
+- Follow-up:
+  - tune role-weighting coefficients with manual feel checks once browser/runtime verification is available
+  - decide whether the passive hp attrition should remain flat per second or gain a small mode/arena modifier later
+  - the next isolated combat slice should activate `Guard` behavior and HUD semantics without re-mixing route or settings changes
+
+## after_guard_activation_refactor
+- Summary:
+  - activated universal `Guard` as a real runtime action with `E` input, mobile HUD button, cooldown/duration state, and route-preserving shell integration
+  - updated battle simulation so guarding reduces incoming hp/spin loss and expires over time, while enemy AI can also trigger guard under close threat windows
+  - added a third HUD action button and localized guard labels/hints/messages without changing the established visual style
+  - exposed guard state through runtime/debug text snapshots and added dedicated automated coverage for guard activation, cooldown, duration, and mitigation
+- Files:
+  - `index.html`
+  - `css/game.css`
+  - `src/config-text.js`
+  - `src/config-tops.js`
+  - `src/round-flow-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/combat-action-tools.js`
+  - `src/ui-shell-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/ui-entry-tools.js`
+  - `src/runtime-audio-tools.js`
+  - `src/debug-runtime-tools.js`
+  - `src/main.js`
+  - `scripts/check-guard-flow.js`
+  - `scripts/check-shell-presentation.js`
+  - `scripts/check-ui-actions.js`
+  - `scripts/check-shell-routes.js`
+  - `package.json`
+- Validation:
+  - `npm run check:guard`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:routes`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice activates universal guard only; it does not yet redesign signature skills, add new armor-specific signature replacements, or introduce a larger combat HUD/art pass
+- Follow-up:
+  - manual feel-check the current guard cooldown/duration once browser/runtime play verification is possible
+  - if Armor's current `Shield` signature now overlaps too heavily with universal `Guard`, convert Armor to a new signature in the next isolated skill-structure slice
+  - decide later whether AI guard timing needs more telegraphing or stricter trigger windows
+
+## after_skill_structure_refactor
+- Summary:
+  - replaced Armor's old overlapping `Shield` signature with `Fortress Pulse` so universal `Guard` remains the baseline defensive action while Armor keeps a distinct personal identity
+  - updated localized text, shell skill icons, audio routing, and combat action handling so `Fortress Pulse` is now treated as the live armor-family signature across the runtime
+  - cleaned old signature references out of round-flow and shell-presentation checks so automated verification matches the new skill mapping
+  - added a dedicated `signatureSkills` config registry and moved signature HUD icon metadata out of `main.js` hardcoding, so future skill tuning can stay config-first
+  - extended that registry flow into runtime audio style selection and HUD/default skill labeling so signature presentation no longer depends on scattered string branches
+  - extended the registry again into signature telegraph metadata so flash type, message tone, and timing no longer live only inside hardcoded skill branches
+  - added a light active-battle UX polish: when burst is full and signature is ready, the HUD hint bar now surfaces a localized `Q READY · <skill>` prompt without changing the existing visual style
+  - extended the signature registry into HUD accent metadata so the ready ring and ready hint can pick per-signature highlight colors while preserving the current shell look
+  - moved universal guard baseline tuning into `combat.actions.guard` metadata (`cooldown` and `duration`) and updated runtime consumers to read those values instead of relying only on scattered fallback constants
+  - applied a conservative balance touch-up: `Armor` core `roleBias` now sits at `0.95`, guard mitigation is slightly stronger but shorter-lived, and `Fortress Pulse` steadies Armor more while trimming its push/damage output below the earlier stronger baseline
+  - added live HUD role-status labels so player/enemy panels now surface `READY` and `GUARD` states directly during battle instead of relying only on ring/button cues
+  - tightened battle readability further by letting ready/guard state color the role labels using the same low-intrusion accent language already used by the signature-ready hint
+- Files:
+  - `index.html`
+  - `src/config-tops.js`
+  - `src/config-signature-skills.js`
+  - `src/config-text.js`
+  - `src/combat-action-tools.js`
+  - `src/runtime-audio-tools.js`
+  - `src/ui-shell-tools.js`
+  - `src/main.js`
+  - `scripts/check-combat-schema.js`
+  - `scripts/check-roster-shell.js`
+  - `scripts/check-round-flow.js`
+  - `scripts/check-shell-presentation.js`
+  - `scripts/check-signature-skills.js`
+  - `package.json`
+- Validation:
+  - `npm run check:signatures`
+  - `npm run check:combatschema`
+  - `npm run check:collisionhelpers`
+  - `npm run check:guard`
+  - `npm run check:roster`
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - `npm run check:localization`
+  - `npm run check:ui`
+  - `npm run preflight`
+- Rollback note:
+  - this slice is limited to signature mapping cleanup and config preparation; it does not redesign the shell, alter the route-return contract, or add a new combat family
+- Follow-up:
+  - use the new `signatureSkills` registry as the single source for future signature icon, audio-style, and telegraph metadata instead of reintroducing stringly-typed skill maps in runtime files
+  - browser-level manual feel checks are still pending because this environment currently fails Chromium launch with `spawn EPERM`
+  - if a later polish slice changes signature timing or effects, keep it isolated from shell/navigation work and preserve `Guard` as the universal baseline action
+
+## after_combat_intent_and_variant_polish
+- Summary:
+  - added enemy AI intent telegraphing for `skill`, `guard`, and `dash`, so the CPU now shows a short readable lead-in before committing to those actions
+  - initialized explicit runtime intent state on spawned tops and exposed it through debug runtime snapshots for future manual tuning and QA
+  - upgraded battle HUD role labels so enemy lead-ins surface as live `SKILL`, `DASH`, or `GUARD` states with accent coloring instead of leaving those reads implicit
+  - extended the signature registry from presentation-only metadata into light tuning blocks, so derived tops can feel more distinct without introducing new signature ids
+  - made `Breaker` and `Raider` more distinct while preserving family signatures: `Breaker` now gets a faster/harder `Fly Charge` plus a temporary collision-role push, and `Raider` gets a longer/more lateral `Phantom`
+  - added `scripts/check-combat-intent-telegraph.js`, extended `scripts/check-signature-skills.js`, and wired the new intent check into `preflight`
+- Files:
+  - `package.json`
+  - `src/config-signature-skills.js`
+  - `src/config-text.js`
+  - `src/combat-action-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/round-flow-tools.js`
+  - `src/ui-shell-tools.js`
+  - `src/debug-runtime-tools.js`
+  - `scripts/check-combat-intent-telegraph.js`
+  - `scripts/check-signature-skills.js`
+- Validation:
+  - `npm run check:signatures`
+  - `npm run check:combatintent`
+  - `npm run check:localization`
+  - `npm run check:shellpresentation`
+  - `npm run check:debugruntime`
+  - `npm run check:roundflow`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice is limited to combat readability and derived-signature distinctness; it does not redesign shell routes, alter result-return flow, or add a new combat family/system layer
+- Follow-up:
+  - browser/manual feel checks are still needed for enemy intent lead timing and the new `Breaker` / `Raider` signature deltas once Chromium launch is available or the user tests locally
+  - if later combat polish adds richer enemy tells, build them on top of this intent state instead of introducing a second competing telegraph path
+  - the remaining larger refactor target is still the later combat-logic cleanup, not another shell/navigation rewrite
+
+## manual_shell_and_route_smoke_2026_04_18
+- Summary:
+  - user completed one manual browser smoke pass in the existing local Chrome session against the current local static build
+  - no visible shell, route-return, or obvious presentation issues were reported during that pass
+  - this closes the earlier gap where route/result/browser validation had only been covered by script checks
+- Scope covered:
+  - `Home -> Championship Path -> Battle -> Result -> Championship Path`
+  - `Home -> Quick Battle -> Battle -> Result -> Quick Battle`
+  - `Home -> Workshop -> Back -> Home`
+  - `Championship Path -> Workshop -> Back -> Championship Path`
+  - `Quick Battle -> Settings -> Back -> Quick Battle`
+- Validation:
+  - manual user smoke pass on `2026-04-18`
+  - local URLs:
+    - `http://127.0.0.1:4173/index.html`
+    - `http://127.0.0.1:4173/index.html?debug=1`
+- Rollback note:
+  - no production code changed in this checkpoint; this is a validation record only
+- Follow-up:
+  - deeper manual feel checks are still useful for combat balance, AI intent timing, and homepage/top-presentation polish
+  - if later UI work touches shell hierarchy again, rerun the same route-return smoke pass before treating it as stable
+
+## home_top_showcase_polish_2026_04_18
+- Summary:
+  - upgraded the `Home` screen from progress-and-buttons only to a real current-top showcase without changing the existing visual language
+  - added left/right home navigation buttons that cycle only through unlocked tops and reuse the existing `playerTopId` selection state
+  - mirrored the selected-top pitch/traits content into the home screen so the player can understand the currently equipped top before entering `Championship Path` or `Quick Battle`
+  - added a light normalization pass so route entry no longer leaves the shell focused on a now-locked top after save/debug state changes
+  - extended shell presentation checks to cover the new home showcase DOM and content bindings
+- Files:
+  - `index.html`
+  - `css/game.css`
+  - `src/loadout-ui-tools.js`
+  - `src/ui-entry-tools.js`
+  - `src/config-text.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:syntax`
+  - `npm run check:ui`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+- Rollback note:
+  - this slice only improves the `Home` shell presentation and top-selection affordance; it does not change battle formulas, route-return rules, or workshop/settings behavior
+- Follow-up:
+  - run one short manual home-screen smoke pass in the existing Chrome session to confirm the new showcase spacing and top-cycle affordance feel right on the live page
+  - if the home screen still feels too static after that pass, the next safe slice is presentation polish inside this same panel rather than another shell-level restructure
+
+## home_model_showcase_stage_2026_04_18
+- Summary:
+  - replaced the interim text-first home top card with a model-first showcase stage so the selected top is now presented visually instead of only through copy
+  - added a dedicated `home-top-showcase-tools` runtime with its own lightweight Three.js renderer, scene, camera, pedestal, and idle animation
+  - reused the existing `mkTop(...)` model factory so the home showcase matches the battle/loadout top shapes instead of introducing a second asset style
+  - kept the battle scene untouched by mounting the home showcase into its own DOM stage inside the `Home` shell
+  - retained the existing unlocked-top cycle logic and `playerTopId` contract, so home selection still flows into `Championship Path`, `Quick Battle`, and battle start without state divergence
+- Files:
+  - `index.html`
+  - `css/game.css`
+  - `src/home-top-showcase-tools.js`
+  - `src/main.js`
+  - `src/loadout-ui-tools.js`
+  - `scripts/check-shell-presentation.js`
+  - `docs/superpowers/plans/2026-04-18-home-top-showcase-model.md`
+- Validation:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run preflight`
+- Rollback note:
+  - this slice only changes the `Home` shell presentation layer and adds an isolated home-only renderer; it does not alter route-return behavior, battle simulation, arena rendering, or loadout/shop rules
+- Follow-up:
+  - run a manual Chrome pass to confirm the showcase stage feels centered and readable on the live page
+  - if mobile clipping appears, adjust only the showcase stage sizing/camera first before touching the broader home shell layout
+
+## home_model_showcase_init_order_fix_2026_04_18
+- Summary:
+  - fixed a live runtime error introduced by the new home showcase stage: `Cannot access 'playerTopId' before initialization`
+  - root cause was initialization order, not rendering logic: the home showcase renderer was being initialized before `playerTopId` finished declaration in `main.js`
+  - moved home showcase initialization to the first safe point after `playerTopId` is initialized, preserving the same renderer and state contract
+- Files:
+  - `src/main.js`
+- Validation:
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - attached to the user's existing Chrome tab through the current CDP bridge and reloaded `http://127.0.0.1:4173/index.html`
+  - confirmed:
+    - `runtime-error-box` is absent
+    - `#home-top-stage` exists
+    - the stage contains one rendered canvas
+- Rollback note:
+  - this fix only changes initialization timing for the home showcase renderer; it does not change route flow, top selection rules, or the showcase visual design
+- Follow-up:
+  - continue manual visual tuning from the now-stable runtime baseline rather than touching initialization order again
+
+## home_showcase_layout_alignment_2026_04_18
+- Summary:
+  - fixed the `Home` showcase panel layout drift where the next-top arrow was being auto-placed into a lower left slot instead of staying on the right side of the model stage
+  - root cause was CSS grid auto-placement, not model rendering: `.home-top-copy` spanned the full grid width while the right nav button still relied on implicit placement, so the panel collapsed into a left-stacked flow on the live page
+  - locked the showcase panel into explicit grid areas so the layout is now stable as `left nav / model stage / right nav` with the supporting top copy on a second row
+  - kept the current visual style and DOM structure intact; this slice only tightened layout semantics and spacing
+- Files:
+  - `css/game.css`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - attached to the user's existing Chrome tab through the local CDP bridge and compared live layout before/after on `http://127.0.0.1:4173/index.html`
+  - captured live screenshots:
+    - `output/home-layout-analysis.png`
+    - `output/home-layout-analysis-fixed.png`
+  - confirmed live geometry moved from:
+    - previous: `prev x=79`, `next x=79`, `panel columns="42px 620.667px 0px"`
+    - fixed: `prev x=79`, `next x=723`, `panel columns="42px 578.667px 42px"`
+- Rollback note:
+  - this slice only changes the `Home` showcase CSS layout contract; it does not alter top selection state, renderer behavior, route flow, or combat logic
+- Follow-up:
+  - if the panel still feels heavy on small screens, the next safe slice is vertical spacing/copy density tuning inside the same locked grid rather than another structure rewrite
+
+## home_showcase_frame_fit_2026_04_18
+- Summary:
+  - tightened the `Home` showcase inner frame so the selected top no longer appears to hang below the visible display plate
+  - root cause was frame depth, not renderer overflow: the stage shell's visible inner frame ended too high above the pedestal, so the lower ring/glow read as if it had slipped outside the intended display area
+  - lowered the inner-frame bottom inset and slightly opened the top inset so the visible frame now wraps the whole showcase volume without changing the established visual style
+- Files:
+  - `css/game.css`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - attached to the user's existing Chrome tab through the local CDP bridge and captured the post-fix live page screenshot:
+    - `output/home-frame-fit-pass1.png`
+  - confirmed the live frame inset is now `top=10px`, `bottom=8px` on the showcase stage shell and the pedestal/glow sit inside the visible frame on the live page
+- Rollback note:
+  - this slice only adjusts the `Home` showcase frame inset in CSS; it does not alter route flow, renderer setup, model selection, or combat behavior
+- Follow-up:
+  - if later tops with taller silhouettes still feel cramped, the next safe slice is a small top-scale/camera pass inside `home-top-showcase-tools.js`, not another shell layout rewrite
+
+## home_showcase_frame_removal_and_nav_slim_2026_04_18
+- Summary:
+  - removed the hard rectangular frame behind the `Home` showcase model after live review showed it was creating a stronger "model pressing against a box edge" impression than the model itself
+  - slimmed the left/right showcase navigation from tall bar-like controls into smaller centered pill buttons so they stop competing with the selected top as the primary focal point
+  - kept the existing shell style, layout flow, and model renderer intact; this slice only simplified the presentation layer around the showcase
+- Files:
+  - `css/game.css`
+- Validation:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - attached to the user's existing Chrome tab through the local CDP bridge and captured the updated live page:
+    - `output/home-showcase-simplified.png`
+  - confirmed on the live page:
+    - showcase pseudo-frame is removed: `content=none`, `border=0px`, `background=none`
+    - nav buttons are reduced to `30x84`
+- Rollback note:
+  - this slice only simplifies the `Home` showcase framing and nav button presentation; it does not alter top selection state, shell routes, battle flow, or combat logic
+- Follow-up:
+  - if the showcase still feels visually heavy after this, the next safe slice is reducing copy density or pedestal glow intensity, not restoring a boxed stage
+
+## home_preview_lock_shadow_roster_2026_04_18
+- Summary:
+  - upgraded the `Home` showcase from an unlocked-only current-top card into a roster preview that can browse locked and unlocked tops without changing the equipped battle top
+  - removed the old `X/N` unlocked count from the home header and replaced it with explicit state chips so the panel now communicates `unlocked` vs `locked` instead of low-value progress math
+  - kept locked top names and types visible, but replaced their full skill/pitch copy with teaser guidance and unlock-source hints
+  - added a dedicated locked-preview rendering pass for the home-only model stage: darkened materials, removed interior pattern detail, suppressed most emissive response, and added a restrained lock/scan overlay so locked tops read as teaser silhouettes rather than normal fully lit models
+  - iterated the locked-preview visual pass through multiple live screenshots until it moved away from a muddy grey model toward a more silhouette-like reveal
+- Files:
+  - `docs/superpowers/plans/2026-04-18-home-preview-lock-shadow-plan.md`
+  - `src/main.js`
+  - `src/ui-entry-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/home-top-showcase-tools.js`
+  - `src/config-text.js`
+  - `css/game.css`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - attached to the user's existing Chrome tab through the local CDP bridge and captured live visual references:
+    - `output/home-preview-unlocked.png`
+    - `output/home-preview-locked.png`
+    - `output/home-preview-locked-pass2.png`
+    - `output/home-preview-locked-pass3.png`
+    - `output/home-preview-locked-pass4.png`
+  - used a temporary local-save narrowing pass to verify locked-preview visuals in the live page, then restored the user's original save immediately afterward
+- Rollback note:
+  - this slice changes only the `Home` showcase preview contract and its home-only renderer/copy presentation; it does not alter battle rendering, combat formulas, or route-return flow
+- Follow-up:
+  - if later polish is still needed, continue comparing locked-preview screenshots against the unlocked baseline and bias toward "less readable material/detail" rather than heavier UI chrome
+  - the latest visual lesson from this batch: avoid solving silhouette readability with large backdrop shapes or duplicate status markers; prefer lighting/material separation and whole-panel harmony over isolated local effects
+  - another screenshot-driven lesson from the follow-up pass: even when the locked-state feature works, duplicate name/type lines and over-emphasized unlocked chips can still make the whole block feel noisy; whole-panel cleanliness matters more than preserving every metadata line
+
+## quick_battle_arena_showcase_2026_04_18
+- Summary:
+  - rebuilt `Quick Battle` around a new arena-first presentation while keeping the shell route split and the existing visual language intact
+  - added a dedicated quick-battle stage with left/right arena cycling, arena name/status/description copy, and a lower ready strip that shows the currently deployed top as a smaller confirmation model instead of reopening top selection inside the route
+  - kept `Home` as the place where top identity and top switching live; `Quick Battle` now focuses on arena browsing and match start
+  - changed quick arena browsing to preview-only selection so unlock/trial resolution stays at `startFight`, which is closer to the approved hierarchy and avoids accidental unlock side effects while only browsing
+  - added an isolated `src/quick-battle-preview-tools.js` renderer so arena preview and the mini top model stay separate from battle rendering and the existing home showcase renderer
+  - added blocked-start UI for the edge case where the current top is locked: warning-colored button state plus explicit hint copy
+- Files:
+  - `docs/superpowers/plans/2026-04-18-quick-battle-arena-showcase-plan.md`
+  - `index.html`
+  - `css/game.css`
+  - `src/main.js`
+  - `src/ui-entry-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `src/quick-battle-preview-tools.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - attached to the current Chrome session through the local CDP bridge and verified against the existing `Spin Clash` tab at `http://127.0.0.1:4173/index.html`
+  - browser screenshots:
+    - `output/quick-battle-pass2.png`
+    - `output/quick-battle-locked-arena-pass1.png`
+    - `output/quick-battle-locked-arena-pass3.png`
+  - live smoke in the attached tab:
+    - route switch to `Quick Battle`
+    - unlocked-arena start flow reached battle state without runtime error
+- Rollback note:
+  - this slice is limited to `Quick Battle` shell presentation and route interaction; it does not change battle formulas, result-return rules, or the current home showcase contract
+- Follow-up:
+  - continue screenshot-driven polish on arena silhouette readability if later arenas still feel too flat in locked/trial states
+  - if the user wants deeper hierarchy cleanup next, the logical continuation is to align `Championship Path` with the same “route-specific main stage” principle instead of reintroducing content piles
+
+## home_locked_preview_route_guard_2026_04_18
+- Summary:
+  - fixed a shell-logic bug where `Home` could preview a locked top while still allowing `Quick Battle` or `Championship Path` entry from the same screen
+  - root cause was state separation without matching route gating: `homePreviewTopId` had been intentionally decoupled from the real equipped top, but the home entry buttons and route actions still treated any home state as immediately enterable
+  - added both UI-level disabling and action-level route guards so the player now gets a consistent result even if a stale click path or direct action call slips past button state
+- Files:
+  - `src/ui-entry-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `css/game.css`
+  - `scripts/check-shell-routes.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:routes`
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - attached Chrome verification on the existing `Spin Clash` tab after reload:
+    - unlocked preview (`冲击`, `装甲`) keeps `Quick Battle / Continue Path` enabled
+    - locked preview (`诡步`, `破阵`, `掠袭`) disables both route buttons
+- Rollback note:
+  - this fix is limited to home-route entry gating for locked previews; it does not alter quick-battle stage layout, battle logic, or save progression rules
+
+## quick_battle_locked_arena_cta_states_2026_04_18
+- Summary:
+  - fixed the `Quick Battle` locked-arena CTA so it no longer reads like a normal unrestricted `Start Match` action when the selected arena is still locked
+  - preserved the existing unlock flow, but made the start button explicitly communicate the real next action in three states: normal start, `unlock + start`, or `ad trial`
+  - kept the current shell style intact and only added light semantic styling so the player can read the locked-arena intent without mistaking it for a bug
+- Files:
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `css/game.css`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice only changes quick-battle CTA semantics, hint copy, and button styling for locked arenas; it does not alter arena preview rendering, battle formulas, or result-return flow
+
+## quick_battle_ready_panel_cleanup_2026_04_18
+- Summary:
+  - simplified the lower `Quick Battle` confirmation area so it reads as a cleaner two-column composition instead of a dense mini info card next to the CTA
+  - removed the deployed-top status chip from the lower panel and kept only the small model plus top name on the left, which reduces duplicate state noise around the battle start decision
+  - removed the mini top pedestal from the confirmation renderer and recentred the lower panel layout so the left model block and right CTA block sit closer to the visual center of the route
+- Files:
+  - `src/quick-battle-preview-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `css/game.css`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice only trims the lower quick-battle confirmation presentation and its preview renderer framing; it does not alter arena selection logic, CTA state rules, or combat behavior
+
+## quick_battle_heart_preview_shape_fix_2026_04_18
+- Summary:
+  - fixed a heart-arena preview mismatch in `Quick Battle` where the showcase was not using the same heart boundary data as the real battle arena
+  - root cause had two layers:
+    - the preview owned a separate custom `createHeartShape()` curve instead of reusing `arenaMathTools.HEART_PTS`
+    - the preview rendered the heart arena as an extruded shell, which introduced an extra offset outline read that could look like a reversed heart line from the chosen camera angle
+  - the fix now wires `arenaMathTools` into `quick-battle-preview-tools`, rebuilds the heart preview from the real runtime point set, and removes the extra circular accent for non-circle arenas so the preview reads closer to the live battle arena
+- Files:
+  - `src/quick-battle-preview-tools.js`
+  - `src/main.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+- Rollback note:
+  - this slice only changes the quick-battle heart preview geometry source and non-circle accent treatment; it does not alter actual combat arena math, collision behavior, or unlock flow
+
+## quick_battle_heart_preview_camera_polish_2026_04_18
+- Summary:
+  - used attached-Chrome screenshots to review the heart arena preview after the geometry-source fix and found the remaining issue was no longer a wrong shape, but a wrong read: the heart was technically correct yet still looked like a glossy blue bowl instead of a stable heart-shaped arena
+  - adjusted the heart preview toward a flatter, more top-down tactical read by raising the camera, reducing bowl height, lowering gloss, and strengthening only the most useful inner guide signal
+  - this keeps the preview in the current visual family, but makes the heart silhouette easier to parse at a glance inside the `Quick Battle` stage card
+- Files:
+  - `src/quick-battle-preview-tools.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - attached Chrome screenshots:
+    - `output/quick-battle-heart-current.png`
+    - `output/quick-battle-heart-current-pass2.png`
+    - `output/quick-battle-heart-current-pass3.png`
+- Rollback note:
+  - this slice only polishes the heart preview camera/material/depth read inside the quick-battle showcase; it does not alter route state, unlock rules, or combat arena math
+
+## quick_battle_heart_preview_shallow_thickness_2026_04_18
+- Summary:
+  - tested the user's hypothesis that the heart preview still felt off partly because it lacked the physical thickness that the circle and hex arena previews already communicated
+  - added a restrained underbody shell beneath the heart preview so it reads as an actual arena object instead of a near-flat emblem, then iterated once more to suppress a dark center wedge by making the added thickness mostly read through the side wall rather than the top cap
+  - kept the heart preview shallow and top-down; this slice restores entity and consistency, not a deep bowl profile
+- Files:
+  - `src/quick-battle-preview-tools.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - attached Chrome screenshots:
+    - `output/quick-battle-heart-current-pass4.png`
+    - `output/quick-battle-heart-current-pass6.png`
+- Rollback note:
+  - this slice only adds shallow thickness treatment to the quick-battle heart preview renderer; it does not affect combat arena geometry, match flow, or shell routing
+
+## quick_battle_arena_thickness_alignment_2026_04_18
+- Summary:
+  - applied a cross-arena balance pass to the quick-battle preview after user feedback that the three arena models still felt inconsistent in thickness and scale
+  - reduced the circle bowl thickness slightly, increased the heart and hex body depth, and moved the arena preview cameras closer so the models occupy more of the showcase region instead of floating in too much empty space
+  - the goal of this slice is consistency, not identical geometry: all three previews should now read as the same product family while preserving each arena's distinct silhouette
+- Files:
+  - `src/quick-battle-preview-tools.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - `npm run preflight`
+  - attached Chrome screenshots:
+    - `output/quick-battle-circle-current-pass3.png`
+    - `output/quick-battle-heart-current-pass7.png`
+    - `output/quick-battle-hex-current-pass3.png`
+- Rollback note:
+  - this slice only retunes preview-only thickness and camera occupancy in the quick-battle arena showcase; it does not alter combat arena math, unlock rules, or route flow
+
+## quick_battle_locked_hex_readability_micro_pass_2026_04_18
+- Summary:
+  - revisited the locked `Hex Bowl` quick-battle preview after side-by-side screenshot review showed it was still the least legible arena state in the route, reading more like a single dark slab than a locked arena object
+  - kept the fix preview-only and narrowly scoped to the locked `hex` state: added an explicit raised top plate plus an inset top guide line, then slightly lifted the locked hex shell/floor material separation so the silhouette keeps its subdued locked mood while exposing a clearer top-vs-side read
+  - did not change the unlocked `hex` direction, the route layout, or any combat arena math; this is only a readability pass on the locked preview surface
+- Files:
+  - `src/quick-battle-preview-tools.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:shellpresentation`
+  - `npm run check:syntax`
+  - local attached-browser screenshot capture against a fresh `file://` tab:
+    - `output/task5-locked-hex-readability-pass4.png`
+- Rollback note:
+  - this slice only adds locked-hex preview readability cues in the quick-battle renderer and a matching source-level regression guard; it does not alter unlocked arena presentation, route flow, or battle simulation
+
+## localization_readability_closure_2026_04_18
+- Summary:
+  - closed the remaining CJK localization readability issues found during the attached-browser Batch 6 pass without redesigning the shell or changing route flow
+  - fixed a real loadout-shell safe-area problem where the persistent storage warning could sit directly on top of the `冠军之路 / チャンピオンロード` heading stack because `#ov-loadout` still lacked its own top-spacing contract
+  - fixed a Japanese repeated-label problem in roster presentation by changing the card type labels from name duplicates such as `インパクト / インパクト` into clearer category labels such as `衝撃型`
+- Files:
+  - `css/game.css`
+  - `src/config-text.js`
+  - `scripts/check-localization.js`
+  - `scripts/check-shell-presentation.js`
+- Validation:
+  - `npm run check:localization`
+  - `npm run check:shellpresentation`
+  - `npm run preflight`
+  - attached-browser screenshots:
+    - before:
+      - `output/task6-ja-path.png`
+      - `output/task6-zh-path.png`
+    - after:
+      - `output/task6-ja-path-fixed.png`
+      - `output/task6-zh-path-fixed.png`
+- Rollback note:
+  - this slice only changes loadout-shell top spacing and localized Japanese type wording; it does not alter combat rules, route state, unlock rules, or provider logic

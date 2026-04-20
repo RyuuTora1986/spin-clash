@@ -73,6 +73,7 @@ function main() {
     currentMode: 'challenge',
     currentArena: 0,
     selectedArenaIndex: 0,
+    rootState: {},
     currentEnemyPresetId: null,
     enemyTopId: 0,
     playerTopId: 0,
@@ -108,6 +109,7 @@ function main() {
     economy: {
       runtime: { defaultRoundTimer: 30 }
     },
+    state: state.rootState,
     analyticsService: {
       track(name, payload) {
         analyticsEvents.push({ name, payload });
@@ -192,6 +194,8 @@ function main() {
   assert(matchStart, 'Expected match_start analytics to fire.');
   assert(matchStart.payload.enemyPresetId === 'armor_standard', 'Expected match_start to preserve enemyPresetId.');
   assert(matchStart.payload.enemyPresetLabel === 'ARMOR STANDARD', 'Expected match_start to preserve enemyPresetLabel.');
+  assert(state.rootState.currentArenaIndex === 2, 'Expected challenge round init to sync the active arena index into root.state.');
+  assert(state.rootState.currentArenaId === 'hex_bowl', 'Expected challenge round init to sync the active arena id into root.state.');
   assert(state.tp && state.tp.template && state.tp.template.combat, 'Expected round-flow to normalize player combat schema.');
   assert(state.tp.template.combat.actions.signature.skillId === 'Fly Charge', 'Expected round-flow combat bridge to preserve legacy player signature skill.');
   assert(state.te && state.te.template && state.te.template.combat, 'Expected round-flow to normalize enemy combat schema.');

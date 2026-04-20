@@ -19,10 +19,18 @@ Optional double-click helpers from the repo root:
 - `run-preflight.cmd`
 
 Open:
-- `http://127.0.0.1:8000/index.html`
+- read the exact `Open:` URL printed by `npm run serve`
+- default start target: `http://127.0.0.1:4173/index.html`
 
 Debug mode:
-- `http://127.0.0.1:8000/index.html?debug=1`
+- read the exact `Debug:` URL printed by `npm run serve`
+- default debug target: `http://127.0.0.1:4173/index.html?debug=1`
+
+Local server behavior:
+- serves the current repo root, not the shell's current directory
+- resolves `/` directly to `index.html`
+- starts at port `4173`
+- if `4173` is busy, it automatically moves to the next free port and prints the real URL
 
 Do not rely on `file://` for normal validation. Use a local static server.
 
@@ -43,9 +51,27 @@ Or run individual checks:
 npm run check:syntax
 npm run check:repo
 npm run check:docs
+npm run check:localserver
 npm run check:dom
 npm run check:config
+npm run check:nextphase
 npm run check:analytics
+npm run check:storage
+npm run check:localization
+npm run check:roster
+npm run check:encounter
+npm run check:workshop
+npm run check:roadrank
+npm run check:providers
+npm run check:debugservice
+npm run check:debug
+npm run check:debugruntime
+npm run check:loadout
+npm run check:shellpresentation
+npm run check:session
+npm run check:roundflow
+npm run check:matchflow
+npm run check:share
 npm run check:ui
 npm run check:static
 npm run verify:release
@@ -56,9 +82,25 @@ What it checks:
 - parse-level syntax regressions before manual play testing
 - critical runtime/doc/reference file presence
 - local Markdown link integrity
+- repo-local static server routing and root resolution
 - core `index.html` / JS DOM id contract integrity
 - config consistency across content tables and Challenge Road references
+- next-phase Championship Path structure and checkpoint metadata
 - tracked analytics event names staying aligned with docs
+- legacy save migration and save-shape normalization
+- English/Chinese/Japanese locale table parity, saved locale behavior, and live runtime text application
+- Workshop Research config shape, purchase persistence, and loadout integration
+- Road Rank unlock flow, selection wiring, and challenge-entry UI exposure
+- provider adapter selection and fallback behavior staying valid
+- debug-panel synchronous action failures surfacing as status messages instead of uncaught errors
+- debug tuning import/reset behavior for economy, arenas, tops, research, road ranks, championship nodes, and enemy preset config
+- debug progression/runtime snapshot builders and export actions
+- arena purchase, arena trial, and top purchase analytics paths in the loadout flow
+- title entry, featured top, battle intro, and result breakdown shell presentation
+- session_start, return_session, and once-only session_end behavior
+- match boot/setup behavior and challenge node metadata threading
+- result-flow context, share-moment behavior, and Challenge Road clear-node unlock analytics staying valid
+- share service SVG-card generation and fallback download path staying valid
 - `index.html` UI invoke hooks staying aligned with exposed UI actions
 - final packaged static release staying limited to runtime files only
 
@@ -76,16 +118,28 @@ Current actions:
 - `+200 SCRAP`
 - `UNLOCK HEX`
 - `UNLOCK TRICK`
+- `UNLOCK BREAKER`
+- `UNLOCK RAIDER`
+- `RANK II`
+- `RANK III`
 - `NODE 4`
 - `FINAL NODE`
+- `COPY PROGRESSION`
+- `COPY RUNTIME`
 - `COPY SAVE`
 - `IMPORT SAVE`
 - `COPY EVENTS`
+- `COPY TUNING`
+- `IMPORT TUNING`
+- `RESET TUNING`
+- `COPY PROVIDERS`
 - `REWARD GRANT`
 - `REWARD DENY`
 - `REWARD ERROR`
 - `CLEAR EVENTS`
 - `MOCK SHARE`
+- `COPY SHARE SVG`
+- `DOWNLOAD SHARE SVG`
 - `MOCK REWARD`
 - `RESET SAVE`
 
@@ -94,12 +148,27 @@ Current debug visibility:
 - storage mode: `local`, `session`, `window_name`, or `memory`
 - persistence diagnostic object for current fallback reason
 - selected mode and arena
+- challenge unlocked node index and checkpoint resume index
+- challenge unlocked rank index and selected rank label
 - player and enemy top ids
 - unlocked arena list
 - unlocked top list
 - trial arena list
 - currency
+- live enemy AI config for the current preset
+- current enemy preset label
+- whether runtime tuning overrides are active
 - reward mock mode
+- reward adapter state
+- reward availability reason
+- reward request reason
+- reward active placement
+- analytics adapter state
+- analytics ready state
+- analytics loading state
+- analytics forward reason
+- analytics initialized state
+- analytics queued event count
 - analytics event count
 - last analytics event name
 
@@ -111,6 +180,10 @@ Persistence notes:
 
 Runtime behavior:
 - when persistence is not `local`, the game now shows a top warning banner so save limitations are visible even outside debug mode
+- tuning imports are debug-only and session-local; use `COPY TUNING` before large changes if you want a restorable snapshot
+- tuning import now accepts full-table overrides for `arenas`, `tops`, `research`, `roadRanks`, and `challengeRoad` in addition to `economy` and `enemyPresets`
+- array-based tuning roots are replaced as complete tables, so the normal workflow is: `COPY TUNING` -> edit the copied JSON -> `IMPORT TUNING`
+- invalid pasted JSON in debug import actions should now surface as a red status message in the panel instead of throwing an uncaught runtime error
 
 ## Manual Smoke Test
 
@@ -121,17 +194,23 @@ Recommended order:
 1. Open the title screen.
 2. Enter loadout from `ENTER BATTLE`.
 3. Switch `Quick Battle` and `Challenge Road`.
-4. Change arena and top selection.
-5. Start a Quick Battle match.
-6. Drag launch and finish a match.
-7. Use result actions:
+4. From the title screen, confirm `CONTINUE PATH`, `QUICK BATTLE`, and `WORKSHOP` all enter the correct loadout state.
+5. Switch language on the title screen, then again in loadout, and confirm the chosen language survives refresh.
+6. Change arena and top selection.
+7. Confirm the featured top panel updates as the selected top changes.
+8. Start a Quick Battle match.
+9. Confirm the pre-fight intro banner shows matchup and arena context in the selected language.
+10. Drag launch and finish a match.
+11. Use result actions:
    - replay
    - double reward
    - share
-8. Enter Challenge Road and clear or fail a node.
-9. Trigger continue flow after a Challenge Road loss.
-10. In debug mode, grant SCRAP and unlock Hex Bowl.
-11. Retry locked-arena trial flow in Quick Battle.
+   - if desktop fallback path is used, confirm a share card download or copied text path occurs
+12. Enter Challenge Road and clear or fail a node.
+13. Select a higher `ROAD RANK` in Championship Path and confirm locked ranks stay disabled until unlocked.
+14. Trigger continue flow after a Challenge Road loss.
+15. In debug mode, grant SCRAP, unlock Hex Bowl, and if needed jump rank state with `RANK II` or `RANK III`.
+16. Retry locked-arena trial flow in Quick Battle.
 
 ## Save Reset
 

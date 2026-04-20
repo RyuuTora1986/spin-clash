@@ -49,11 +49,28 @@ Initial adapter strategy:
 - `NullRewardAdapter` cleanly reports unavailable.
 - Future adapters can wrap host-specific rewarded video SDKs.
 
+Current implementation note:
+- the live `adsense_rewarded` path now waits through the first GPT script load attempt and then issues a real GPT rewarded slot request
+- current live result mapping:
+  - granted reward + slot close -> `granted:true`
+  - slot close without grant -> `granted:false`
+  - provider/setup failure -> safe rejection such as `provider_unavailable`
+- reward failure normalization is now shared through `rewardService.getFailureInfo(...)` so gameplay/UI flows can react consistently
+- gameplay callers still do not change
+
 ## ShareService
 Responsibilities:
 - Build share payloads for result moments.
 - Prefer Web Share API where available.
 - Fall back to clipboard or download.
+
+Current implementation note:
+- result shares now build a lightweight SVG result card through `src/share-card-tools.js`
+- preferred runtime path is:
+  - Web Share file share when supported
+  - Web Share text share
+  - SVG card download plus copied text fallback
+- non-result shares still use text-only fallback behavior
 
 Suggested surface:
 ```js
@@ -86,10 +103,21 @@ Current implementation status:
   - `trial_unlock_complete`
   - `continue_used`
   - `share_click`
+  - `share_complete`
   - `unlock_grant`
   - `unlock_purchase`
   - reward analytics now include `adapter`, `granted`, and `resultValue` metadata in the mock path
   - save shape now supports both `unlocks.arenas` and `unlocks.tops`
+  - provider config is now explicit in `src/config-providers.js`
+  - analytics adapter selection is now explicit in `src/analytics-service.js`
+  - reward adapter selection is now explicit in `src/reward-service.js`
+  - PostHog queued events now auto-flush after script load instead of requiring a second gameplay event
+  - adapter info now exposes:
+    - `ready`
+    - `loading`
+    - `lastForwardReason`
+    - `initialized`
+    - `queuedEvents`
 Reference:
 - `docs/analytics-events.md`
 
@@ -108,6 +136,7 @@ Minimum events:
 - `trial_unlock_start`
 - `trial_unlock_complete`
 - `share_click`
+- `share_complete`
 - `unlock_grant`
 - `unlock_purchase`
 
@@ -137,7 +166,11 @@ Current lightweight implementation status:
 - inspectable state snapshot in the debug panel
 - save export via `COPY SAVE`
 - save import via `IMPORT SAVE`
+- legacy save migration and save-shape normalization now run through `src/storage-service.js`
 - analytics export via `COPY EVENTS`
+- tuning export via `COPY TUNING`
+- tuning import via `IMPORT TUNING`
+- baseline restore via `RESET TUNING`
 - reward mock-mode switching via `REWARD GRANT`, `REWARD DENY`, and `REWARD ERROR`
 - analytics reset via `CLEAR EVENTS`
 - mock reward trigger via `MOCK REWARD`

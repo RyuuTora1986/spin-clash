@@ -19,6 +19,24 @@
           dashT:0.24,
           roleBiasBoost:0.24,
           roleBiasWindow:0.52
+        },
+        vanguard:{
+          chargeScale:2.16,
+          dashT:0.34,
+          roleBiasBoost:0.12,
+          roleBiasWindow:0.7
+        },
+        nova:{
+          chargeScale:2.92,
+          dashT:0.2,
+          roleBiasBoost:0.18,
+          roleBiasWindow:0.36
+        },
+        tremor:{
+          chargeScale:2.26,
+          dashT:0.31,
+          roleBiasBoost:0.3,
+          roleBiasWindow:0.82
         }
       },
       hudAccent:{
@@ -44,6 +62,36 @@
         knockback:6.8,
         spinDamage:78,
         hpDamage:5
+      },
+      variants:{
+        bastion:{
+          selfVelocityScale:0.18,
+          selfTiltScale:0.28,
+          knockback:7.2,
+          spinDamage:84,
+          hpDamage:6
+        },
+        aegis:{
+          selfVelocityScale:0.22,
+          selfTiltScale:0.34,
+          knockback:7.6,
+          spinDamage:80,
+          hpDamage:5
+        },
+        mammoth:{
+          selfVelocityScale:0.16,
+          selfTiltScale:0.22,
+          knockback:8.4,
+          spinDamage:92,
+          hpDamage:7
+        },
+        mirror:{
+          selfVelocityScale:0.3,
+          selfTiltScale:0.46,
+          knockback:7.1,
+          spinDamage:74,
+          hpDamage:4
+        }
       },
       hudAccent:{
         chargeStroke:'rgba(125,215,255,0.62)',
@@ -74,6 +122,24 @@
           phantomT:1.55,
           targetKnockback:5.1,
           lateralDrift:5.6
+        },
+        venom:{
+          speedMul:2.08,
+          phantomT:1.42,
+          targetKnockback:5.0,
+          lateralDrift:3.8
+        },
+        orbit:{
+          speedMul:1.92,
+          phantomT:1.66,
+          targetKnockback:4.7,
+          lateralDrift:2.6
+        },
+        glitch:{
+          speedMul:2.26,
+          phantomT:1.78,
+          targetKnockback:5.4,
+          lateralDrift:7.2
         }
       },
       hudAccent:{

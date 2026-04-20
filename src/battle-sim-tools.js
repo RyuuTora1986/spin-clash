@@ -35,6 +35,7 @@
     const endRound = deps.endRound;
     const fireSkill = deps.fireSkill;
     const scene = deps.scene;
+    const arenaMathTools = root.createArenaMathTools ? root.createArenaMathTools() : null;
     const hexInner = scalePolygon(hexPoints,0.82);
     const hexOuter = scalePolygon(hexPoints,1.12);
     const DEFAULT_ENEMY_AI = {
@@ -51,6 +52,53 @@
       intentSkillLead:0.36,
       useSkillOnBurstReady:true
     };
+
+    function getPolygonRadius(points){
+      let best = 0;
+      (points || []).forEach(function(point){
+        if(!point) return;
+        const x = Array.isArray(point) ? point[0] : point.x;
+        const z = Array.isArray(point) ? point[1] : point.z;
+        const radius = Math.sqrt((x || 0) * (x || 0) + (z || 0) * (z || 0));
+        if(radius > best){
+          best = radius;
+        }
+      });
+      return best || 7.1;
+    }
+
+    function getActiveArenaConfig(){
+      const arenas = (root.config && root.config.arenas) || [];
+      const state = root.state || {};
+      const index = typeof state.currentArenaIndex === 'number' ? state.currentArenaIndex : 0;
+      const fallbackType = isCircleArena() ? 'circle' : (isHeartArena() ? 'heart' : 'hex');
+      return arenas[index] || arenas[0] || { id:'fallback_arena', type:fallbackType };
+    }
+
+    function getActiveArenaProfile(){
+      if(arenaMathTools && typeof arenaMathTools.getArenaProfile === 'function'){
+        return arenaMathTools.getArenaProfile(getActiveArenaConfig(), {
+          arenaRadius:arenaRadius,
+          polygonRadius:getPolygonRadius(hexPoints)
+        });
+      }
+      return {
+        type:isCircleArena() ? 'circle' : (isHeartArena() ? 'heart' : 'hex'),
+        slopeForce:isCircleArena() ? 5.5 : (isHeartArena() ? 4.8 : 5.0),
+        radialPull:isCircleArena() ? 1 : 0.6,
+        hazardStart:6.5,
+        safeWallInset:0.18,
+        wallPush:0.42,
+        rimColor:isCircleArena() ? 0x2299ff : (isHeartArena() ? 0xff2288 : 0xffb000),
+        outerRadius:arenaRadius + 1.0,
+        heartPoints:null,
+        hazardPoints:null,
+        nearWallPoints:null,
+        outerPoints:isHexArena() ? hexOuter : null,
+        polygonPoints:isHexArena() ? hexPoints : null,
+        polygonRadius:getPolygonRadius(hexPoints)
+      };
+    }
 
     function buildImpactProfile(topA,topB){
       const dx=topA.x-topB.x;
@@ -236,11 +284,12 @@
 
     function movTop(top,dt){
       if(!top.alive) return;
+      const arenaProfile = getActiveArenaProfile();
       const frictionScale = Math.pow(friction,dt*60);
       top.vx *= frictionScale;
       top.vz *= frictionScale;
-      const slopeK = isCircleArena() ? 5.5 : (isHeartArena() ? 4.8 : 5.0);
-      if(isCircleArena()){
+      const slopeK = arenaProfile.slopeForce;
+      if(arenaProfile.type === 'circle'){
         const dist0 = Math.sqrt(top.x*top.x+top.z*top.z);
         if(dist0>0.05){
           const slope = slopeK*Math.pow(dist0/arenaRadius,0.8);
@@ -250,8 +299,8 @@
       }else{
         const dist0 = Math.sqrt(top.x*top.x+top.z*top.z);
         if(dist0>0.05){
-          top.vx -= top.x/dist0*slopeK*0.6*dt;
-          top.vz -= top.z/dist0*slopeK*0.6*dt;
+          top.vx -= top.x/dist0*slopeK*arenaProfile.radialPull*dt;
+          top.vz -= top.z/dist0*slopeK*arenaProfile.radialPull*dt;
         }
       }
       top.x += top.vx*dt;
@@ -298,9 +347,14 @@
       top.wallCD = Math.max(0,(top.wallCD||0)-dt);
 
       const dist = Math.sqrt(top.x*top.x+top.z*top.z);
-      const inHaz = isCircleArena()
-        ? dist>6.5
-        : (isHeartArena() ? heartInHaz(top.x,top.z) : (polygonContains(hexPoints,top.x,top.z) && !polygonContains(hexInner,top.x,top.z)));
+      const inHaz = arenaProfile.type === 'circle'
+        ? dist > arenaProfile.hazardStart
+        : (arenaProfile.type === 'heart'
+          ? (arenaMathTools
+            ? arenaMathTools.heartInHaz(top.x, top.z, arenaProfile)
+            : heartInHaz(top.x, top.z))
+          : (polygonContains(arenaProfile.polygonPoints || hexPoints, top.x, top.z)
+            && !polygonContains(arenaProfile.hazardPoints || hexInner, top.x, top.z)));
       top.spin = Math.max(0,top.spin-(spinDrain+(inHaz?hazardDrain:0))*dt);
       const passiveHpDecay = getPassiveHpDecayPerSec(top);
       if(passiveHpDecay>0){
@@ -310,18 +364,24 @@
       let nearWall=false;
       let wallNx=0;
       let wallNz=0;
-      if(isCircleArena()){
+      if(arenaProfile.type === 'circle'){
         if(dist>arenaRadius-topRadius-0.1&&dist>0.01){ nearWall=true; wallNx=top.x/dist; wallNz=top.z/dist; }
-      }else if(isHeartArena()){
-        if(heartNearWall(top.x,top.z)){
+      }else if(arenaProfile.type === 'heart'){
+        const isNearHeartWall = arenaMathTools
+          ? arenaMathTools.heartNearWall(top.x, top.z, arenaProfile)
+          : heartNearWall(top.x, top.z);
+        if(isNearHeartWall){
           nearWall=true;
-          const wallNormal = heartWallNormal(top.x,top.z);
+          const wallNormal = arenaMathTools
+            ? arenaMathTools.heartWallNormal(top.x, top.z, arenaProfile.heartPoints)
+            : heartWallNormal(top.x, top.z);
           wallNx = wallNormal.nx;
           wallNz = wallNormal.nz;
         }
       }else{
-        const edge = nearestPolygonEdgeData(hexPoints,top.x,top.z);
-        if(polygonContains(hexPoints,top.x,top.z) && edge.dist < topRadius+0.12){
+        const activePolygon = arenaProfile.polygonPoints || hexPoints;
+        const edge = nearestPolygonEdgeData(activePolygon,top.x,top.z);
+        if(polygonContains(activePolygon,top.x,top.z) && edge.dist < topRadius+0.12){
           nearWall = true;
           wallNx = edge.nx;
           wallNz = edge.nz;
@@ -335,13 +395,13 @@
           const elasticity = 1.38+Math.min(speed*0.028,0.28);
           top.vx -= elasticity*dot*wallNx;
           top.vz -= elasticity*dot*wallNz;
-          if(isCircleArena()){
-            const safeRadius = arenaRadius-topRadius-0.18;
+          if(arenaProfile.type === 'circle'){
+            const safeRadius = arenaRadius-topRadius-arenaProfile.safeWallInset;
             top.x = wallNx*safeRadius;
             top.z = wallNz*safeRadius;
           }else{
-            top.x -= wallNx*0.42;
-            top.z -= wallNz*0.42;
+            top.x -= wallNx*arenaProfile.wallPush;
+            top.z -= wallNz*arenaProfile.wallPush;
           }
           top.spin = Math.max(0,top.spin-22);
           top.burst = Math.min(100,top.burst+8);
@@ -351,18 +411,32 @@
           top.tiltVZ -= wallNx*tiltForce;
           (top.isPlayer ? getPlayerTrailPositions() : getEnemyTrailPositions()).length = 0;
           sfxWall(Math.abs(dot));
-          spawnParts(top.x,top.z,isCircleArena()?0x2299ff:(isHeartArena()?0xff2288:0xffb000),6);
+          spawnParts(top.x,top.z,arenaProfile.rimColor,6);
           spawnParts(top.x,top.z,0xffffff,3);
           setCamShake(Math.min(0.8,getCamShake()+Math.abs(dot)*0.11));
         }
       }
 
-      const isOut = isCircleArena()
-        ? dist>arenaRadius+1.0
-        : (isHeartArena() ? heartRingOut(top.x,top.z) : !polygonContains(hexOuter,top.x,top.z));
-      if(isCircleArena()&&dist>arenaRadius+0.05&&dist<arenaRadius+0.3&&getTimeScale()>0.5) setTimeScale(0.18);
-      if(isHeartArena()&&heartCrossed(top.x,top.z)&&!heartRingOut(top.x,top.z)&&getTimeScale()>0.5) setTimeScale(0.18);
-      if(isHexArena()&&polygonContains(hexOuter,top.x,top.z)&&!polygonContains(hexPoints,top.x,top.z)&&getTimeScale()>0.5) setTimeScale(0.18);
+      const isOut = arenaProfile.type === 'circle'
+        ? dist > (arenaProfile.outerRadius || (arenaRadius + 1.0))
+        : (arenaProfile.type === 'heart'
+          ? (arenaMathTools
+            ? arenaMathTools.heartRingOut(top.x, top.z, arenaProfile)
+            : heartRingOut(top.x, top.z))
+          : !polygonContains(arenaProfile.outerPoints || hexOuter,top.x,top.z));
+      if(arenaProfile.type === 'circle' && dist>arenaRadius+0.05&&dist<arenaRadius+0.3&&getTimeScale()>0.5) setTimeScale(0.18);
+      if(
+        arenaProfile.type === 'heart'
+        && (arenaMathTools ? arenaMathTools.heartCrossed(top.x, top.z, arenaProfile) : heartCrossed(top.x, top.z))
+        && !(arenaMathTools ? arenaMathTools.heartRingOut(top.x, top.z, arenaProfile) : heartRingOut(top.x, top.z))
+        && getTimeScale()>0.5
+      ) setTimeScale(0.18);
+      if(
+        arenaProfile.type === 'hex'
+        && polygonContains(arenaProfile.outerPoints || hexOuter,top.x,top.z)
+        && !polygonContains(arenaProfile.polygonPoints || hexPoints,top.x,top.z)
+        && getTimeScale()>0.5
+      ) setTimeScale(0.18);
 
       if(isOut){
         top.alive=false;

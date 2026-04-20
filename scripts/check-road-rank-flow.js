@@ -57,7 +57,7 @@ function createBaseSave() {
     },
     unlocks: {
       arenas: ['circle_bowl', 'heart_bowl', 'hex_bowl'],
-      tops: ['impact', 'armor', 'trick']
+      tops: ['impact', 'armor']
     },
     analytics: []
   };
@@ -113,6 +113,9 @@ async function main() {
 
   const roadRanks = context.SpinClash.config.roadRanks;
   assert(Array.isArray(roadRanks) && roadRanks.length === 3, 'Expected exactly 3 road ranks.');
+  assert(roadRanks[0].rewardTopId === 'trick', 'Expected Rank I to reward trick.');
+  assert(roadRanks[1].rewardTopId === 'armor_bastion', 'Expected Rank II to reward armor_bastion.');
+  assert(roadRanks[2].rewardTopId === 'impact_nova', 'Expected Rank III to reward impact_nova.');
 
   const storage = createStorageStub(createBaseSave());
   const progression = context.SpinClash.createProgressionTools({
@@ -191,7 +194,10 @@ async function main() {
     },
     tops: [
       { id: 'impact', name: 'Impact' },
-      { id: 'armor', name: 'Armor' }
+      { id: 'armor', name: 'Armor' },
+      { id: 'trick', name: 'Trick' },
+      { id: 'armor_bastion', name: 'Bastion' },
+      { id: 'impact_nova', name: 'Nova' }
     ],
     challengeRoad: new Array(10).fill(null).map((_, index) => ({
       id: 'node-' + (index + 1),
@@ -254,9 +260,14 @@ async function main() {
   await flushMicrotasks();
 
   const rankUnlockI = analyticsEvents.find((event) => event.name === 'road_rank_unlock');
+  const rankRewardUnlockI = analyticsEvents.find((event) => event.name === 'unlock_grant' && event.payload.kind === 'top');
   assert(state.save.currency === 86, 'Expected Rank I final-node reward to preserve the new championship payout baseline.');
   assert(state.save.challenge.unlockedRankIndex === 1, 'Expected clearing the final node to unlock the next road rank.');
+  assert(state.save.unlocks.tops.includes('trick'), 'Expected Rank I clear to unlock Trick as the reward top.');
   assert(rankUnlockI, 'Expected clearing the final node to emit road_rank_unlock analytics.');
+  assert(rankRewardUnlockI, 'Expected Rank I clear to emit unlock_grant analytics for the reward top.');
+  assert(rankRewardUnlockI.payload.topId === 'trick', 'Expected Rank I reward top unlock to preserve topId.');
+  assert(rankRewardUnlockI.payload.source === 'challenge_road_rank', 'Expected Rank I reward top unlock to preserve rank reward source.');
   assert(rankUnlockI.payload.fromRankIndex === 0, 'Expected road_rank_unlock to preserve fromRankIndex.');
   assert(rankUnlockI.payload.fromRankId === 'rank_i', 'Expected road_rank_unlock to preserve fromRankId.');
   assert(rankUnlockI.payload.toRankIndex === 1, 'Expected road_rank_unlock to preserve toRankIndex.');
@@ -267,18 +278,41 @@ async function main() {
   state.roundRewardGranted = false;
   state.save.currency = 0;
   state.save.challenge.unlockedRankIndex = 1;
+  state.save.unlocks.tops = ['impact', 'armor', 'trick'];
   analyticsEvents.length = 0;
   tools.showMatchResult();
   await flushMicrotasks();
 
   const rankUnlockII = analyticsEvents.find((event) => event.name === 'road_rank_unlock');
+  const rankRewardUnlockII = analyticsEvents.find((event) => event.name === 'unlock_grant' && event.payload.kind === 'top');
   assert(state.save.currency === 103, 'Expected Rank II multiplier to apply the new measured championship bonus.');
   assert(state.save.challenge.unlockedRankIndex === 2, 'Expected clearing the final node on Rank II to unlock Rank III.');
+  assert(state.save.unlocks.tops.includes('armor_bastion'), 'Expected Rank II clear to unlock Bastion as the reward top.');
   assert(rankUnlockII, 'Expected clearing the final node on Rank II to emit road_rank_unlock analytics.');
+  assert(rankRewardUnlockII, 'Expected Rank II clear to emit unlock_grant analytics for the reward top.');
+  assert(rankRewardUnlockII.payload.topId === 'armor_bastion', 'Expected Rank II reward top unlock to preserve topId.');
   assert(rankUnlockII.payload.fromRankIndex === 1, 'Expected Rank II road_rank_unlock to preserve fromRankIndex.');
   assert(rankUnlockII.payload.fromRankId === 'rank_ii', 'Expected Rank II road_rank_unlock to preserve fromRankId.');
   assert(rankUnlockII.payload.toRankIndex === 2, 'Expected Rank II road_rank_unlock to preserve toRankIndex.');
   assert(rankUnlockII.payload.toRankId === 'rank_iii', 'Expected Rank II road_rank_unlock to preserve toRankId.');
+
+  state.selectedRoadRankIndex = 2;
+  state.roundRewardGranted = false;
+  state.save.currency = 0;
+  state.save.challenge.unlockedRankIndex = 2;
+  state.save.unlocks.tops = ['impact', 'armor', 'trick', 'armor_bastion'];
+  analyticsEvents.length = 0;
+  tools.showMatchResult();
+  await flushMicrotasks();
+
+  const rankUnlockIII = analyticsEvents.find((event) => event.name === 'road_rank_unlock');
+  const rankRewardUnlockIII = analyticsEvents.find((event) => event.name === 'unlock_grant' && event.payload.kind === 'top');
+  assert(state.save.currency === 119, 'Expected Rank III multiplier to apply the final championship bonus.');
+  assert(state.save.challenge.unlockedRankIndex === 2, 'Expected Rank III clear to stay capped at Rank III unlock state.');
+  assert(state.save.unlocks.tops.includes('impact_nova'), 'Expected Rank III clear to unlock Nova as the reward top.');
+  assert(!rankUnlockIII, 'Expected Rank III clear not to emit a further road_rank_unlock event.');
+  assert(rankRewardUnlockIII, 'Expected Rank III clear to emit unlock_grant analytics for the reward top.');
+  assert(rankRewardUnlockIII.payload.topId === 'impact_nova', 'Expected Rank III reward top unlock to preserve topId.');
 
   console.log('Road rank flow check passed.');
 }

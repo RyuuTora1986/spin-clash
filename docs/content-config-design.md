@@ -8,18 +8,27 @@ Content expansion should come mostly from structured data and existing code path
 {
   id: 'arena_circle',
   nameKey: 'arena.circle.name',
-  type: 'circle_bowl',
+  type: 'circle',
   visualTheme: 'neon_blue',
+  shape: {
+    sides: 8,
+    radiusScale: 0.97,
+    rotation: Math.PI / 8
+  },
   geometry: {
     radius: 8,
     bowlHeight: 0.58,
     hazardStart: 6.5,
-    ringOutRadius: 9.0
+    ringOutRadius: 9.0,
+    hazardScale: 0.82,
+    nearWallScale: 0.94
   },
   physics: {
     slopeForce: 5.5,
     wallBounceBase: 1.38,
-    wallBounceSpeedBonus: 0.28
+    wallBounceSpeedBonus: 0.28,
+    radialPull: 0.6,
+    wallPush: 0.42
   },
   pickups: {
     orbSpawnPoints: [{ x: -2.5, z: 0 }, { x: 2.5, z: 0 }],
@@ -28,15 +37,21 @@ Content expansion should come mostly from structured data and existing code path
   renderer: {
     centerMarkerColor: '#00ffcc',
     rimColor: '#0055ff',
-    hazardColor: '#ff2200'
+    hazardColor: '#ff2200',
+    accentColor: '#1a3355'
   }
 }
 ```
+
+Current implementation note:
+- `src/config-arenas.js` now supports same-family arena expansion by parameterizing `shape`, `geometry`, `physics`, and `renderer`.
+- New arena families still require code, but new arenas within the existing `circle`, `heart`, and polygon/`hex` families can stay config-driven.
 
 ## Top Schema
 ```js
 {
   id: 'top_impact',
+  variant: 'core',
   nameKey: 'top.impact.name',
   classKey: 'top.impact.class',
   skillId: 'skill_charge',
@@ -59,24 +74,32 @@ Content expansion should come mostly from structured data and existing code path
 }
 ```
 
+Notes:
+- `variant` is the hook for balance/render differentiation inside the same top family.
+- `meshFamily` can point at family-scoped variants such as `impact_nova` or `armor_mammoth` when the same skill family needs a distinct silhouette.
+- Loadout top cards should be generated from the config roster length rather than hardcoded DOM slots.
+
 ## Enemy Preset Schema
+Current implementation status:
+- `src/config-enemy-presets.js` is now the live enemy preset table.
+- Challenge Road nodes now reference `enemyPresetId` instead of `enemyTopId`.
+- Presets currently own enemy top selection plus differentiated AI tuning values, while reward tuning stays outside the preset.
+
 ```js
 {
-  id: 'enemy_armor_baseline',
-  nameKey: 'enemy.armorBaseline.name',
-  topId: 'top_armor',
+  id: 'armor_standard',
+  label: 'ARMOR STANDARD',
+  topId: 'armor',
   ai: {
     seekForce: 6.5,
+    speedCapScale: 0.9,
     inwardBiasRadius: 5.9,
     inwardBiasForce: 7,
     dashRange: 4.5,
     dashScale: 2.2,
     dashCooldownScaleMin: 0.8,
     dashCooldownScaleMax: 1.3,
-    preferredSkillUse: 'onReady'
-  },
-  reward: {
-    payoutMultiplier: 1
+    useSkillOnBurstReady: true
   }
 }
 ```
@@ -100,50 +123,45 @@ Content expansion should come mostly from structured data and existing code path
 ## Challenge Node Schema
 ```js
 {
-  id: 'road_03',
-  order: 3,
-  arenaId: 'arena_hex_bowl',
-  enemyPresetId: 'enemy_trick_fast',
-  modifierIds: ['modifier_fast_burst'],
-  rewards: {
-    clearCurrency: 40,
-    firstClearBonus: 20
-  },
-  unlocksOnClear: {
-    topIds: [],
-    arenaIds: []
-  }
+  id: 'node-5',
+  name: 'Tight Clock',
+  arenaIndex: 2,
+  enemyPresetId: 'trick_standard',
+  modifierId: 'suddenDeath',
+  reward: 40,
+  unlockTopId: 'trick'
 }
 ```
 
 ## Unlock / Tuning Schema
+Current implementation status:
+- `src/config-economy.js` now owns the shared result reward and continue/runtime tuning values.
+- Arena/top unlock costs remain with arena/top content configs because they are content-specific, not global economy rules.
+- Challenge node reward bonuses remain on the node config because they are node-specific.
+
 ```js
 {
-  economy: {
-    resultWin: 20,
-    resultLoss: 8,
-    challengeFirstClearBonus: 20,
-    rewardDoubleEnabled: true
-  },
-  unlocks: {
-    top_armor_variant: 120,
-    arena_hex_bowl: 180
+  rewards: {
+    winBase: 20,
+    lossBase: 8,
+    doubleRewardMultiplier: 2
   },
   runtime: {
-    roundSeconds: 30,
-    bestOfRounds: 3,
-    continueEnabled: true,
-    continueLimitPerRun: 1
+    defaultRoundTimer: 30,
+    challengeContinueEnabled: true,
+    challengeContinueLimit: 1
   }
 }
 ```
 
 ## What Can Be Config-Only
 - Top roster metadata and base stats.
+- Top family variants that still reuse an existing skill behavior family.
 - Arena parameter values when using existing geometry families.
 - Enemy presets and AI tuning numbers.
 - Modifier values.
 - Challenge Road node ordering and rewards.
+- Loadout roster card count and per-top presentation copy.
 - Unlock costs and economy numbers.
 - Localized text strings.
 

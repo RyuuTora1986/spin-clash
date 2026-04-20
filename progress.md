@@ -1098,9 +1098,478 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - direct in-page fetch checks for those four files returned `200`
   - `?debug=1` mounted the debug panel successfully
   - no visible runtime error banner was present in that fresh deployed check
-- Current practical state after recovery:
+ - Current practical state after recovery:
   - the public GitHub Pages URL is now current enough to use as the provider-closeout baseline
   - the remaining blocker is real rewarded-ad validation plus real PostHog forwarding validation under deploy-time overrides, not stale host package mismatch
   - docs updated:
     - `docs/provider-phase-report-2026-04-18-partial.md`
     - `docs/launch-blockers.md`
+
+2026-04-18 PostHog live validation closeout
+- Continued provider closeout on the recovered GitHub Pages baseline and used the user's authenticated browser session plus GitHub Actions repository variables to enable live PostHog forwarding without changing committed base config.
+- Created live PostHog repository variables:
+  - `SPIN_CLASH_ANALYTICS_ADAPTER=posthog`
+  - `SPIN_CLASH_ANALYTICS_ENABLE_FORWARDING=true`
+  - `SPIN_CLASH_POSTHOG_ENABLED=true`
+  - `SPIN_CLASH_POSTHOG_PROJECT_API_KEY=<configured in repo variables>`
+  - `SPIN_CLASH_POSTHOG_API_HOST=https://us.i.posthog.com`
+  - `SPIN_CLASH_POSTHOG_SCRIPT_URL=https://us-assets.i.posthog.com/static/array.js`
+- Triggered and completed two deploy runs during this closeout:
+  - `24607190399`
+  - `24607227795`
+- Found and resolved one real deployed-runtime gap:
+  - enabling PostHog with only key + host was not enough in the current implementation
+  - without `SPIN_CLASH_POSTHOG_SCRIPT_URL`, the runtime switched to `posthog` mode but stayed `posthog_unavailable`
+  - after adding the script URL variable and redeploying, the deployed override file served the expected live PostHog config
+- Live runtime/browser validation results on `https://ryuutora1986.github.io/spin-clash/?debug=1`:
+  - adapter state switched to `posthog`
+  - forwarding state switched to enabled
+  - first validation event showed expected transitional `posthog_loading`
+  - SDK then reached `ready: true`, `initialized: true`, `queuedEvents: 0`
+  - follow-up validation event returned `forwarded: true`
+- Important operational note:
+  - an already-open browser tab may continue using cached older provider scripts until hard refresh
+  - the deployed file itself was confirmed current via direct fetch from `src/config-providers-override.js`
+- Current practical state after this pass:
+  - first real deployed-host PostHog validation is complete
+  - analytics forwarding is no longer a launch blocker for the current first-sink scope
+  - the only major provider-closeout item still open is real rewarded-ad validation with a production-capable GPT/AdSense ad unit path
+- Docs updated:
+  - `docs/provider-phase-report-2026-04-18-partial.md`
+  - `docs/launch-blockers.md`
+  - `docs/github-pages-deploy.md`
+
+2026-04-19 company-domain custom-host cutover
+- Chosen host direction changed from trying to monetize directly on the WordPress root company site to using a controlled company subdomain for the game host:
+  - target: `play.hakurokudo.com`
+- Confirmed with the user's authenticated browser session that:
+  - `hakurokudo.com` is the active primary domain in WordPress.com
+  - DNS for `hakurokudo.com` is managed inside the same WordPress domain console
+  - an existing `test.hakurokudo.com` subdomain already pointed to an external static host, proving the subdomain pattern is viable in this setup
+- Configured GitHub Pages custom domain in the repository browser settings:
+  - `Settings -> Pages -> Custom domain -> play.hakurokudo.com`
+- Added the required WordPress DNS record in the user's authenticated domain console:
+  - `CNAME`
+  - host: `play`
+  - target: `ryuutora1986.github.io`
+- Immediate validation after the DNS write:
+  - `Resolve-DnsName play.hakurokudo.com -Type CNAME` returned `ryuutora1986.github.io`
+  - `http://play.hakurokudo.com/` already served the live `Spin Clash` build
+  - GitHub Pages still reported:
+    - `DNS Check in Progress`
+    - HTTPS unavailable for now
+  - `https://play.hakurokudo.com/` currently returns the expected temporary certificate mismatch warning while GitHub Pages certificate issuance is pending
+- Practical meaning:
+  - company-branded static hosting is no longer the blocker
+  - the main remaining provider blocker is still rewarded-ad live/manual validation plus the missing production-capable Ad Manager rewarded setup
+- Docs updated locally for the new host shape:
+  - `docs/github-pages-deploy.md`
+  - `docs/launch-blockers.md`
+  - `docs/provider-phase-report-2026-04-18-partial.md`
+
+2026-04-19 game-host AdSense verification asset prep
+- Continued the main provider path on the new company-branded game host instead of waiting on the WordPress root site.
+- Added the basic static host verification materials directly to the game repository:
+  - `index.html` now includes:
+    - `<meta name="google-adsense-account" content="ca-pub-4799303992679484">`
+  - new root file:
+    - `ads.txt`
+    - content: `google.com, pub-4799303992679484, DIRECT, f08c47fec0942fa0`
+- Updated the static release pipeline so these materials are treated as real release assets:
+  - `scripts/build-static-release.js` now packages `ads.txt`
+  - `scripts/check-static-package.js` now asserts `dist-static/ads.txt`
+  - `scripts/check-repo.js` now asserts repo-root `ads.txt`
+- Practical meaning:
+  - once the updated Pages deploy is published, `play.hakurokudo.com` will have the minimum static ownership materials needed for AdSense site review on the game host itself
+  - remaining blockers after this prep are still:
+    - GitHub Pages HTTPS issuance for the custom domain
+    - real Ad Manager rewarded setup and live rewarded validation
+
+2026-04-19 rewarded integration prep closure
+- Executed the approved rewarded-prep slice instead of staying in design-only state.
+- Locked live rewarded placement scope in committed provider config:
+  - `double_reward`
+  - `continue_once`
+  - `trial_unlock_arena`
+- `src/reward-service.js` now treats non-allowlisted live placements as a first-class safe failure:
+  - `placement_not_enabled`
+- reward adapter info now exposes the operator-facing prep fields needed for later live validation:
+  - `rewardEnabled`
+  - `allowedPlacements`
+  - `rewardedAdUnitConfigured`
+  - existing readiness / request-state fields remain intact
+- `src/debug-runtime-tools.js` now surfaces those reward prep fields in the debug/runtime panel, so mock-vs-live and config completeness can be read without opening source files.
+- Added regression coverage for:
+  - config default live placement allowlist
+  - `placement_not_enabled` classification
+  - non-allowlisted live placement rejection path
+  - reward prep debug snapshot visibility
+- Added one direct operator doc:
+  - `docs/rewarded-integration-prep-checklist.md`
+- Synced reward/provider/deploy/blocker docs to the current prep state:
+  - `docs/provider-integration-notes.md`
+  - `docs/reward-live-adapter-status.md`
+  - `docs/github-pages-deploy.md`
+  - `docs/launch-blockers.md`
+- Fresh verification after the prep slice:
+  - `npm run check:providers`
+  - `npm run preflight`
+  - both passed
+- Current meaning:
+  - rewarded prep is no longer the blocker
+  - the next real blocker remains external live/manual rewarded validation on the deployed host/account/browser path
+
+2026-04-19 Ad Manager access check and rewarded ad unit prep follow-up
+- Continued from `docs/session-handoff-2026-04-19.md` using the attached Chrome CDP session instead of reopening local code work.
+- Confirmed the current browser session exposes three Google accounts in the Ad Manager chooser:
+  - `liuyinzg@gmail.com`
+  - `hakurokudo2024@gmail.com`
+  - `ryuushinyu0305@gmail.com`
+- Narrowed the current Ad Manager access state:
+  - `hakurokudo2024@gmail.com` lands on the public Ad Manager marketing page, not a usable workspace
+  - `ryuushinyu0305@gmail.com` is blocked by a supervised/age-restricted service gate
+  - `liuyinzg@gmail.com` did not produce a confirmed usable Ad Manager workspace in the checked session either
+- Practical conclusion:
+  - no currently signed-in account has confirmed usable Ad Manager network access yet
+  - the remaining rewarded blocker is account/workspace access plus creation of one real rewarded ad unit, not further local prep code
+- Cross-checked the current external setup requirement against official Ad Manager help:
+  - rewarded web setup still goes through `Inventory -> Ad units -> New ad unit`
+  - the repo still only needs the final full rewarded ad unit path in:
+    - `SPIN_CLASH_REWARDED_AD_UNIT_PATH`
+- Added a dedicated operator note:
+  - `docs/admanager-access-check-2026-04-19.md`
+- Continued the same session to probe the actual signup path instead of stopping at the public marketing page:
+  - `authuser=1` signup start returned:
+    - `errorReason=showLeadGenerationForm`
+    - visible requirement: this account needs an AdSense account first
+  - `authuser=0` signup start returned:
+    - `errorReason=uncheckedAdsenseAccount`
+    - visible requirement: Google is still reviewing the AdSense application; Ad Manager should be retried after the approval email
+- Practical conclusion tightened further:
+  - the strongest current path is to wait for the `authuser=0` AdSense review result, then retry Ad Manager signup/login there first
+  - if the business must use `hakurokudo2024@gmail.com` as the long-term owner, that exact Google account will still need its own valid AdSense-linked signup path
+
+2026-04-19 rewarded live cutover runbook
+- Continued the mainline without reopening runtime code, since the live blocker is still external.
+- Added a concrete post-approval operator runbook:
+  - `docs/rewarded-live-cutover-runbook.md`
+- The new runbook closes the biggest remaining process gap:
+  - exact sequence after AdSense / Ad Manager access unblocks
+  - ad unit creation path
+  - GitHub Actions variable update path
+  - live deployment expectations
+  - manual rewarded validation flow on `play.hakurokudo.com`
+  - go / no-go criteria
+- Synced document navigation and blocker references:
+  - `docs/docs-index.md`
+  - `docs/launch-blockers.md`
+
+2026-04-19 AdSense site-status follow-up
+- Recorded the latest user-provided AdSense site status for:
+  - `hakurokudo.com`
+- Current state observed by the user:
+  - status:
+    - `正在准备`
+  - authorization:
+    - `已授权`
+  - observed at:
+    - `2026-04-19 02:47 JST`
+- Practical meaning:
+  - site-side authorization appears to be complete
+  - Google-side preparation/review is still not finished
+  - the rewarded mainline remains blocked on external account/platform readiness, not on additional repository code prep
+
+2026-04-20 external platform status recheck
+- Rechecked the live external blocker status through the attached logged-in browser session instead of inferring from yesterday's notes.
+- AdSense site detail for `hakurokudo.com` still shows:
+  - `正在准备`
+  - `验证网站所有权`
+  - `已请求审核`
+- Ad Manager signup recheck on the strongest candidate path still returns:
+  - `errorReason=uncheckedAdsenseAccount`
+  - visible message still says Google is reviewing the AdSense application
+- Practical meaning:
+  - no material external platform progress is visible yet
+  - the rewarded mainline is still blocked on Google-side review state, not on local repository work
+
+2026-04-20 external platform status recheck follow-up
+- Added the exact browser-read strings so the blocker note no longer depends only on paraphrase.
+- AdSense site detail currently reads:
+  - `正在准备`
+  - `验证网站所有权`
+  - `已请求审核`
+- Ad Manager direct `/home` still does not expose any usable workspace:
+  - `authuser=0` -> public marketing page
+  - `authuser=1` -> public marketing page
+  - `authuser=2` -> public marketing page
+- Ad Manager signup paths still return the same blockers:
+  - `authuser=0` -> `errorReason=uncheckedAdsenseAccount`
+  - `authuser=1` -> `errorReason=showLeadGenerationForm`
+  - `authuser=2` -> `service-restricted`
+- Practical meaning remains unchanged:
+  - rewarded live closeout is still blocked on Google-side account/review state
+  - there is still no justification to reopen runtime code changes before platform status changes
+
+2026-04-20 AdinPlay priority-switch preparation
+- Chosen first-priority non-Google path is now:
+  - `AdinPlay`
+- Confirmed the current AdinPlay publisher contact form fields through the live embedded form on:
+  - `https://adinplay.com/contact/for-publishers`
+- Confirmed required fields:
+  - first name
+  - last name
+  - email
+  - phone number
+  - website URL
+  - monthly pageviews
+  - site content category
+  - submission reason
+- Confirmed recommended interest targets available in the form:
+  - `Rewarded Ads`
+  - `Video Ads`
+  - `Interstitial Ads`
+  - `Display Ads`
+- Added a project-specific operator note:
+  - `docs/adinplay-priority-switch-plan-2026-04-20.md`
+- Locked execution direction in that note:
+  - apply to AdinPlay now
+  - do not reopen runtime code until AdinPlay confirms a real supported web integration path
+  - preserve the current `rewardService` adapter boundary so future return to Google remains a provider toggle instead of a gameplay rewrite
+
+2026-04-20 non-Google application execution follow-up
+- Submitted the real AdinPlay publisher application with the current live project values:
+  - contact:
+    - `Ryuu Tora`
+    - `liuyinzg@gmail.com`
+    - `+81 08037006508`
+  - website:
+    - `https://play.hakurokudo.com/`
+  - monthly pageviews estimate:
+    - `1000`
+  - content:
+    - `H5 / HTML5`
+  - requested interests:
+    - `Rewarded Ads`
+    - `Video Ads`
+    - `Interstitial Ads`
+    - `Display Ads`
+- Verified AdinPlay submission success through the live confirmation page:
+  - `https://adinplay.com/thank-you`
+- Submitted the real Nitro publisher application as the second-priority non-Google path:
+  - company:
+    - `Hakurokudo`
+  - website:
+    - `https://play.hakurokudo.com/`
+  - country:
+    - `JP`
+  - traffic bucket:
+    - `Below 50K`
+- Verified Nitro submission success through the live confirmation page:
+  - `https://nitropay.com/success`
+- Continued the real Playwire application and confirmed the concrete blocker on the live onboarding form:
+  - step 1 contact fields can be filled normally
+  - website info step requires all of:
+    - `Website URL`
+    - `Monthly Pageviews`
+    - `Upload screenshot proof of pageviews`
+  - the file upload is currently hard-required by the form
+- After the user chose to proceed with currently available proof, captured the logged-in WordPress / Jetpack stats page for:
+  - `hakurokudo.com`
+- Used that real stats screenshot as the uploaded traffic-proof attachment in the Playwire onboarding form.
+- Completed the Playwire submission with:
+  - website:
+    - `https://play.hakurokudo.com/`
+  - monthly pageviews bucket:
+    - `Less than 500,000`
+  - traffic source:
+    - `Asia`
+- Verified Playwire submission success through the live completion page:
+  - `https://ramp.playwire.com/onboarding/completed.5190`
+- Practical meaning:
+  - `AdinPlay`, `Nitro`, and `Playwire` are now all pending external review
+  - the Playwire proof used the currently available WordPress / Jetpack site stats, not a dedicated `play.hakurokudo.com` analytics dashboard
+  - there is still no reason to reopen runtime code before any approved platform provides a real integration path
+
+2026-04-20 arena expansion sandbox merged back to main workspace
+- Merged the finished arena-content sandbox changes back into the main workspace.
+- Added three new playable arenas:
+  - `cyclone_bowl`
+  - `rose_bowl`
+  - `octa_bowl`
+- The arena expansion now reads more of its runtime behavior from config-driven arena profiles, including:
+  - shape / geometry
+  - physics
+  - renderer-facing parameters
+- Added the new validation entry:
+  - `npm run check:arenas`
+- Main-workspace verification after merge:
+  - `npm run preflight` -> passed
+- Practical meaning:
+  - arena content can continue to expand without reopening the ad-provider integration boundary
+  - rewarded / provider runtime files still remain untouched by this content-line merge
+
+2026-04-20 content and balance sandbox merged back to main workspace
+- Merged the finished content/balance sandbox changes back into the main workspace.
+- Challenge Road back-half remix:
+  - added new enemy presets:
+    - `armor_bastion`
+    - `trick_duelist`
+    - `impact_reaper`
+  - remixed nodes `7-9`
+  - kept node `10` on the established `impact_blitz + overclock` final pairing
+- Progression-facing tuning updates:
+  - `challengeLossBase` raised from `10` to `12`
+  - `GUARD FRAME` is now the cheapest full research line
+  - `Rank II` / `Rank III` enemy scalars were increased slightly while reward multipliers stayed fixed
+- Localization/content updates:
+  - added localized names for the new enemy presets
+  - updated CN/JP node `7-9` descriptions
+  - updated CN/JP Road Rank descriptions
+- Added the dedicated note:
+  - `docs/balance-pass-2026-04-20.md`
+- Main-workspace verification after merge:
+  - `npm run preflight` -> passed
+- Review note kept on record:
+  - this balance pass is still hypothesis-driven and was not based on a fresh manual playtest
+  - the highest-risk content change remains `node-8` on `suddenDeath + trick_duelist`
+
+2026-04-20 top expansion sandbox merged back to main workspace
+- Merged the finished top-expansion sandbox changes back into the main workspace.
+- Expanded the playable top roster from `5` to `15` entries by adding:
+  - `impact_breaker`
+  - `trick_raider`
+  - `impact_vanguard`
+  - `impact_nova`
+  - `impact_tremor`
+  - `armor_bastion`
+  - `armor_aegis`
+  - `armor_mammoth`
+  - `armor_mirror`
+  - `trick_venom`
+  - `trick_orbit`
+  - `trick_glitch`
+- Merged the new unlock split without reopening the ad/runtime boundary:
+  - starters:
+    - `impact`
+    - `armor`
+  - rank rewards:
+    - `RANK I -> trick`
+    - `RANK II -> armor_bastion`
+    - `RANK III -> impact_nova`
+  - shop unlocks remain priced content entries
+- Mainline merge notes:
+  - loadout top cards are now generated from config rather than a fixed shell count
+  - `unlockCost: 0` no longer implies default unlock on its own
+  - `unlockSource: 'road'` tops are blocked from direct purchase
+  - rank-final clears now grant `roadRanks[n].rewardTopId`
+- Merge-repair work completed in main:
+  - restored arena-expansion localized strings that had been overwritten by the older top sandbox baseline
+  - restored content/balance localized strings for:
+    - `roadRanks`
+    - `enemyPresets`
+    - Challenge Road `node-7` to `node-9`
+  - re-added arena root-state assertions inside `scripts/check-loadout-flow.js`
+- Main-workspace verification after merge:
+  - `npm run preflight` -> passed
+- Practical meaning:
+  - the content roster is now materially larger while reward/provider files still remain untouched
+  - the remaining risk is balance quality, not merge correctness
+
+2026-04-20 post-merge content execution docs staged
+- Wrote the continuing content-only execution baseline for the next mainline phase:
+  - `docs/content-post-merge-execution-plan-2026-04-20.md`
+- Locked the immediate next work as `Phase 1A` instead of jumping straight into UI polishing:
+  - validate the merged `15-top` unlock structure first
+  - only after that, move into unlock-source UI clarity
+- Added the dedicated validation pack:
+  - `docs/top-balance-validation-plan-2026-04-20.md`
+- Added the narrow UI-design note for the later clarity pass:
+  - `docs/unlock-source-ui-design-2026-04-20.md`
+- Updated discovery surfaces:
+  - `docs/docs-index.md`
+  - `README.md`
+- Practical meaning:
+  - content work can keep advancing in a disciplined sequence while ad-platform approval is still externally blocked
+  - the user does not need to be pulled back in yet; the planned human playtest gate remains at the end of Phases 1 and 2
+
+2026-04-20 Phase 1A static validation report completed
+- Completed the first actual validation pass for the merged `15-top` roster and unlock split:
+  - `docs/top-balance-validation-report-2026-04-20-phase-1a.md`
+- Validation basis:
+  - inspected live config for:
+    - tops
+    - Road ranks
+    - Challenge Road rewards
+    - economy
+    - enemy presets
+  - ran:
+    - `npm run check:config`
+    - `npm run check:roster`
+    - `npm run check:roadrank`
+    - `npm run check:nextphase`
+- Main conclusions:
+  - the merged structure is technically coherent
+  - the biggest issue is pacing, not merge correctness
+  - early shop diversity is still too narrow
+  - the first trick-family access is structurally too late
+  - `armor_bastion` may compress the mid-tier armor shop branch
+- Documentation repair:
+  - corrected the stale `armor_mammoth` price drift in the validation plan from `520` to the live config value `540`
+- Practical meaning:
+  - the next justified move is a narrow Phase 1B config pass
+  - this still does not require user playtest yet
+
+2026-04-20 Phase 1B narrow trick-access correction applied
+- Applied the smallest config-only correction justified by the Phase 1A report:
+  - `src/config-tops.js`
+  - `trick_venom` price:
+    - `220 -> 180`
+- Reason:
+  - the first purchasable trick-family path was structurally arriving too late
+  - this correction makes one non-reward trick option reachable much earlier without rewriting the whole shop ladder
+- Wrote the dedicated note:
+  - `docs/balance-pass-2026-04-20-phase-1b.md`
+- Updated discovery surfaces:
+  - `docs/docs-index.md`
+  - `README.md`
+- Practical meaning:
+  - early style diversity is slightly widened while the rest of the merged unlock structure stays stable
+  - the next intended step is the unlock-source UI clarity pass, not another broad price rewrite
+
+2026-04-20 unlock-source UI clarity pass applied
+- Implemented the first narrow unlock-source UI pass without reopening shell architecture or provider/runtime boundaries.
+- Updated loadout / home / Road-rank text surfaces so players can distinguish:
+  - starter tops
+  - Road reward tops
+  - Workshop tops
+- Main runtime changes:
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+- New behavior:
+  - loadout card type line now includes source class
+  - locked top hint text now uses exact rank or Workshop-cost messaging where derivable
+  - home preview kicker now reflects source class
+  - Road rank note now names the reward top directly
+- Wrote the implementation note:
+  - `docs/unlock-source-ui-pass-2026-04-20.md`
+- Updated discovery surfaces:
+  - `docs/docs-index.md`
+  - `README.md`
+- Practical meaning:
+  - the roster’s progression language is now closer to the actual unlock logic
+  - the remaining meaningful validation step is a later focused human experience pass, not more blind UI expansion
+
+2026-04-20 focused human playtest packet prepared
+- Wrote the final user-facing experience gate for this content line:
+  - `docs/focused-human-playtest-2026-04-20.md`
+- Scope of that playtest packet:
+  - early roster narrowness
+  - lock-source readability
+  - rank reward meaning
+  - direct top feel / price intuition
+- Updated discovery surfaces:
+  - `docs/docs-index.md`
+  - `README.md`
+- Practical meaning:
+  - this content-line prep now has a clean final handoff point
+  - when it is time to involve the user, the playtest ask can be focused and short instead of ad hoc

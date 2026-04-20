@@ -130,6 +130,7 @@ function testRewardFailureClassification() {
   const timeout = reward.getFailureInfo(new Error('provider_timeout'));
   const unavailable = reward.getFailureInfo(new Error('provider_unavailable'));
   const misconfigured = reward.getFailureInfo(new Error('provider_misconfigured'));
+  const placementDisabled = reward.getFailureInfo(new Error('placement_not_enabled'));
   const generic = reward.getFailureInfo(new Error('mock_error'));
   const granted = reward.getFailureInfo({ granted: true });
 
@@ -140,6 +141,7 @@ function testRewardFailureClassification() {
   assert(timeout.category === 'error', 'Expected provider_timeout to classify as generic error.');
   assert(unavailable.category === 'unavailable', 'Expected provider_unavailable to classify as unavailable.');
   assert(misconfigured.category === 'unavailable', 'Expected provider_misconfigured to classify as unavailable.');
+  assert(placementDisabled.category === 'unavailable', 'Expected placement_not_enabled to classify as unavailable.');
   assert(generic.category === 'error', 'Expected unknown error reason to classify as generic error.');
   assert(granted.category === 'granted', 'Expected granted result to classify as granted.');
 }
@@ -320,8 +322,53 @@ function testAdsenseDisabledRewardFallback() {
 
   assert(info.adapter === 'adsense_rewarded', 'Expected adsense_rewarded adapter when configured.');
   assert(info.ready === false, 'Expected adsense adapter to report not ready without GPT.');
+  assert(info.rewardEnabled === false, 'Expected disabled adsense adapter to report rewardEnabled:false.');
+  assert(info.rewardedAdUnitConfigured === false, 'Expected disabled adsense adapter to report rewardedAdUnitConfigured:false.');
+  assert(Array.isArray(info.allowedPlacements), 'Expected disabled adsense adapter to expose allowedPlacements.');
+  assert(info.allowedPlacements.includes('double_reward'), 'Expected disabled adsense adapter to allow double_reward by config.');
+  assert(info.allowedPlacements.includes('continue_once'), 'Expected disabled adsense adapter to allow continue_once by config.');
+  assert(info.allowedPlacements.includes('trial_unlock_arena'), 'Expected disabled adsense adapter to allow trial_unlock_arena by config.');
   assert(availability.available === false, 'Expected disabled live reward adapter to report unavailable.');
   assert(availability.reason === 'provider_disabled', 'Expected provider_disabled reason when adsense adapter is disabled.');
+}
+
+async function testAdsensePlacementAllowlistRejectsUnknownPlacement() {
+  const { context, save } = createBaseContext();
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.rewardedAdUnitPath = '/1234567/spin_clash_rewarded';
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  const reward = context.SpinClash.services.reward;
+  const info = reward.getAdapterInfo();
+  const availability = reward.isRewardAvailable('boss_retry');
+
+  assert(info.adapter === 'adsense_rewarded', 'Expected adsense_rewarded adapter during placement allowlist validation.');
+  assert(info.rewardEnabled === true, 'Expected configured live reward adapter to report rewardEnabled:true.');
+  assert(info.rewardedAdUnitConfigured === true, 'Expected configured live reward adapter to report rewardedAdUnitConfigured:true.');
+  assert(Array.isArray(info.allowedPlacements), 'Expected live reward adapter to expose allowedPlacements.');
+  assert(info.allowedPlacements.includes('double_reward'), 'Expected live reward adapter to preserve double_reward in allowedPlacements.');
+  assert(info.allowedPlacements.includes('continue_once'), 'Expected live reward adapter to preserve continue_once in allowedPlacements.');
+  assert(info.allowedPlacements.includes('trial_unlock_arena'), 'Expected live reward adapter to preserve trial_unlock_arena in allowedPlacements.');
+  assert(availability.available === false, 'Expected non-allowlisted live reward placement to report unavailable.');
+  assert(availability.reason === 'placement_not_enabled', 'Expected non-allowlisted live reward placement to report placement_not_enabled.');
+
+  let rejected = false;
+  try {
+    await reward.request('boss_retry', { source: 'placement-allowlist' });
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'placement_not_enabled', 'Expected non-allowlisted live reward placement to reject with placement_not_enabled.');
+  }
+  assert(rejected, 'Expected non-allowlisted live reward placement to reject.');
+  assert(reward.getAdapterInfo().lastRequestReason === 'placement_not_enabled', 'Expected non-allowlisted live reward placement to preserve placement_not_enabled after rejection.');
+
+  const rewardDeclineEvent = save.analytics.find((event) => event.name === 'reward_decline');
+  assert(rewardDeclineEvent, 'Expected reward_decline analytics after a non-allowlisted live reward request.');
+  assert(rewardDeclineEvent.payload && rewardDeclineEvent.payload.reason === 'placement_not_enabled', 'Expected reward_decline analytics to preserve placement_not_enabled.');
 }
 
 async function testUnknownRewardAdapterDoesNotFallbackToMock() {
@@ -825,6 +872,7 @@ async function main() {
   testPosthogTopLevelFallbackNormalizesUnexpectedFailureReason();
   testPosthogSdkPresentButConfigMissingStaysMisconfigured();
   testAdsenseDisabledRewardFallback();
+  await testAdsensePlacementAllowlistRejectsUnknownPlacement();
   await testUnknownRewardAdapterDoesNotFallbackToMock();
   await testAdsenseConfiguredRewardFallback();
   await testAdsenseRequestWaitsForScriptLoad();

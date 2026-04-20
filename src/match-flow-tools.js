@@ -358,6 +358,8 @@
       const selectedRoadRankIndex = getSelectedRoadRankIndex();
       const currentRoadRank = getCurrentRoadRank();
       const nextRoadRank = roadRanks[selectedRoadRankIndex + 1] || null;
+      const rewardTopId = currentRoadRank && currentRoadRank.rewardTopId ? currentRoadRank.rewardTopId : null;
+      const rewardTop = rewardTopId ? tops.find((top)=>top.id===rewardTopId) : null;
       const unlockTopId = currentNode && currentNode.unlockTopId ? currentNode.unlockTopId : null;
       const unlockTop = unlockTopId ? tops.find((top)=>top.id===unlockTopId) : null;
       const previousCheckpointNodeIndex = saveBefore.challenge && typeof saveBefore.challenge.checkpointNodeIndex === 'number'
@@ -372,6 +374,11 @@
         && score[0] >= 2
         && unlockTop
         && !unlockedTopIdsBefore.includes(unlockTop.id);
+      const shouldTrackRankRewardTopUnlock = getCurrentMode()==='challenge'
+        && score[0] >= 2
+        && clearedChallengeIndex === challengeRoad.length - 1
+        && rewardTop
+        && !unlockedTopIdsBefore.includes(rewardTop.id);
       const shouldTrackCheckpoint = getCurrentMode()==='challenge'
         && score[0] >= 2
         && checkpointNodeIndex != null
@@ -416,6 +423,9 @@
           if(unlockTop && !draft.unlocks.tops.includes(unlockTop.id)){
             draft.unlocks.tops.push(unlockTop.id);
           }
+          if(shouldTrackRankRewardTopUnlock && rewardTop && !draft.unlocks.tops.includes(rewardTop.id)){
+            draft.unlocks.tops.push(rewardTop.id);
+          }
         }
         return draft;
       });
@@ -442,6 +452,21 @@
           mode:getCurrentMode(),
           topId:unlockTop.id,
           topLabel:unlockTop.name,
+          nodeIndex:clearedChallengeIndex,
+          nodeId:currentNode ? currentNode.id : null
+        });
+      }
+      if(analyticsService && shouldTrackRankRewardTopUnlock){
+        analyticsService.track('unlock_grant',{
+          kind:'top',
+          grantType:'challenge_clear',
+          source:'challenge_road_rank',
+          mode:getCurrentMode(),
+          topId:rewardTop.id,
+          topLabel:rewardTop.name,
+          roadRankIndex:selectedRoadRankIndex,
+          roadRankId:currentRoadRank ? currentRoadRank.id || null : null,
+          roadRankLabel:currentRoadRank ? currentRoadRank.label || null : null,
           nodeIndex:clearedChallengeIndex,
           nodeId:currentNode ? currentNode.id : null
         });
@@ -475,11 +500,13 @@
       setRoundRewardGranted(true);
       updateModeUI();
       showMsg(
-        shouldTrackTopUnlock
-          ? (unlockTop.name+' '+uiText.unlockTopReward)
-          : (shouldUnlockNextRoadRank
-            ? (nextRoadRank.label+' '+(uiText.roadRankUnlocked || 'UNLOCKED'))
-            : ('+'+delta+' '+uiText.currencyLabel)),
+        shouldTrackRankRewardTopUnlock
+          ? (rewardTop.name+' '+uiText.unlockTopReward)
+          : (shouldTrackTopUnlock
+            ? (unlockTop.name+' '+uiText.unlockTopReward)
+            : (shouldUnlockNextRoadRank
+              ? (nextRoadRank.label+' '+(uiText.roadRankUnlocked || 'UNLOCKED'))
+              : ('+'+delta+' '+uiText.currencyLabel))),
         1.2
       );
       updateCurrencyUI();

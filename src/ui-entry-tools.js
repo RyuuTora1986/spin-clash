@@ -76,6 +76,12 @@
       }
     }
 
+    function isTopDefaultUnlocked(top){
+      if(!top) return false;
+      if(top.unlockSource === 'starter') return true;
+      return !top.unlockSource && top.unlockCost <= 0;
+    }
+
     function getUnlockedTopIndexes(){
       const save = getSave();
       const unlockedTopIds = save && save.unlocks && Array.isArray(save.unlocks.tops)
@@ -84,7 +90,7 @@
       const unlockedIndexes = [];
       tops.forEach(function(top, index){
         if(!top) return;
-        if(top.unlockCost <= 0 || unlockedTopIds.includes(top.id)){
+        if(isTopDefaultUnlocked(top) || unlockedTopIds.includes(top.id)){
           unlockedIndexes.push(index);
         }
       });

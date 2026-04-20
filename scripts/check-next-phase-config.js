@@ -93,8 +93,8 @@ function main() {
     fail(`config.challengeRoad must define 1 final node, found ${tierCounts.final}`);
   }
 
-  if (!challengeRoad[3] || challengeRoad[3].unlockTopId !== 'trick') {
-    fail('config.challengeRoad node 4 must unlock trick');
+  if (challengeRoad.some((node) => node && node.unlockTopId)) {
+    fail('config.challengeRoad should not directly unlock tops when rank rewards own the top progression.');
   }
 
   if (!Array.isArray(researchTracks)) {
@@ -166,6 +166,18 @@ function main() {
       fail(`config.roadRanks rank ${index} is missing enemy scaling config`);
     }
   });
+
+  if (!roadRanks[0] || roadRanks[0].rewardTopId !== 'trick') {
+    fail('config.roadRanks rank_i must reward trick');
+  }
+
+  if (!roadRanks[1] || roadRanks[1].rewardTopId !== 'armor_bastion') {
+    fail('config.roadRanks rank_ii must reward armor_bastion');
+  }
+
+  if (!roadRanks[2] || roadRanks[2].rewardTopId !== 'impact_nova') {
+    fail('config.roadRanks rank_iii must reward impact_nova');
+  }
 
   if (failures.length) {
     console.error('Next-phase config check failed:');

@@ -12,6 +12,7 @@
     const isCircleArena = deps.isCircleArena;
     const isHeartArena = deps.isHeartArena;
     const getGameState = deps.getGameState;
+    const arenaMathTools = root.createArenaMathTools ? root.createArenaMathTools() : null;
     const textureSize = 1024;
     const canvas = document.createElement('canvas');
     canvas.width = textureSize;
@@ -31,17 +32,59 @@
     let uvScaleZ = 1 / (arenaRadius * 2);
     let phase = 0;
 
-    function refreshUVScale(){
+    function getBounds(points){
+      return points.reduce(function(bounds, point){
+        return {
+          minX:Math.min(bounds.minX, point.x),
+          maxX:Math.max(bounds.maxX, point.x),
+          minZ:Math.min(bounds.minZ, point.z),
+          maxZ:Math.max(bounds.maxZ, point.z)
+        };
+      }, {
+        minX:Infinity,
+        maxX:-Infinity,
+        minZ:Infinity,
+        maxZ:-Infinity
+      });
+    }
+
+    function getActiveArenaConfig(){
+      const arenas = (root.config && root.config.arenas) || [];
+      const state = root.state || {};
+      const index = typeof state.currentArenaIndex === 'number' ? state.currentArenaIndex : 0;
+      const fallbackType = isCircleArena() ? 'circle' : (isHeartArena() ? 'heart' : 'hex');
+      return arenas[index] || arenas[0] || { id:'fallback_arena', type:fallbackType };
+    }
+
+    function getActiveArenaProfile(){
+      if(arenaMathTools && typeof arenaMathTools.getArenaProfile === 'function'){
+        return arenaMathTools.getArenaProfile(getActiveArenaConfig(), {
+          arenaRadius:arenaRadius,
+          polygonRadius:hexRadius
+        });
+      }
       if(isCircleArena()){
+        return { type:'circle', scratchBowlHeight:0.78 };
+      }
+      if(isHeartArena()){
+        return { type:'heart', scratchBowlHeight:0.78, heartPoints:getHeartPoints() };
+      }
+      return { type:'hex', scratchBowlHeight:0.78, polygonPoints:hexPoints, polygonRadius:hexRadius, polygonSides:6 };
+    }
+
+    function refreshUVScale(){
+      const profile = getActiveArenaProfile();
+      if(profile.type === 'circle'){
         uvScaleX = 1 / (arenaRadius * 2);
         uvScaleZ = 1 / (arenaRadius * 2);
-      }else if(isHeartArena()){
-        uvScaleX = 1 / 15.2;
-        uvScaleZ = 1 / 15.2;
-      }else{
-        uvScaleX = 1 / (hexRadius * 2.25);
-        uvScaleZ = 1 / (hexRadius * 2.25);
+        return;
       }
+      const points = profile.type === 'heart' ? (profile.heartPoints || getHeartPoints()) : (profile.polygonPoints || hexPoints);
+      const bounds = getBounds(points);
+      const width = Math.max(1, bounds.maxX - bounds.minX);
+      const depth = Math.max(1, bounds.maxZ - bounds.minZ);
+      uvScaleX = 1 / (width * 1.08);
+      uvScaleZ = 1 / (depth * 1.08);
     }
 
     function clear(){
@@ -89,7 +132,9 @@
         strokeTop(enemyPrevX, enemyPrevZ, enemyTop.x, enemyTop.z, enemyTop.vx, enemyTop.vz, Math.PI);
         drew = true;
       }
-      if(drew) texture.needsUpdate = true;
+      if(drew){
+        texture.needsUpdate = true;
+      }
       if(playerTop.alive){
         playerPrevX = playerTop.x;
         playerPrevZ = playerTop.z;
@@ -100,20 +145,20 @@
       }
     }
 
-    function buildCircleScratchGeometry(){
+    function buildCircleScratchGeometry(profile){
       const rings = 22;
       const segments = 72;
       const offset = 0.012;
-      const bowlHeight = 0.78;
+      const bowlHeight = profile.scratchBowlHeight;
       const verts = [];
       const indices = [];
       const uvs = [];
       verts.push(0, offset, 0);
       uvs.push(0.5, 0.5);
-      for(let ring=1; ring<=rings; ring++){
+      for(let ring = 1; ring <= rings; ring += 1){
         const radius = arenaRadius * ring / rings;
         const y = Math.pow(ring / rings, 1.8) * bowlHeight + offset;
-        for(let segment=0; segment<segments; segment++){
+        for(let segment = 0; segment < segments; segment += 1){
           const angle = segment / segments * Math.PI * 2;
           verts.push(radius * Math.cos(angle), y, radius * Math.sin(angle));
           uvs.push(
@@ -122,9 +167,11 @@
           );
         }
       }
-      for(let segment=0; segment<segments; segment++) indices.push(0, 1 + segment, 1 + (segment + 1) % segments);
-      for(let ring=0; ring<rings - 1; ring++){
-        for(let segment=0; segment<segments; segment++){
+      for(let segment = 0; segment < segments; segment += 1){
+        indices.push(0, 1 + segment, 1 + (segment + 1) % segments);
+      }
+      for(let ring = 0; ring < rings - 1; ring += 1){
+        for(let segment = 0; segment < segments; segment += 1){
           const a = 1 + ring * segments + segment;
           const b = 1 + ring * segments + (segment + 1) % segments;
           const c = 1 + (ring + 1) * segments + segment;
@@ -140,41 +187,23 @@
       return geometry;
     }
 
-    function buildHeartScratchGeometry(){
-      const offset = 0.012;
-      const bowlHeight = 0.78;
-      const heartPoints = getHeartPoints();
-      const shape2D = new THREE.Shape(heartPoints.map((point)=>new THREE.Vector2(point.x, -point.z)));
+    function buildShapeScratchGeometry(points, safeRadius, bowlHeight){
+      const shape2D = new THREE.Shape(points.map(function(point){
+        return new THREE.Vector2(point.x, -point.z);
+      }));
       const geometry = new THREE.ShapeGeometry(shape2D, 80);
       geometry.rotateX(-Math.PI / 2);
       const positions = geometry.attributes.position;
+      const bounds = getBounds(points);
+      const width = Math.max(1, bounds.maxX - bounds.minX);
+      const depth = Math.max(1, bounds.maxZ - bounds.minZ);
       const uvs = [];
-      for(let i=0; i<positions.count; i++){
+      for(let i = 0; i < positions.count; i += 1){
         const x = positions.getX(i);
         const z = positions.getZ(i);
         const radius = Math.sqrt(x * x + z * z);
-        positions.setY(i, Math.pow(radius / 7.0, 1.9) * bowlHeight + offset);
-        uvs.push(0.5 + x / 15.2, 0.5 - z / 15.2);
-      }
-      positions.needsUpdate = true;
-      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-      return geometry;
-    }
-
-    function buildHexScratchGeometry(){
-      const offset = 0.012;
-      const bowlHeight = 0.78;
-      const shape2D = new THREE.Shape(hexPoints.map((point)=>new THREE.Vector2(point.x, -point.z)));
-      const geometry = new THREE.ShapeGeometry(shape2D, 48);
-      geometry.rotateX(-Math.PI / 2);
-      const positions = geometry.attributes.position;
-      const uvs = [];
-      for(let i=0; i<positions.count; i++){
-        const x = positions.getX(i);
-        const z = positions.getZ(i);
-        const radius = Math.sqrt(x * x + z * z);
-        positions.setY(i, Math.pow(radius / hexRadius, 1.8) * bowlHeight + offset);
-        uvs.push(0.5 + x / (hexRadius * 2.25), 0.5 - z / (hexRadius * 2.25));
+        positions.setY(i, Math.pow(radius / safeRadius, 1.9) * bowlHeight + 0.012);
+        uvs.push(0.5 + x / (width * 1.08), 0.5 - z / (depth * 1.08));
       }
       positions.needsUpdate = true;
       geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
@@ -182,14 +211,19 @@
     }
 
     function onArenaBuilt(){
+      const profile = getActiveArenaProfile();
       if(mesh){
         scene.remove(mesh);
         mesh = null;
       }
       clear();
-      const geometry = isCircleArena()
-        ? buildCircleScratchGeometry()
-        : (isHeartArena() ? buildHeartScratchGeometry() : buildHexScratchGeometry());
+      const geometry = profile.type === 'circle'
+        ? buildCircleScratchGeometry(profile)
+        : buildShapeScratchGeometry(
+          profile.type === 'heart' ? (profile.heartPoints || getHeartPoints()) : (profile.polygonPoints || hexPoints),
+          profile.type === 'heart' ? 7.0 : (profile.polygonRadius || hexRadius),
+          profile.scratchBowlHeight
+        );
       geometry.computeVertexNormals();
       mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({
         map:texture,

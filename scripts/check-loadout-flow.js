@@ -52,9 +52,10 @@ function createUiText() {
 function createContent() {
   return {
     tops: [
-      { id: 'impact', name: 'Impact', unlockCost: 0 },
-      { id: 'armor', name: 'Armor', unlockCost: 0 },
-      { id: 'trick', name: 'Trick', unlockCost: 80 }
+      { id: 'impact', name: 'Impact', unlockCost: 0, unlockSource: 'starter' },
+      { id: 'armor', name: 'Armor', unlockCost: 0, unlockSource: 'starter' },
+      { id: 'trick', name: 'Trick', unlockCost: 0, unlockSource: 'road' },
+      { id: 'breaker', name: 'Breaker', unlockCost: 80, unlockSource: 'shop' }
     ],
     arenas: [
       { id: 'circle_bowl', label: 'CIRCLE BOWL', unlockCost: 0 },
@@ -89,6 +90,7 @@ async function testArenaPurchaseAnalytics() {
   const analyticsEvents = [];
   const messages = [];
   const currentArenaCalls = [];
+  const rootState = {};
   let refreshCount = 0;
 
   const tools = instantiateTools({
@@ -116,6 +118,7 @@ async function testArenaPurchaseAnalytics() {
     getSessionTrialArenaIds() {
       return new Set();
     },
+    state: rootState,
     analyticsService: {
       track(name, payload) {
         analyticsEvents.push({ name, payload });
@@ -141,6 +144,8 @@ async function testArenaPurchaseAnalytics() {
   assert(save.currency === 30, 'Expected arena purchase to deduct unlock cost from SCRAP.');
   assert(save.unlocks.arenas.includes('hex_bowl'), 'Expected arena purchase to persist the unlocked arena.');
   assert(currentArenaCalls.length === 1 && currentArenaCalls[0] === 2, 'Expected arena purchase to set the selected arena as active.');
+  assert(rootState.currentArenaIndex === 2, 'Expected arena purchase to sync currentArenaIndex onto the shared root state.');
+  assert(rootState.currentArenaId === 'hex_bowl', 'Expected arena purchase to sync currentArenaId onto the shared root state.');
   assert(refreshCount === 1, 'Expected arena purchase flow to trigger one refresh.');
   assert(messages.length === 1 && messages[0].indexOf('HEX BOWL') >= 0, 'Expected arena purchase flow to show an unlock message.');
   assert(unlockGrant, 'Expected arena purchase to emit unlock_grant analytics.');
@@ -164,6 +169,7 @@ async function testArenaTrialAnalytics() {
   const analyticsEvents = [];
   const sessionTrialArenaIds = new Set();
   const currentArenaCalls = [];
+  const rootState = {};
   let rewardRequests = 0;
 
   const tools = instantiateTools({
@@ -191,6 +197,7 @@ async function testArenaTrialAnalytics() {
     getSessionTrialArenaIds() {
       return sessionTrialArenaIds;
     },
+    state: rootState,
     analyticsService: {
       track(name, payload) {
         analyticsEvents.push({ name, payload });
@@ -225,6 +232,8 @@ async function testArenaTrialAnalytics() {
   assert(rewardRequests === 1, 'Expected arena trial flow to issue one reward request.');
   assert(sessionTrialArenaIds.has('hex_bowl'), 'Expected granted arena trial to mark the arena as trial-unlocked for the session.');
   assert(currentArenaCalls.length === 1 && currentArenaCalls[0] === 2, 'Expected granted arena trial to activate the requested arena.');
+  assert(rootState.currentArenaIndex === 2, 'Expected granted arena trial to sync currentArenaIndex onto the shared root state.');
+  assert(rootState.currentArenaId === 'hex_bowl', 'Expected granted arena trial to sync currentArenaId onto the shared root state.');
   assert(trialStart, 'Expected arena trial flow to emit trial_unlock_start analytics.');
   assert(trialComplete, 'Expected arena trial flow to emit trial_unlock_complete analytics.');
   assert(trialStart.payload.kind === 'arena', 'Expected trial_unlock_start to classify kind as arena.');
@@ -282,34 +291,92 @@ async function testTopPurchaseAnalytics() {
     }
   });
 
-  const granted = await tools.attemptTopAccess(2);
+  const granted = await tools.attemptTopAccess(3);
   const unlockGrant = analyticsEvents.find((event) => event.name === 'unlock_grant');
   const unlockPurchase = analyticsEvents.find((event) => event.name === 'unlock_purchase');
 
   assert(granted === true, 'Expected top purchase flow to resolve true.');
   assert(save.currency === 20, 'Expected top purchase to deduct unlock cost from SCRAP.');
-  assert(save.unlocks.tops.includes('trick'), 'Expected top purchase to persist the unlocked top.');
+  assert(save.unlocks.tops.includes('breaker'), 'Expected top purchase to persist the unlocked top.');
   assert(refreshCount === 1, 'Expected top purchase flow to trigger one refresh.');
-  assert(messages.length === 1 && messages[0].indexOf('Trick') >= 0, 'Expected top purchase flow to show an unlock message.');
+  assert(messages.length === 1 && messages[0].indexOf('Breaker') >= 0, 'Expected top purchase flow to show an unlock message.');
   assert(unlockGrant, 'Expected top purchase to emit unlock_grant analytics.');
   assert(unlockPurchase, 'Expected top purchase to emit unlock_purchase analytics.');
   assert(unlockGrant.payload.kind === 'top', 'Expected top purchase unlock_grant to classify kind as top.');
   assert(unlockGrant.payload.grantType === 'purchase', 'Expected top purchase unlock_grant to preserve grantType purchase.');
   assert(unlockGrant.payload.source === 'loadout_shop', 'Expected top purchase unlock_grant to preserve source.');
   assert(unlockGrant.payload.mode === 'quick', 'Expected top purchase unlock_grant to preserve mode.');
-  assert(unlockGrant.payload.topId === 'trick', 'Expected top purchase unlock_grant to preserve topId.');
-  assert(unlockGrant.payload.topLabel === 'Trick', 'Expected top purchase unlock_grant to preserve topLabel.');
+  assert(unlockGrant.payload.topId === 'breaker', 'Expected top purchase unlock_grant to preserve topId.');
+  assert(unlockGrant.payload.topLabel === 'Breaker', 'Expected top purchase unlock_grant to preserve topLabel.');
   assert(unlockGrant.payload.currencyBefore === 100, 'Expected top purchase unlock_grant to preserve currencyBefore.');
   assert(unlockGrant.payload.currencyAfter === 20, 'Expected top purchase unlock_grant to preserve currencyAfter.');
   assert(unlockPurchase.payload.kind === 'top', 'Expected top purchase unlock_purchase to classify kind as top.');
-  assert(unlockPurchase.payload.topId === 'trick', 'Expected top purchase unlock_purchase to preserve topId.');
+  assert(unlockPurchase.payload.topId === 'breaker', 'Expected top purchase unlock_purchase to preserve topId.');
   assert(unlockPurchase.payload.currencyAfter === 20, 'Expected top purchase unlock_purchase to preserve currencyAfter.');
+}
+
+async function testRoadRewardTopCannotBePurchased() {
+  const { tops, arenas } = createContent();
+  const save = createSave(100);
+  const analyticsEvents = [];
+  const messages = [];
+  let refreshCount = 0;
+
+  const tools = instantiateTools({
+    uiText: createUiText(),
+    tops,
+    arenas,
+    getSave() {
+      return save;
+    },
+    saveProgress(mutator) {
+      return mutator(save);
+    },
+    getCurrentMode() {
+      return 'challenge';
+    },
+    getActiveChallengeIndex() {
+      return 0;
+    },
+    getSelectedArenaIndex() {
+      return 0;
+    },
+    getPlayerTopId() {
+      return 0;
+    },
+    getSessionTrialArenaIds() {
+      return new Set();
+    },
+    analyticsService: {
+      track(name, payload) {
+        analyticsEvents.push({ name, payload });
+      }
+    },
+    setCurrentArena() {},
+    rewardService: null,
+    showMsg(text) {
+      messages.push(text);
+    },
+    refresh() {
+      refreshCount += 1;
+    }
+  });
+
+  assert(tools.isTopUnlocked(2) === false, 'Expected road reward top with zero price to stay locked before grant.');
+  const granted = await tools.attemptTopAccess(2);
+  assert(granted === false, 'Expected road reward top purchase flow to refuse direct purchase.');
+  assert(save.currency === 100, 'Expected road reward top refusal not to spend SCRAP.');
+  assert(!save.unlocks.tops.includes('trick'), 'Expected road reward top refusal not to unlock the top.');
+  assert(refreshCount === 1, 'Expected road reward top refusal to trigger one refresh.');
+  assert(messages.length === 1, 'Expected road reward top refusal to show one message.');
+  assert(analyticsEvents.length === 0, 'Expected road reward top refusal not to emit purchase analytics.');
 }
 
 async function main() {
   await testArenaPurchaseAnalytics();
   await testArenaTrialAnalytics();
   await testTopPurchaseAnalytics();
+  await testRoadRewardTopCannotBePurchased();
   console.log('Loadout flow check passed.');
 }
 

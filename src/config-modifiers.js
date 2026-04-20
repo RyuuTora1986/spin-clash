@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   const root = window.SpinClash;
   root.config.modifiers = {
     standard:{ id:'standard', label:'STANDARD', description:'No special rules.', player:{}, enemy:{} },

@@ -6,6 +6,11 @@
     reward: {
       adapter: 'mock',
       mockMode: 'grant',
+      livePlacements: {
+        double_reward: true,
+        continue_once: true,
+        trial_unlock_arena: true
+      },
       adsense: {
         enabled: false,
         scriptUrl: 'https://securepubads.g.doubleclick.net/tag/js/gpt.js',

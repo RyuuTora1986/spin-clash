@@ -47,12 +47,13 @@ Use opt-in value exchange only. The game should remain playable and respectable 
 5. Revenge link prompt after a close loss.
 
 ## Share Implementation Direction
-- Current MVP implementation is summary-text/browser-share-first.
-- Result-card image generation remains a later refinement, not a current dependency.
+- Current MVP implementation now generates a lightweight SVG result card for result shares.
+- Current runtime now classifies result shares into `road_clear`, `challenge_clear`, `ring_out`, `perfect_win`, `close_loss`, `victory`, and `defeat`.
+- Result-card raster export and stronger social-template polish remain later refinements, not current dependencies.
 - Preferred fallback order:
-  - Web Share API if available.
-  - Copy text CTA.
-  - Optional later image/download CTA.
+  - Web Share API with file share if available.
+  - Web Share API with text only.
+  - SVG result-card download plus copied text.
 - No invite-economy logic.
 - No backend referral state.
 

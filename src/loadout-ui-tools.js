@@ -2,6 +2,7 @@
   const root = window.SpinClash || (window.SpinClash = {});
 
   root.createLoadoutUiTools = function createLoadoutUiTools(options){
+    const state = options.state || root.state || (root.state = {});
     const uiText = options.uiText || {};
     const tops = options.tops || [];
     const arenas = options.arenas || [];
@@ -53,6 +54,13 @@
     const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
     const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
 
+    function syncActiveArenaState(index){
+      const arena = getArenaConfig(index);
+      state.currentArenaIndex = index;
+      state.currentArenaId = arena.id || null;
+      return arena;
+    }
+
     function setText(id, value){
       const el = document.getElementById(id);
       if(el) el.textContent = value;
@@ -88,6 +96,45 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+    }
+
+    function hexColor(value, fallback){
+      const color = typeof value === 'number' ? value : fallback;
+      const normalized = Math.max(0, Math.min(0xffffff, Number(color) || 0));
+      return '#'+normalized.toString(16).padStart(6,'0');
+    }
+
+    function getTopCardContainer(){
+      if(typeof document.getElementById === 'function'){
+        const byId = document.getElementById('top-card-list');
+        if(byId) return byId;
+      }
+      return typeof document.querySelector === 'function' ? document.querySelector('.cards') : null;
+    }
+
+    function buildTopCardMarkup(top, index){
+      const colorA = hexColor(top && top.color, 0x666666);
+      const colorB = hexColor(top && top.emi, 0x222222);
+      return [
+        '<div class="card'+(index===0 ? ' sel' : '')+'" data-id="'+index+'" onclick="return window.__spinClashInvoke(\'selectTop\','+index+')">',
+        '<div class="card-icon" id="card-icon-'+index+'" style="background:radial-gradient(circle,'+colorA+','+colorB+')"></div>',
+        '<h3 id="card-name-'+index+'"></h3><div class="card-type" id="card-type-'+index+'"></div>',
+        '<div class="card-stats" id="card-stats-'+index+'"></div>',
+        '<div class="card-skill-tag" id="card-skill-'+index+'"></div>',
+        '</div>'
+      ].join('');
+    }
+
+    function ensureTopCards(){
+      const container = getTopCardContainer();
+      if(!container || typeof container.innerHTML !== 'string') return;
+      if(container.dataset && container.dataset.rosterCount === String(tops.length)) return;
+      container.innerHTML = tops.map(function(top, index){
+        return buildTopCardMarkup(top, index);
+      }).join('');
+      if(container.dataset){
+        container.dataset.rosterCount = String(tops.length);
+      }
     }
 
     function getLoadoutSubtitle(){
@@ -141,6 +188,84 @@
       return tops.find((top)=>top && top.id === topId) || null;
     }
 
+    function getRoadRankForTop(top){
+      if(!top || !Array.isArray(roadRanks)) return null;
+      for(let index = 0; index < roadRanks.length; index += 1){
+        const rank = roadRanks[index];
+        if(rank && rank.rewardTopId === top.id){
+          return rank;
+        }
+      }
+      return null;
+    }
+
+    function isTopDefaultUnlocked(top){
+      if(!top) return false;
+      if(top.unlockSource === 'starter') return true;
+      return !top.unlockSource && top.unlockCost <= 0;
+    }
+
+    function getTopSourceLabel(top){
+      if(!top) return '';
+      if(top.unlockSource === 'starter'){
+        return uiText.topSourceStarter || 'STARTER';
+      }
+      if(top.unlockSource === 'road'){
+        return uiText.topSourceRoadReward || 'ROAD REWARD';
+      }
+      if(top.unlockSource === 'shop'){
+        return uiText.topSourceWorkshop || 'WORKSHOP';
+      }
+      if(top.unlockSource === 'road_or_shop'){
+        return uiText.topSourceRoadShop || 'ROAD REWARD / WORKSHOP';
+      }
+      return '';
+    }
+
+    function getRoadUnlockText(top){
+      const rank = getRoadRankForTop(top);
+      if(rank){
+        return formatText(
+          uiText.topUnlockRoadRank || 'Clear {rank} to unlock',
+          { rank:rank.label || 'RANK' }
+        );
+      }
+      return uiText.homeTopLockedHintRoad || uiText.challengeMode || 'CHAMPIONSHIP PATH';
+    }
+
+    function getShopUnlockText(top, currencyLabel){
+      return formatText(
+        uiText.topUnlockShopCost || 'Unlock for {cost} {currency}',
+        {
+          cost:top && typeof top.unlockCost === 'number' ? top.unlockCost : 0,
+          currency:currencyLabel || (uiText.currencyLabel || 'SCRAP')
+        }
+      );
+    }
+
+    function getTopTypeLine(top, baseType){
+      const parts = [baseType];
+      const sourceLabel = getTopSourceLabel(top);
+      if(sourceLabel){
+        parts.push(sourceLabel);
+      }
+      return parts.filter(Boolean).join(' · ');
+    }
+
+    function getLockedTopText(top, currencyLabel){
+      if(!top) return uiText.lockedTop || 'LOCKED';
+      if(top.unlockSource === 'road'){
+        return (uiText.topSourceRoadReward || 'ROAD REWARD')+' · '+getRoadUnlockText(top);
+      }
+      if(top.unlockSource === 'shop'){
+        return (uiText.topSourceWorkshop || 'WORKSHOP')+' · '+getShopUnlockText(top, currencyLabel);
+      }
+      if(top.unlockSource === 'road_or_shop'){
+        return (uiText.topSourceRoadShop || 'ROAD REWARD / WORKSHOP')+' · '+(uiText.homeTopLockedHintRoadShop || uiText.lockedTop || 'LOCKED');
+      }
+      return (uiText.lockedTop || 'LOCKED')+' - '+(top.unlockCost || 0)+' '+currencyLabel;
+    }
+
     function getCardText(index){
       return uiText.cards && uiText.cards[index] ? uiText.cards[index] : null;
     }
@@ -160,7 +285,7 @@
       const top = getTopConfig(index);
       const save = getSave();
       const unlocked = save.unlocks && Array.isArray(save.unlocks.tops) ? save.unlocks.tops : [];
-      return top.unlockCost <= 0 || unlocked.includes(top.id);
+      return isTopDefaultUnlocked(top) || unlocked.includes(top.id);
     }
 
     function getUnlockedTopIndexes(){
@@ -187,10 +312,10 @@
         return uiText.homeTopLockedHintRoadShop || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
       }
       if(top.unlockSource === 'road'){
-        return uiText.homeTopLockedHintRoad || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+        return getRoadUnlockText(top);
       }
       if(top.unlockSource === 'shop'){
-        return uiText.homeTopLockedHintShop || uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
+        return getShopUnlockText(top, uiText.currencyLabel || 'SCRAP');
       }
       return uiText.homeTopLockedHint || uiText.homeTopEmpty || 'Preview locked.';
     }
@@ -299,21 +424,23 @@
 
     function updateTopCardUI(){
       const currencyLabel = uiText.currencyLabel || 'SCRAP';
+      ensureTopCards();
       document.querySelectorAll('.card').forEach((el)=>{
         const topIndex = parseInt(el.dataset.id,10);
         const top = getTopConfig(topIndex);
         const locked = !isTopUnlocked(topIndex);
         const cardText = getCardText(topIndex);
+        const baseType = cardText && cardText.type ? cardText.type : (top.family ? String(top.family).toUpperCase() : 'TOP');
         el.classList.toggle('sel', topIndex===getPlayerTopId());
         el.classList.toggle('locked', locked);
         setText('card-name-'+topIndex, top.name || 'TOP');
         if(cardText){
-          setText('card-type-'+topIndex, cardText.type);
+          setText('card-type-'+topIndex, getTopTypeLine(top, baseType));
           setHtml('card-stats-'+topIndex, cardText.stats);
           setText(
             'card-skill-'+topIndex,
             locked
-              ? (uiText.lockedTop+' - '+top.unlockCost+' '+currencyLabel)
+              ? getLockedTopText(top, currencyLabel)
               : cardText.skill
           );
         }
@@ -328,11 +455,11 @@
       const traits = Array.isArray(cardText.traits) ? cardText.traits : [];
       setText('featured-top-title', uiText.featuredTopTitle || 'SELECTED TOP');
       setText('featured-top-name', top.name || 'TOP');
-      setText('featured-top-type', cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP'));
+      setText('featured-top-type', getTopTypeLine(top, cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP')));
       setText(
         'featured-top-skill',
         locked
-          ? ((uiText.lockedTop || 'LOCKED')+' - '+(top.unlockCost || 0)+' '+(uiText.currencyLabel || 'SCRAP'))
+          ? getLockedTopText(top, uiText.currencyLabel || 'SCRAP')
           : (cardText.pitch || cardText.skill || top.skill || 'Ready for the next duel.')
       );
       setText(
@@ -475,10 +602,10 @@
       const stageShellEl = document.querySelector('.home-top-stage-shell');
       const typeEl = document.getElementById('home-top-type');
       const canCycle = tops.length > 1;
-      const typeText = cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP');
+      const typeText = getTopTypeLine(top, cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP'));
       const hideDuplicateType = !locked && normalizeCompareText(typeText) === normalizeCompareText(top.name || 'TOP');
 
-      setText('home-top-kicker', uiText.homeTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
+      setText('home-top-kicker', getTopSourceLabel(top) || uiText.homeTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
       setText('home-top-name', top.name || 'TOP');
       setText('home-top-count', locked ? (uiText.homeTopLocked || uiText.lockedTop || 'LOCKED') : (uiText.homeTopUnlocked || uiText.homeTopCountLabel || 'UNLOCKED'));
       setText('home-top-type', hideDuplicateType ? '' : typeText);
@@ -570,6 +697,12 @@
         parts.push(rank.description);
       }
       parts.push((uiText.roadRankRewardLabel || 'Reward')+' x'+formatMultiplier(rank.rewardMul));
+      if(rank.rewardTopId){
+        const rewardTop = getTopById(rank.rewardTopId);
+        if(rewardTop){
+          parts.push((uiText.roadRankRewardTopLabel || 'Top')+' '+rewardTop.name);
+        }
+      }
       return parts.join(' - ');
     }
 
@@ -668,6 +801,7 @@
     }
 
     function updateModeUI(){
+      ensureTopCards();
       const save = getSave();
       const currentNode = getCurrentChallengeNode();
       const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex : 0;
@@ -805,6 +939,7 @@
     }
 
     function applyStaticText(){
+      ensureTopCards();
       setText('title-main', uiText.titleMain);
       setText('title-sub', uiText.titleSub);
       setText('title-tagline', uiText.titleTagline);
@@ -871,6 +1006,7 @@
     function attemptArenaAccess(index){
       const arena = getArenaConfig(index);
       if(isArenaUnlocked(index)){
+        syncActiveArenaState(index);
         setCurrentArena(index);
         return Promise.resolve(true);
       }
@@ -908,6 +1044,7 @@
             currencyAfter:currencyBefore - arena.unlockCost
           });
         }
+        syncActiveArenaState(index);
         setCurrentArena(index);
         showMsg(arena.label+' '+uiText.unlockArena,1.2);
         refresh();
@@ -941,6 +1078,7 @@
             arenaLabel:arena.label
           });
         }
+        syncActiveArenaState(index);
         setCurrentArena(index);
         showMsg(arena.label+' '+uiText.trialArena,1.2);
         refresh();
@@ -956,6 +1094,17 @@
       const top = getTopConfig(index);
       if(isTopUnlocked(index)){
         return Promise.resolve(true);
+      }
+      if(top.unlockSource === 'road'){
+        showMsg(
+          uiText.homeTopLockedHintRoad
+            || uiText.challengeMode
+            || uiText.lockedTop
+            || 'CHAMPIONSHIP PATH',
+          1.2
+        );
+        refresh();
+        return Promise.resolve(false);
       }
       const save = getSave();
       if(save.currency < top.unlockCost){

@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   const root = window.SpinClash;
   const params = new URLSearchParams(window.location.search);
   const enabled = params.get('debug') === '1';

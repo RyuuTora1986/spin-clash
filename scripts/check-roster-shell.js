@@ -34,14 +34,31 @@ function main() {
   const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
   const topIds = tops.map((top) => top && top.id).filter(Boolean);
   const reusableSkills = new Set(['Fly Charge', 'Fortress Pulse', 'Phantom']);
+  const expectedTopIds = [
+    'impact',
+    'armor',
+    'trick',
+    'impact_breaker',
+    'trick_raider',
+    'impact_vanguard',
+    'impact_nova',
+    'impact_tremor',
+    'armor_bastion',
+    'armor_aegis',
+    'armor_mammoth',
+    'armor_mirror',
+    'trick_venom',
+    'trick_orbit',
+    'trick_glitch'
+  ];
 
-  if (tops.length !== 5) {
-    fail(`config.tops must contain 5 entries for the expanded roster, found ${tops.length}`);
+  if (tops.length !== expectedTopIds.length) {
+    fail(`config.tops must contain ${expectedTopIds.length} entries for the expanded roster, found ${tops.length}`);
   }
 
-  ['impact_breaker', 'trick_raider'].forEach((topId) => {
+  expectedTopIds.forEach((topId) => {
     if (!topIds.includes(topId)) {
-      fail(`config.tops is missing required derived top: ${topId}`);
+      fail(`config.tops is missing required roster top: ${topId}`);
     }
   });
 
@@ -64,25 +81,12 @@ function main() {
     }
   });
 
-  if (!Array.isArray(text.cards) || text.cards.length !== 5) {
-    fail(`config.text.cards must contain 5 entries for the expanded roster, found ${Array.isArray(text.cards) ? text.cards.length : 'none'}`);
+  if (!Array.isArray(text.cards) || text.cards.length !== expectedTopIds.length) {
+    fail(`config.text.cards must contain ${expectedTopIds.length} entries for the expanded roster, found ${Array.isArray(text.cards) ? text.cards.length : 'none'}`);
   }
 
-  const cardMatches = [...html.matchAll(/class="card\b[^"]*"\s+data-id="(\d+)"/g)].map((match) => Number(match[1]));
-  if (cardMatches.length !== 5) {
-    fail(`index.html must contain 5 top card elements, found ${cardMatches.length}`);
-  }
-
-  for (let index = 0; index < 5; index += 1) {
-    if (!cardMatches.includes(index)) {
-      fail(`index.html is missing top card with data-id="${index}"`);
-    }
-    ['icon', 'name', 'type', 'stats', 'skill'].forEach((suffix) => {
-      const id = `card-${suffix}-${index}`;
-      if (!html.includes(`id="${id}"`)) {
-        fail(`index.html is missing element id="${id}"`);
-      }
-    });
+  if (!html.includes('id="top-card-list"')) {
+    fail('index.html must expose a top-card-list container for config-driven roster cards.');
   }
 
   if (failures.length) {

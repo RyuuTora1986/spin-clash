@@ -8,6 +8,7 @@ Static single-player spinning-top arena battle foundation for fast static deploy
 - Local vendored renderer dependency: `assets/vendor/three.min.js`
 - No runtime Google Fonts dependency
 - Runtime split into small plain-script factories under `src/`
+- Player-facing runtime supports `English`, `中文`, and `日本語` with saved locale preference
 - Phase A design package remains under `docs/`
 - Manual smoke test passed for:
   - main menu
@@ -36,15 +37,18 @@ Double-click helpers:
 - `run-preflight.cmd`
 
 Open:
-- `http://127.0.0.1:8000/index.html`
+- read the exact `Open:` URL printed by `npm run serve`
+- default start target: `http://127.0.0.1:4173/index.html`
 
 Debug:
-- `http://127.0.0.1:8000/index.html?debug=1`
+- read the exact `Debug:` URL printed by `npm run serve`
+- default debug target: `http://127.0.0.1:4173/index.html?debug=1`
 
 Operational reference:
 - [Docs Index](./docs/docs-index.md)
 - [Local Operations](./docs/local-operations.md)
 - [Manual Test Batches](./docs/manual-test-batches.md)
+- [Focused Human Playtest 2026-04-20](./docs/focused-human-playtest-2026-04-20.md)
 - [Deployment Preflight](./docs/deployment-preflight.md)
 - [Deployment Notes](./docs/deployment-notes.md)
 - [Launch Blockers](./docs/launch-blockers.md)
@@ -53,7 +57,18 @@ Operational reference:
 - [GitHub Pages Deploy](./docs/github-pages-deploy.md)
 - [Host Validation Plan](./docs/host-validation-plan.md)
 - [Host Validation Report Template](./docs/host-validation-report-template.md)
+- [Host Validation Report 2026-04-17 GitHub Pages](./docs/host-validation-report-2026-04-17-github-pages.md)
 - [Provider Preflight](./docs/provider-preflight.md)
+- [Provider Recommendation 2026-04-17](./docs/provider-recommendation-2026-04-17.md)
+- [AdinPlay Priority Switch Plan 2026-04-20](./docs/adinplay-priority-switch-plan-2026-04-20.md)
+- [Content Post-Merge Execution Plan 2026-04-20](./docs/content-post-merge-execution-plan-2026-04-20.md)
+- [15-Top Balance And Unlock Validation Plan 2026-04-20](./docs/top-balance-validation-plan-2026-04-20.md)
+- [15-Top Balance Validation Report 2026-04-20 Phase 1A](./docs/top-balance-validation-report-2026-04-20-phase-1a.md)
+- [Balance Pass 2026-04-20 Phase 1B](./docs/balance-pass-2026-04-20-phase-1b.md)
+- [Unlock Source UI Design 2026-04-20](./docs/unlock-source-ui-design-2026-04-20.md)
+- [Unlock Source UI Pass 2026-04-20](./docs/unlock-source-ui-pass-2026-04-20.md)
+- [PostHog Setup](./docs/posthog-setup.md)
+- [Reward Live Adapter Status](./docs/reward-live-adapter-status.md)
 - [Provider Phase Plan](./docs/provider-phase-plan.md)
 - [Provider Phase Report Template](./docs/provider-phase-report-template.md)
 - [Reward Provider Evaluation Sheet](./docs/reward-provider-evaluation-sheet.md)
@@ -70,9 +85,27 @@ npm run verify:release
 npm run check:syntax
 npm run check:repo
 npm run check:docs
+npm run check:localserver
 npm run check:dom
 npm run check:config
+npm run check:nextphase
 npm run check:analytics
+npm run check:storage
+npm run check:localization
+npm run check:roster
+npm run check:encounter
+npm run check:workshop
+npm run check:roadrank
+npm run check:providers
+npm run check:debugservice
+npm run check:debug
+npm run check:debugruntime
+npm run check:loadout
+npm run check:shellpresentation
+npm run check:session
+npm run check:roundflow
+npm run check:matchflow
+npm run check:share
 npm run check:ui
 npm run preflight
 ```
@@ -83,16 +116,38 @@ npm run preflight
 `verify:release` runs runtime preflight, builds the static package, and validates the final packaged output.
 `check:repo` validates critical runtime files, entry references, required operational docs, and rejects remote font dependencies in runtime entry files.
 `check:docs` validates local Markdown links in `README.md` and `docs/`.
+`check:localserver` validates that the repo-local static server serves this repo root and resolves `/` to `index.html`.
 `check:dom` validates that key `document.getElementById(...)` contracts still match `index.html`.
 `check:config` validates cross-file config consistency for tops, arenas, modifiers, and Challenge Road nodes.
 `check:analytics` validates that tracked analytics event names are documented in `docs/analytics-events.md`.
+`check:storage` validates legacy save migration, unlock normalization, and analytics log sanitization in `StorageService`.
+`check:localization` validates locale table parity, locale persistence, and in-place runtime text switching for English/Chinese/Japanese.
+`check:roster` validates the 5-top roster shell and derived-top metadata wiring.
+`check:encounter` validates the current encounter preset/modifier pack.
+`check:workshop` validates Workshop Research config, progression purchase flow, and loadout integration.
+`check:roadrank` validates Road Rank unlock logic, selection wiring, and challenge-entry UI exposure.
+`check:providers` validates provider adapter selection and safe fallback behavior for analytics/reward integration scaffolding.
+`check:debugservice` validates that debug-panel actions surface synchronous failures in the status line instead of throwing.
+`check:debug` validates debug-only tuning import/reset behavior for economy and enemy preset config.
+`check:debugruntime` validates debug progression/runtime snapshot export coverage.
+`check:loadout` validates arena purchase, arena trial, and top purchase flows plus their unlock/trial analytics payloads.
+`check:shellpresentation` validates the title-entry, featured-loadout, battle-intro, and result-breakdown shell surfaces.
+`check:session` validates first-session, return-session, and once-only session_end analytics behavior.
+`check:roundflow` validates match boot/setup behavior including challenge node metadata threading.
+`check:matchflow` validates Challenge Road result-context handling plus clear-node unlock analytics so reward/share/unlock actions stay tied to the cleared node.
+`check:share` validates result-card SVG generation plus share fallback behavior.
 `check:ui` validates that `index.html` action hooks still match the UI actions exposed by `src/ui-entry-tools.js`.
 `preflight` runs the full local validation stack before host validation or release checks.
 
 ## Current Game Shell
 ### Modes
 - `Quick Battle`
-- `Challenge Road`
+- `Championship Path`
+
+### Supported Languages
+- `English`
+- `中文`
+- `日本語`
 
 ### Arenas
 - `Neo Dome`
@@ -104,14 +159,25 @@ npm run preflight
 - analytics event buffer abstraction
 - rewarded flow abstraction with mock fallback
 - share abstraction with browser fallback
-- lightweight debug tools behind `?debug=1`
+- result-share SVG card generation with browser-share or download fallback
+- lightweight debug/tuning tools behind `?debug=1`
 
 ### Current Progression Hooks
 - persistent arena unlocks
 - persistent top unlocks
 - Challenge Road top reward unlocks
+- Workshop Research permanent upgrades
+- Road Rank unlock and selection
 - rewarded arena trial
 - Challenge Road node progression
+
+### Current Shell Upgrades
+- title screen routes around `CONTINUE PATH`, `QUICK BATTLE`, and `WORKSHOP`
+- selected-top feature panel in loadout
+- Championship Path node strip with current, cleared, and boss/final markers
+- battle intro banner plus stronger HUD danger states
+- result reward breakdown and next-step guidance
+- debug tuning import/export now covers economy, unlock tables, research, ranks, and Championship Path nodes
 
 ## Debug Mode
 `?debug=1` exposes a small developer panel in the top-left corner.
@@ -120,16 +186,26 @@ Current debug actions:
 - `+200 SCRAP`
 - `UNLOCK HEX`
 - `UNLOCK TRICK`
+- `UNLOCK BREAKER`
+- `UNLOCK RAIDER`
+- `RANK II`
+- `RANK III`
 - `NODE 4`
 - `FINAL NODE`
 - `COPY SAVE`
 - `IMPORT SAVE`
 - `COPY EVENTS`
+- `COPY TUNING`
+- `IMPORT TUNING`
+- `RESET TUNING`
+- `COPY PROVIDERS`
 - `REWARD GRANT`
 - `REWARD DENY`
 - `REWARD ERROR`
 - `CLEAR EVENTS`
 - `MOCK SHARE`
+- `COPY SHARE SVG`
+- `DOWNLOAD SHARE SVG`
 - `MOCK REWARD`
 - `RESET SAVE`
 
@@ -217,4 +293,4 @@ That is a local execution constraint, not a known game runtime failure.
 1. Validate one real static host and confirm `persistenceMode === local`
 2. Keep reward/share/analytics boundaries stable so provider adapters can be added without gameplay rewrites
 3. Only after host validation, choose the reward provider path and remote analytics sink
-4. Leave deeper content expansion and config closure for after release-environment uncertainty is closed
+4. Keep non-blocked polish focused on low-risk layers like share output and config tuning until provider credentials are ready
