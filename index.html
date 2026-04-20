@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="google-adsense-account" content="ca-pub-4799303992679484">
 <title>Spin Clash</title>
-<link rel="stylesheet" href="./css/game.css">
+<link rel="stylesheet" href="./css/game.css?v=1.0.2">
 </head>
 <body>
 <div id="gc"></div>
@@ -118,16 +118,10 @@
 </div>
 <div class="ov" id="ov-title">
   <h1 id="title-main"></h1>
-  <div class="sub" id="title-sub"></div>
-  <div class="tagline" id="title-tagline"></div>
   <div class="locale-switcher title-locale-switcher" id="locale-title-switcher">
     <button class="locale-btn" id="locale-title-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
     <button class="locale-btn" id="locale-title-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">中文</button>
     <button class="locale-btn" id="locale-title-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">日本語</button>
-  </div>
-  <div class="title-status">
-    <div class="title-status-line" id="title-progress"></div>
-    <div class="title-status-line" id="title-goal"></div>
   </div>
   <div class="home-top-panel" id="home-top-panel">
     <button class="home-top-nav" id="btn-home-top-prev" type="button" onclick="return window.__spinClashInvoke('prevHomeTop')"></button>
@@ -145,6 +139,9 @@
       <div class="home-top-traits" id="home-top-traits"></div>
     </div>
     <button class="home-top-nav" id="btn-home-top-next" type="button" onclick="return window.__spinClashInvoke('nextHomeTop')"></button>
+  </div>
+  <div class="title-status">
+    <div class="title-status-line" id="title-progress"></div>
   </div>
   <div class="deco-line"></div>
   <div class="title-actions">
@@ -236,12 +233,20 @@
     </div>
   </div>
   <div class="settings-panel hide" id="settings-panel">
-    <div class="settings-title" id="settings-title"></div>
-    <div class="settings-hint" id="settings-hint"></div>
-    <div class="settings-line" id="settings-language-label"></div>
-    <div class="settings-line" id="settings-audio-label"></div>
-    <div class="settings-actions">
+    <div class="settings-row settings-row-stack">
+      <div class="settings-label" id="settings-language-label"></div>
+      <div class="locale-switcher settings-locale-switcher" id="locale-settings-switcher">
+        <button class="locale-btn" id="locale-settings-en" data-locale-target="en" type="button" onclick="return window.__spinClashInvoke('setLocale','en')">EN</button>
+        <button class="locale-btn" id="locale-settings-zh" data-locale-target="zh" type="button" onclick="return window.__spinClashInvoke('setLocale','zh')">涓枃</button>
+        <button class="locale-btn" id="locale-settings-ja" data-locale-target="ja" type="button" onclick="return window.__spinClashInvoke('setLocale','ja')">鏃ユ湰瑾?/button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label" id="settings-music-label"></div>
       <button class="settings-toggle-btn" id="btn-settings-music" type="button" onclick="return window.__spinClashInvoke('toggleMusic')"></button>
+    </div>
+    <div class="settings-row">
+      <div class="settings-label" id="settings-sfx-label"></div>
       <button class="settings-toggle-btn" id="btn-settings-sfx" type="button" onclick="return window.__spinClashInvoke('toggleSfx')"></button>
     </div>
   </div>
@@ -332,7 +337,7 @@
   <button class="sec-btn" id="btn-share" style="margin-top:10px" onclick="return window.__spinClashInvoke('share')"></button>
 </div>
 <script src="./src/bootstrap-app-globals.js"></script>
-<script src="./src/config-text.js"></script>
+<script src="./src/config-text.js?v=1.0.2"></script>
 <script src="./src/config-tops.js"></script>
 <script src="./src/config-signature-skills.js"></script>
 <script src="./src/config-arenas.js"></script>
@@ -354,7 +359,7 @@
 <script src="./src/share-card-tools.js"></script>
 <script src="./src/share-service.js"></script>
 <script src="./src/progression-tools.js"></script>
-<script src="./src/loadout-ui-tools.js"></script>
+<script src="./src/loadout-ui-tools.js?v=1.0.2"></script>
 <script src="./src/match-flow-tools.js"></script>
 <script src="./src/debug-runtime-tools.js"></script>
 <script src="./src/ui-entry-tools.js"></script>

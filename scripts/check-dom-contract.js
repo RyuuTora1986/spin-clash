@@ -61,12 +61,16 @@ function main() {
   const requiredIds = [
     'locale-title-switcher',
     'locale-loadout-switcher',
+    'locale-settings-switcher',
     'locale-title-en',
     'locale-title-zh',
     'locale-title-ja',
     'locale-loadout-en',
     'locale-loadout-zh',
-    'locale-loadout-ja'
+    'locale-loadout-ja',
+    'locale-settings-en',
+    'locale-settings-zh',
+    'locale-settings-ja'
   ];
 
   for (const id of referencedIds) {

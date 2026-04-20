@@ -144,13 +144,14 @@
     function updateLocaleButtons(){
       const locale = getCurrentLocale();
       const labels = uiText.localeButtons || {};
-      ['en','zh','ja'].forEach(function(localeId){
-        ['title','loadout'].forEach(function(scope){
-          const button = document.getElementById('locale-'+scope+'-'+localeId);
-          if(!button) return;
-          button.textContent = labels[localeId] || localeId.toUpperCase();
-          button.classList.toggle('active', locale === localeId);
-        });
+      const buttons = typeof document.querySelectorAll === 'function'
+        ? document.querySelectorAll('[data-locale-target]')
+        : [];
+      Array.prototype.forEach.call(buttons, function(button){
+        const localeId = button && button.dataset ? button.dataset.localeTarget : null;
+        if(!localeId) return;
+        button.textContent = labels[localeId] || localeId.toUpperCase();
+        button.classList.toggle('active', locale === localeId);
       });
     }
 
@@ -869,14 +870,9 @@
     }
 
     function getSettingsToggleLabel(kind, enabled){
-      if(kind === 'music'){
-        return enabled
-          ? (uiText.settingsMusicOn || 'MUSIC: ON')
-          : (uiText.settingsMusicOff || 'MUSIC: OFF');
-      }
       return enabled
-        ? (uiText.settingsSfxOn || 'SFX: ON')
-        : (uiText.settingsSfxOff || 'SFX: OFF');
+        ? (uiText.settingsToggleOn || 'ON')
+        : (uiText.settingsToggleOff || 'OFF');
     }
 
     function getRoadRankButtonText(index){
@@ -900,7 +896,7 @@
           parts.push((uiText.roadRankRewardTopLabel || 'Top')+' '+rewardTop.name);
         }
       }
-      return parts.join(' - ');
+      return parts.join(' · ');
     }
 
     function updateChallengeRouteUI(){
@@ -929,33 +925,12 @@
       const challenge = save.challenge || {};
       const rank = getSelectedRoadRank();
       const nextNodeIndex = Math.min(challenge.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1));
+      const targetNode = challengeRoad[nextNodeIndex] || null;
       return [
-        uiText.titleProgressLabel || 'PATH STATUS',
-        formatNodeLabel(nextNodeIndex + 1),
+        uiText.challengeMode || 'CHAMPIONSHIP PATH',
         rank ? rank.label : null,
-        (uiText.currencyLabel || 'SCRAP')+' '+(save.currency || 0)
-      ].filter(Boolean).join(' - ');
-    }
-
-    function getTitleGoalText(){
-      const save = getSave();
-      const challenge = save.challenge || {};
-      if((challenge.unlockedNodeIndex || 0) < challengeRoad.length - 1){
-        const targetNode = challengeRoad[Math.min(challenge.unlockedNodeIndex || 0, challengeRoad.length - 1)] || null;
-        if(targetNode){
-          return [
-            uiText.titleGoalLabel || 'NEXT TARGET',
-            formatNodeLabel((challenge.unlockedNodeIndex || 0) + 1),
-            targetNode.name,
-            getArenaLabel(targetNode.arenaIndex)
-          ].filter(Boolean).join(' - ');
-        }
-      }
-      return [
-        uiText.titleGoalLabel || 'NEXT TARGET',
-        uiText.roadClear || 'ROAD CLEAR',
-        uiText.roadRankHint || 'Push a higher rank or open the workshop.'
-      ].filter(Boolean).join(' - ');
+        targetNode ? targetNode.name : (uiText.roadClear || 'ROAD CLEAR')
+      ].filter(Boolean).join(' · ');
     }
 
     function updateTitleSummary(){
@@ -964,7 +939,6 @@
       const pathButton = document.getElementById('btn-enter');
       const quickButton = document.getElementById('btn-enter-quick');
       setText('title-progress', getTitleProgressText());
-      setText('title-goal', getTitleGoalText());
       updateHomeTopUI();
       if(pathButton){
         pathButton.disabled = homePreviewLocked;
@@ -1002,38 +976,10 @@
       ensureTopPurchaseDialogBindings();
       const save = getSave();
       const currentNode = getCurrentChallengeNode();
-      const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex : 0;
-      const checkpointNodeIndex = save.challenge ? save.challenge.checkpointNodeIndex || 0 : 0;
-      const currentMode = getCurrentMode();
       const uiRoute = getUiRoute();
-      const routeOrigin = getUiRouteFrom();
       const isPathRoute = uiRoute === 'path';
       const isQuickRoute = uiRoute === 'quick';
-      const isWorkshopRoute = uiRoute === 'workshop';
       const isSettingsRoute = uiRoute === 'settings';
-      const routeTitle = isPathRoute
-        ? (uiText.challengeMode || 'CHAMPIONSHIP PATH')
-        : isQuickRoute
-          ? (uiText.quickMode || 'QUICK BATTLE')
-          : isWorkshopRoute
-            ? (uiText.workshopTitle || 'WORKSHOP')
-            : (uiText.settingsTitle || 'SETTINGS');
-      const routeContext = isPathRoute
-        ? (uiText.loadoutHintChallenge || 'Battle through fixed nodes with modifiers and persistent rewards.')
-        : isQuickRoute
-          ? (uiText.loadoutHintQuick || 'Choose any arena and top for a one-off duel.')
-          : isWorkshopRoute
-            ? ((uiText.routeFromLabel || 'FROM')+' '+(routeOrigin === 'path'
-              ? (uiText.challengeMode || 'CHAMPIONSHIP PATH')
-              : routeOrigin === 'quick'
-                ? (uiText.quickMode || 'QUICK BATTLE')
-                : (uiText.homeRoute || 'HOME')))
-            : (uiText.settingsHint || 'Language and shell preferences for the current static build.');
-
-      setText('loadout-title', routeTitle);
-      setText('loadout-subtitle', routeContext);
-      setText('shell-route-title', routeTitle);
-      setText('shell-route-context', routeContext);
       setText('btn-route-back', uiText.backButton || 'BACK');
       setText('btn-route-workshop', uiText.titleWorkshop || 'WORKSHOP');
       setText('btn-route-settings', uiText.settingsTitle || 'SETTINGS');
@@ -1052,7 +998,7 @@
       const fightButton = document.getElementById('btn-fight');
       const pathFightButton = document.getElementById('btn-path-fight');
       const settingsPanel = document.getElementById('settings-panel');
-      const localeSwitcher = document.getElementById('locale-loadout-switcher');
+      const localeSwitcher = document.getElementById('locale-settings-switcher');
       const musicToggle = document.getElementById('btn-settings-music');
       const sfxToggle = document.getElementById('btn-settings-sfx');
 
@@ -1060,8 +1006,8 @@
       if(quickTab) quickTab.style.display = 'none';
       if(challengeTab) challengeTab.style.display = 'none';
       if(modeHint){
-        modeHint.style.display = isPathRoute || isQuickRoute ? '' : 'none';
-        modeHint.textContent = isPathRoute ? uiText.loadoutHintChallenge : uiText.loadoutHintQuick;
+        modeHint.style.display = 'none';
+        modeHint.textContent = '';
       }
       if(challengePanel) challengePanel.classList.toggle('hide', !isPathRoute);
       if(quickBattlePanel) quickBattlePanel.classList.toggle('hide', !isQuickRoute);
@@ -1072,13 +1018,9 @@
       if(pathFightButton) pathFightButton.style.display = isPathRoute ? '' : 'none';
       if(settingsPanel) settingsPanel.classList.toggle('hide', !isSettingsRoute);
       if(localeSwitcher) localeSwitcher.style.display = isSettingsRoute ? '' : 'none';
-      setText('settings-title', uiText.settingsTitle || 'SETTINGS');
-      setText('settings-hint', uiText.settingsHint || 'Language and audio toggles update immediately and persist to local save data.');
-      setText('settings-language-label', uiText.settingsLanguageLabel || 'LANGUAGE: use the locale buttons above.');
-      setText('settings-audio-label', (uiText.settingsAudioLabel || 'AUDIO')+': '+[
-        getSettingsToggleLabel('music', getMusicEnabled()),
-        getSettingsToggleLabel('sfx', getSfxEnabled())
-      ].join(' - '));
+      setText('settings-language-label', uiText.settingsLanguageLabel || 'LANGUAGE');
+      setText('settings-music-label', uiText.settingsMusicLabel || 'MUSIC');
+      setText('settings-sfx-label', uiText.settingsSfxLabel || 'SFX');
       setText('btn-settings-music', getSettingsToggleLabel('music', getMusicEnabled()));
       setText('btn-settings-sfx', getSettingsToggleLabel('sfx', getSfxEnabled()));
       if(musicToggle) musicToggle.classList.toggle('off', !getMusicEnabled());
@@ -1108,31 +1050,45 @@
         const enemyTop = enemyPreset ? getTopById(enemyPreset.topId) : null;
         const activeChallengeIndex = getActiveChallengeIndex();
         const chapterLabel = getChapterLabel(currentNode);
-        const tierLabel = getTierLabel(currentNode);
         const roadRank = getSelectedRoadRank();
-        const previewBits = [
-          currentNode.previewLabel || chapterLabel,
-          tierLabel,
-          currentNode.checkpointOnClear ? (uiText.checkpointLabel || 'CHECKPOINT') : ''
+        const tierLabel = getTierLabel(currentNode);
+        const enemyLabel = enemyPreset
+          ? (enemyPreset.label || (enemyTop ? enemyTop.name : 'TOP'))
+          : (enemyTop ? enemyTop.name : 'TOP');
+        const detailBits = [
+          formatText(uiText.challengeArenaInfo || 'Arena {value}', { value:getArenaLabel(currentNode.arenaIndex) }),
+          formatText(uiText.challengeEnemyInfo || 'Enemy {value}', { value:enemyLabel }),
+          modifier && modifier.label
+            ? formatText(uiText.challengeRuleInfo || 'Rule {value}', { value:modifier.label })
+            : null
         ].filter(Boolean);
-        const detailBits = previewBits.concat([
-          roadRank ? roadRank.label : null,
-          getArenaLabel(currentNode.arenaIndex),
-          enemyTop ? enemyTop.name : 'TOP',
-          modifier.label
-        ]).filter(Boolean);
-        const tail = unlockedNodeIndex >= challengeRoad.length-1 && activeChallengeIndex >= challengeRoad.length-1
-          ? uiText.challengeComplete
-          : (activeChallengeIndex > unlockedNodeIndex ? uiText.challengeLocked : (currentNode.previewDesc || modifier.description));
-        setText('challenge-node-name', chapterLabel+' - '+formatNodeLabel(activeChallengeIndex+1)+' - '+currentNode.name);
-        setText('challenge-node-detail', detailBits.join(' - '));
+        const progressBits = [
+          formatText(uiText.challengeRewardInfo || 'Reward {value}', {
+            value:currentNode.reward+' '+(uiText.currencyLabel || 'SCRAP')
+          }),
+          currentNode.firstClearBonus > 0
+            ? formatText(uiText.challengeFirstClearInfo || 'First Clear +{value}', {
+                value:currentNode.firstClearBonus+' '+(uiText.currencyLabel || 'SCRAP')
+              })
+            : null,
+          roadRank
+            ? formatText(uiText.challengeRankInfo || '{rank} x{multiplier}', {
+                rank:roadRank.label,
+                multiplier:formatMultiplier(roadRank.rewardMul)
+              })
+            : null,
+          currentNode.checkpointOnClear ? (uiText.challengeCheckpointInfo || 'Checkpoint on clear') : null
+        ].filter(Boolean);
+        setText('challenge-node-name', [
+          chapterLabel,
+          formatNodeLabel(activeChallengeIndex+1),
+          currentNode.name,
+          tierLabel
+        ].filter(Boolean).join(' · '));
+        setText('challenge-node-detail', detailBits.join(' · '));
         setText('challenge-progress', [
-          (uiText.resultBreakdownNode || 'NODE')+' '+currentNode.reward+' '+uiText.currencyLabel,
-          currentNode.firstClearBonus > 0 ? ('+'+currentNode.firstClearBonus+' '+(uiText.resultBreakdownFirstClear || 'FIRST CLEAR')) : null,
-          roadRank ? roadRank.label+' x'+formatMultiplier(roadRank.rewardMul) : null,
-          (uiText.resumeLabel || 'Resume')+' '+(checkpointNodeIndex + 1),
-          tail
-        ].filter(Boolean).join(' - '));
+          progressBits.join(' · ')
+        ].filter(Boolean).join(''));
       }
       updateLocaleButtons();
     }

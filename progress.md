@@ -1573,3 +1573,42 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - this content-line prep now has a clean final handoff point
   - when it is time to involve the user, the playtest ask can be focused and short instead of ad hoc
+
+2026-04-20 home/settings/path information cleanup shipped
+- Reworked shell information density to remove internal/dev-feeling copy without reopening gameplay or ad-provider boundaries.
+- Main runtime changes:
+  - `index.html`
+  - `css/game.css`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `package.json`
+- Main UX outcomes:
+  - home now collapses the old dual status cards into one formal line near the primary CTA:
+    - `冠军之路 · RANK名 · 节点名`
+  - title-page language switching is no longer surfaced in the center stack
+  - settings now owns language selection and exposes only formal labels for:
+    - language
+    - music
+    - SFX
+  - championship-path copy was rewritten toward:
+    - arena
+    - enemy
+    - rule
+    - reward
+    instead of design-doc style explanation text
+  - loadout shell headers beside back-navigation were visually removed from the player-facing layout
+- Release-facing updates:
+  - bumped the visible build/version to `1.0.2`
+  - added `?v=1.0.2` cache-busting query strings to the changed shell CSS / text / loadout scripts
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:localization`
+  - `npm run check:settings`
+  - `npm run check:dom`
+  - `npm run check:routes`
+  - `npm run check:roadrank`
+  - `npm run check:loadout`
+  - `npm run check:shellpresentation`
+- Practical meaning:
+  - the home/loadout/settings/path shell now reads closer to a shipped game UI and less like a development harness
+  - the next intended step is live user experience validation on the deployed site, not another speculative copy expansion pass

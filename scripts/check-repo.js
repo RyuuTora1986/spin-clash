@@ -16,7 +16,10 @@ function readText(relPath) {
 }
 
 function normalizeWebPath(ref) {
-  return ref.replace(/^[.][\\/]/, '').replace(/\//g, path.sep);
+  return ref
+    .replace(/^[.][\\/]/, '')
+    .replace(/[?#].*$/, '')
+    .replace(/\//g, path.sep);
 }
 
 function checkIndexReferences() {

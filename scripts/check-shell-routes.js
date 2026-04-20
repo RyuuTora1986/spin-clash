@@ -79,9 +79,11 @@ function checkIndexHtmlContract() {
     'btn-enter-workshop',
     'btn-enter-settings',
     'btn-route-back',
-    'shell-route-title',
-    'shell-route-context',
     'settings-panel',
+    'settings-language-label',
+    'settings-music-label',
+    'settings-sfx-label',
+    'locale-settings-switcher',
     'btn-settings-music',
     'btn-settings-sfx'
   ];

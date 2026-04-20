@@ -138,14 +138,11 @@ function testSettingsPanelPresentation() {
 
   const tools = context.SpinClash.createLoadoutUiTools({
     uiText: {
-      settingsTitle: 'SETTINGS',
-      settingsHint: 'Language and audio toggles update immediately and persist to the current local save.',
-      settingsLanguageLabel: 'LANGUAGE: use the locale buttons above.',
-      settingsAudioLabel: 'AUDIO',
-      settingsMusicOn: 'MUSIC: ON',
-      settingsMusicOff: 'MUSIC: OFF',
-      settingsSfxOn: 'SFX: ON',
-      settingsSfxOff: 'SFX: OFF',
+      settingsLanguageLabel: 'LANGUAGE',
+      settingsMusicLabel: 'MUSIC',
+      settingsSfxLabel: 'SFX',
+      settingsToggleOn: 'ON',
+      settingsToggleOff: 'OFF',
       fightButton: 'START MATCH',
       challengeButton: 'ENTER PATH',
       loadoutHintChallenge: 'Path hint',
@@ -220,11 +217,11 @@ function testSettingsPanelPresentation() {
 
   tools.updateModeUI();
 
-  assert(document.getElementById('settings-title').textContent === 'SETTINGS', 'Expected settings title to render.');
-  assert(document.getElementById('settings-audio-label').textContent.indexOf('MUSIC: OFF') >= 0, 'Expected settings audio summary to include MUSIC: OFF.');
-  assert(document.getElementById('settings-audio-label').textContent.indexOf('SFX: ON') >= 0, 'Expected settings audio summary to include SFX: ON.');
-  assert(document.getElementById('btn-settings-music').textContent === 'MUSIC: OFF', 'Expected music toggle button to render OFF label.');
-  assert(document.getElementById('btn-settings-sfx').textContent === 'SFX: ON', 'Expected SFX toggle button to render ON label.');
+  assert(document.getElementById('settings-language-label').textContent === 'LANGUAGE', 'Expected settings panel to surface a formal language label.');
+  assert(document.getElementById('settings-music-label').textContent === 'MUSIC', 'Expected settings panel to surface a formal music label.');
+  assert(document.getElementById('settings-sfx-label').textContent === 'SFX', 'Expected settings panel to surface a formal SFX label.');
+  assert(document.getElementById('btn-settings-music').textContent === 'OFF', 'Expected music toggle button to render OFF label.');
+  assert(document.getElementById('btn-settings-sfx').textContent === 'ON', 'Expected SFX toggle button to render ON label.');
   assert(document.getElementById('btn-settings-music').classList.contains('off'), 'Expected disabled music toggle to carry .off state.');
   assert(document.getElementById('btn-settings-sfx').classList.contains('off') === false, 'Expected enabled SFX toggle to avoid .off state.');
 
@@ -232,8 +229,8 @@ function testSettingsPanelPresentation() {
   sfxEnabled = false;
   tools.updateModeUI();
 
-  assert(document.getElementById('btn-settings-music').textContent === 'MUSIC: ON', 'Expected music toggle button to update to ON.');
-  assert(document.getElementById('btn-settings-sfx').textContent === 'SFX: OFF', 'Expected SFX toggle button to update to OFF.');
+  assert(document.getElementById('btn-settings-music').textContent === 'ON', 'Expected music toggle button to update to ON.');
+  assert(document.getElementById('btn-settings-sfx').textContent === 'OFF', 'Expected SFX toggle button to update to OFF.');
 }
 
 function main() {

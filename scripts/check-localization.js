@@ -81,8 +81,21 @@ function createDocument() {
     },
     querySelectorAll(selector) {
       if (selector === '[data-locale-target]') {
-        return ['locale-title-en', 'locale-title-zh', 'locale-title-ja', 'locale-loadout-en', 'locale-loadout-zh', 'locale-loadout-ja']
-          .map((id) => getElement(id));
+        return [
+          'locale-title-en',
+          'locale-title-zh',
+          'locale-title-ja',
+          'locale-loadout-en',
+          'locale-loadout-zh',
+          'locale-loadout-ja',
+          'locale-settings-en',
+          'locale-settings-zh',
+          'locale-settings-ja'
+        ].map((id) => {
+          const element = getElement(id);
+          element.dataset.localeTarget = id.split('-').pop();
+          return element;
+        });
       }
       return [];
     }

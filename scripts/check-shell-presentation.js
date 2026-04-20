@@ -106,7 +106,6 @@ function checkIndexHtml() {
   const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
   [
     'title-progress',
-    'title-goal',
     'btn-enter-quick',
     'btn-enter-workshop',
     'btn-enter-settings',
@@ -133,13 +132,15 @@ function checkIndexHtml() {
     'quick-selected-top-status',
     'quick-start-hint',
     'btn-route-back',
-    'shell-route-title',
-    'shell-route-context',
     'featured-top-name',
     'featured-top-skill',
     'featured-top-traits',
     'challenge-route-strip',
     'settings-panel',
+    'settings-language-label',
+    'settings-music-label',
+    'settings-sfx-label',
+    'locale-settings-switcher',
     'btn-settings-music',
     'btn-settings-sfx',
     'act-guard',
@@ -267,8 +268,18 @@ function checkLoadoutPresentation() {
       roadRankTitle: 'ROAD RANK',
       roadRankHint: 'Select a higher rank.',
       currencyLabel: 'SCRAP',
-      loadoutHintChallenge: 'Challenge hint',
-      loadoutHintQuick: 'Quick hint',
+      settingsLanguageLabel: 'LANGUAGE',
+      settingsMusicLabel: 'MUSIC',
+      settingsSfxLabel: 'SFX',
+      settingsToggleOn: 'ON',
+      settingsToggleOff: 'OFF',
+      challengeArenaInfo: 'Arena {value}',
+      challengeEnemyInfo: 'Enemy {value}',
+      challengeRuleInfo: 'Rule {value}',
+      challengeRewardInfo: 'Reward {value}',
+      challengeFirstClearInfo: 'First Clear +{value}',
+      challengeRankInfo: '{rank} x{multiplier}',
+      challengeCheckpointInfo: 'Checkpoint on clear',
       cards: [
         {
           icon: 'I',
@@ -451,18 +462,13 @@ function checkSettingsPresentation() {
 
   const tools = context.SpinClash.createLoadoutUiTools({
     uiText: {
-      settingsTitle: 'SETTINGS',
-      settingsHint: 'Language and audio toggles update immediately and persist to the current local save.',
-      settingsLanguageLabel: 'LANGUAGE: use the locale buttons above.',
-      settingsAudioLabel: 'AUDIO',
-      settingsMusicOn: 'MUSIC: ON',
-      settingsMusicOff: 'MUSIC: OFF',
-      settingsSfxOn: 'SFX: ON',
-      settingsSfxOff: 'SFX: OFF',
+      settingsLanguageLabel: 'LANGUAGE',
+      settingsMusicLabel: 'MUSIC',
+      settingsSfxLabel: 'SFX',
+      settingsToggleOn: 'ON',
+      settingsToggleOff: 'OFF',
       fightButton: 'START MATCH',
       challengeButton: 'ENTER PATH',
-      loadoutHintChallenge: 'Challenge hint',
-      loadoutHintQuick: 'Quick hint',
       quickMode: 'QUICK BATTLE',
       challengeMode: 'CHAMPIONSHIP PATH',
       featuredTopTitle: 'SELECTED TOP',
@@ -535,11 +541,23 @@ function checkSettingsPresentation() {
   tools.updateModeUI();
 
   assert(
-    document.getElementById('btn-settings-music').textContent === 'MUSIC: OFF',
+    document.getElementById('settings-language-label').textContent === 'LANGUAGE',
+    'Expected settings presentation to render a formal language label.'
+  );
+  assert(
+    document.getElementById('settings-music-label').textContent === 'MUSIC',
+    'Expected settings presentation to render a formal music label.'
+  );
+  assert(
+    document.getElementById('settings-sfx-label').textContent === 'SFX',
+    'Expected settings presentation to render a formal SFX label.'
+  );
+  assert(
+    document.getElementById('btn-settings-music').textContent === 'OFF',
     'Expected settings presentation to render route-aware music toggle text.'
   );
   assert(
-    document.getElementById('btn-settings-sfx').textContent === 'SFX: ON',
+    document.getElementById('btn-settings-sfx').textContent === 'ON',
     'Expected settings presentation to render route-aware SFX toggle text.'
   );
 }
