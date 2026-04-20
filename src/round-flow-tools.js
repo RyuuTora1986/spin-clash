@@ -175,9 +175,15 @@
       return -1;
     }
 
+    function setRoundResultTakeover(active){
+      if(!document || !document.body || !document.body.classList) return;
+      document.body.classList.toggle('round-result-takeover', !!active);
+    }
+
     function initRound(){
       let currentEnemyPreset = null;
       setEndLock(false);
+      setRoundResultTakeover(false);
       setGameState('prepare');
       const physTick = getPhysTick();
       if(physTick && physTick._orbTimer){
@@ -371,12 +377,21 @@
           : (uiText.roundWinDraw || 'DRAW');
       rdTxt.style.color=winner==='player'?'#00ffcc':winner==='enemy'?'#ff4422':'#ffcc00';
       rdDet.textContent=(uiText.roundLabel || 'ROUND')+' '+getRound()+' - '+why;
+      setRoundResultTakeover(true);
       ovRound.classList.remove('hide');
       if(score[0]>=2||score[1]>=2){
-        setTimeout(()=>{ovRound.classList.add('hide');showMatchResult();},2200);
+        setTimeout(()=>{
+          setRoundResultTakeover(false);
+          ovRound.classList.add('hide');
+          showMatchResult();
+        },2200);
       }else{
         setRound(getRound()+1);
-        setTimeout(()=>{ovRound.classList.add('hide');initRound();},2400);
+        setTimeout(()=>{
+          setRoundResultTakeover(false);
+          ovRound.classList.add('hide');
+          initRound();
+        },2400);
       }
     }
 
