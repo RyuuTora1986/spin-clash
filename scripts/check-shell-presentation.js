@@ -958,20 +958,30 @@ function checkMobileRoundResultTakeoverContract() {
   );
   assert(
     mobilePortraitBlock.includes('body.round-result-takeover #p-panel')
-      && mobilePortraitBlock.includes('body.round-result-takeover #e-panel'),
+      && mobilePortraitBlock.includes('body.round-result-takeover #e-panel')
+      && mobilePortraitBlock.includes('display:none')
+      && mobilePortraitBlock.includes('visibility:hidden'),
     'Expected the mobile round-result takeover contract to hide both top status rails.'
   );
   assert(
     mobilePortraitBlock.includes('body.round-result-takeover #act-swap')
-      && mobilePortraitBlock.includes('body.round-result-takeover #hint-bar'),
+      && mobilePortraitBlock.includes('body.round-result-takeover #hint-bar')
+      && mobilePortraitBlock.includes('display:none')
+      && mobilePortraitBlock.includes('opacity:0'),
     'Expected the mobile round-result takeover contract to remove swap and hint surfaces during settlement.'
   );
   assert(
-    mobilePortraitBlock.includes('body.round-result-takeover #ov-round.result-overlay'),
+    mobilePortraitBlock.includes('body.round-result-takeover #ov-round.result-overlay')
+      && mobilePortraitBlock.includes('justify-content:flex-start')
+      && mobilePortraitBlock.includes('background:'),
     'Expected the mobile round-result takeover contract to strengthen the round-result overlay background.'
   );
   assert(
-    mobilePortraitBlock.includes('body.round-result-takeover .round-result-shell'),
+    mobilePortraitBlock.includes('body.round-result-takeover .round-result-shell')
+      && mobilePortraitBlock.includes('padding:')
+      && mobilePortraitBlock.includes('box-shadow:')
+      && mobilePortraitBlock.includes('border-radius:')
+      && mobilePortraitBlock.includes('background:'),
     'Expected the mobile round-result takeover contract to strengthen the dedicated round-result shell.'
   );
 }
