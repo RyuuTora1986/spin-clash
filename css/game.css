@@ -1613,6 +1613,14 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
     radial-gradient(circle at top center,rgba(0,255,200,.08),transparent 28%),
     rgba(2,3,14,.94);
 }
+body.round-result-takeover #p-panel,
+body.round-result-takeover #e-panel,
+body.round-result-takeover #skill-panel,
+body.round-result-takeover #act-swap,
+body.round-result-takeover #hint-bar,
+body.round-result-takeover #msg-txt{
+  pointer-events:none;
+}
 .result-shell{
   width:min(560px,92vw);
   display:flex;
@@ -2256,6 +2264,23 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   }
   .locale-switcher{width:100%}
   .locale-btn{flex:1 1 0;min-width:0}
+  body.round-result-takeover #p-panel,
+  body.round-result-takeover #e-panel,
+  body.round-result-takeover #skill-panel,
+  body.round-result-takeover #act-swap,
+  body.round-result-takeover #hint-bar,
+  body.round-result-takeover #msg-txt{
+    opacity:0!important;
+    visibility:hidden!important;
+    display:none!important;
+  }
+  body.round-result-takeover #ov-round.result-overlay{
+    justify-content:flex-start;
+    padding:28px 14px 0;
+    background:
+      radial-gradient(circle at 50% 18%,rgba(0,255,200,.12),transparent 26%),
+      linear-gradient(180deg,rgba(3,9,20,.86),rgba(2,4,12,.96));
+  }
   .result-shell,
   .match-result-shell{
     width:min(560px,94vw);
@@ -2263,6 +2288,41 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   }
   .round-result-shell{
     width:min(420px,90vw);
+  }
+  body.round-result-takeover .round-result-shell{
+    width:min(430px,92vw);
+    margin-top:max(56px,calc(env(safe-area-inset-top,0px) + 44px));
+    padding:28px 18px 24px;
+    gap:12px;
+    border-radius:28px;
+    border:1px solid rgba(210,235,255,.12);
+    background:
+      linear-gradient(180deg,rgba(18,26,40,.96),rgba(9,14,26,.94)),
+      radial-gradient(circle at top,rgba(0,255,200,.12),transparent 58%);
+    box-shadow:0 22px 64px rgba(0,0,0,.48);
+  }
+
+  body.round-result-takeover #ov-round h2{
+    font-size:46px;
+    line-height:1.02;
+    letter-spacing:2px;
+  }
+
+  body.round-result-takeover #ov-round .rd-detail{
+    padding:16px 14px;
+    border-radius:18px;
+    font-size:12px;
+    line-height:1.75;
+    letter-spacing:1.6px;
+    background:rgba(255,255,255,.05);
+  }
+
+  body.round-result-takeover #ov-round .rd-next{
+    padding-top:6px;
+    font-size:12px;
+    line-height:1.6;
+    letter-spacing:1.8px;
+    color:rgba(190,255,240,.84);
   }
   .purchase-dialog{
     width:100%;
