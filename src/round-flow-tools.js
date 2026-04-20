@@ -352,12 +352,21 @@
       else if(winner==='enemy') score[1]++;
       setScore(score);
       if(winner==='player') sfxRoundWin(); else sfxRoundLose();
-      const rdTxt=document.getElementById('rd-txt');
-      const rdDet=document.getElementById('rd-detail');
-      const ovRound=document.getElementById('ov-round');
-      rdTxt.textContent=winner==='player'
-        ? (uiText.roundWinPlayer || 'YOU WIN!')
-        : winner==='enemy'
+        const rdTxt=document.getElementById('rd-txt');
+        const rdDet=document.getElementById('rd-detail');
+        const rdKicker=document.getElementById('rd-kicker');
+        const ovRound=document.getElementById('ov-round');
+        const msgTxt=document.getElementById('msg-txt');
+        if(msgTxt){
+          msgTxt.style.opacity='0';
+          msgTxt.textContent='';
+        }
+        if(rdKicker){
+          rdKicker.textContent=(uiText.roundLabel || 'ROUND')+' RESULT';
+        }
+        rdTxt.textContent=winner==='player'
+          ? (uiText.roundWinPlayer || 'YOU WIN!')
+          : winner==='enemy'
           ? (uiText.roundWinEnemy || 'ENEMY WINS')
           : (uiText.roundWinDraw || 'DRAW');
       rdTxt.style.color=winner==='player'?'#00ffcc':winner==='enemy'?'#ff4422':'#ffcc00';

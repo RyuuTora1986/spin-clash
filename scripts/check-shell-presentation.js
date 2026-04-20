@@ -105,6 +105,8 @@ function createBaseContext() {
 function checkIndexHtml() {
   const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
   [
+    'home-hero-panel',
+    'home-command-panel',
     'title-progress',
     'btn-enter-quick',
     'btn-enter-workshop',
@@ -119,6 +121,7 @@ function checkIndexHtml() {
     'home-top-skill',
     'home-top-traits',
     'quick-battle-panel',
+    'quick-ready-band',
     'btn-quick-arena-prev',
     'btn-quick-arena-next',
     'quick-arena-stage',
@@ -146,8 +149,11 @@ function checkIndexHtml() {
     'act-guard',
     'guard-icon',
     'guard-name',
+    'guard-state',
     'guard-cd',
     'guard-cd-txt',
+    'dash-state',
+    'skill-state',
     'battle-intro',
     'battle-intro-title',
     'battle-intro-meta',
@@ -216,6 +222,28 @@ function checkShortViewportTitleCompressionContract() {
   assert(
     shortViewportBlock.includes('.home-top-stage-shell') && shortViewportBlock.includes('height:220px'),
     'Expected the short-viewport title compression block to give the home showcase stage an explicit reduced height.'
+  );
+}
+
+function checkHeroAndQuickBandContracts() {
+  const html = fs.readFileSync(path.join(repoRoot, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(repoRoot, 'css', 'game.css'), 'utf8');
+
+  assert(
+    html.includes('id="home-hero-panel"') && html.includes('id="home-command-panel"'),
+    'Expected Home to define a dedicated hero wrapper that binds command UI and showcase into one composition.'
+  );
+  assert(
+    html.includes('id="quick-ready-band"'),
+    'Expected Quick Battle to define a dedicated decision band wrapper for the selected top and launch CTA.'
+  );
+  assert(
+    css.includes('.home-hero-panel') && css.includes('.home-command-panel'),
+    'Expected game.css to define layout rules for the new Home hero composition.'
+  );
+  assert(
+    css.includes('.quick-ready-band'),
+    'Expected game.css to define layout rules for the Quick Battle decision band.'
   );
 }
 
@@ -709,8 +737,8 @@ function checkQuickBattlePresentation() {
     'Expected quick battle presentation to surface the deployed top name.'
   );
   assert(
-    blockedDocument.getElementById('quick-selected-top-status').textContent === '',
-    'Expected quick battle presentation to stop rendering the deployed-top status tag.'
+    blockedDocument.getElementById('quick-selected-top-status').textContent.indexOf('LOCKED') >= 0,
+    'Expected quick battle presentation to surface a concise selected-top state badge for locked tops.'
   );
   assert(
     blockedDocument.getElementById('quick-start-hint').textContent.indexOf('locked top') >= 0,
@@ -882,6 +910,34 @@ function checkBattleHudPresentation() {
   assert(
     document.getElementById('e-role').textContent.indexOf('GUARD') >= 0,
     'Expected enemy HUD role label to surface GUARD status.'
+  );
+}
+
+function checkMobileBattleHudTopRailContract() {
+  const css = fs.readFileSync(path.join(repoRoot, 'css', 'game.css'), 'utf8');
+  const mobilePortraitMatch = css.match(/@media\(max-width:540px\) and \(orientation:portrait\)\{[\s\S]*?\n\}/);
+  assert(mobilePortraitMatch, 'Expected game.css to define a mobile portrait battle HUD contract block.');
+  const mobilePortraitBlock = mobilePortraitMatch[0];
+
+  assert(
+    mobilePortraitBlock.includes('#p-panel{') && mobilePortraitBlock.includes('top:')
+      && mobilePortraitBlock.includes('bottom:auto'),
+    'Expected the mobile portrait HUD contract to move the player status panel into a top rail position.'
+  );
+  assert(
+    mobilePortraitBlock.includes('#e-panel{') && mobilePortraitBlock.includes('top:')
+      && mobilePortraitBlock.includes('bottom:auto'),
+    'Expected the mobile portrait HUD contract to move the enemy status panel into a top rail position.'
+  );
+  assert(
+    mobilePortraitBlock.includes('#skill-panel{')
+      && mobilePortraitBlock.includes('left:50%')
+      && mobilePortraitBlock.includes('bottom:max('),
+    'Expected the mobile portrait HUD contract to keep the skill cluster in the bottom action zone.'
+  );
+  assert(
+    mobilePortraitBlock.includes('#act-swap{') && mobilePortraitBlock.includes('top:auto'),
+    'Expected the mobile portrait HUD contract to relocate the swap control away from the top-corner status rails.'
   );
 }
 
@@ -1097,11 +1153,13 @@ function main() {
   checkTitleOverlaySafeAreaContract();
   checkLoadoutOverlaySafeAreaContract();
   checkShortViewportTitleCompressionContract();
+  checkHeroAndQuickBandContracts();
   checkQuickBattlePreviewSourceContract();
   checkLoadoutPresentation();
   checkQuickBattlePresentation();
   checkSettingsPresentation();
   checkBattleHudPresentation();
+  checkMobileBattleHudTopRailContract();
   checkResultPresentation();
   console.log('Shell presentation check passed.');
 }

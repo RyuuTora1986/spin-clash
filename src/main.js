@@ -567,14 +567,15 @@ loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   getPlayerTopId:()=>playerTopId,
   getHomePreviewTopId:()=>homePreviewTopId,
   getSessionTrialArenaIds:()=>sessionTrialArenaIds,
-  getUnlockedRoadRankIndex,
-  getSelectedRoadRankIndex,
-  setSelectedRoadRankIndex,
-  setCurrentArena:(index)=>{ currentArena = index; },
-  rewardService,
-  showMsg,
-  refresh:refreshDebugState
-}) : null;
+    getUnlockedRoadRankIndex,
+    getSelectedRoadRankIndex,
+    setSelectedRoadRankIndex,
+    setCurrentArena:(index)=>{ currentArena = index; },
+    goPathRoute:()=>{ if(uiEntryTools) uiEntryTools.goPath(); },
+    rewardService,
+    showMsg,
+    refresh:refreshDebugState
+  }) : null;
 let gameState='title',playerTopId=0,homePreviewTopId=0,score=[0,0],round=1,roundTimer=(ECONOMY.runtime && typeof ECONOMY.runtime.defaultRoundTimer === 'number' ? ECONOMY.runtime.defaultRoundTimer : 30);
 if(homeTopShowcaseTools) homeTopShowcaseTools.initialize();
 if(quickBattlePreviewTools) quickBattlePreviewTools.initialize();

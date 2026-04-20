@@ -7,17 +7,21 @@ Use this file as the shortest path to the right document for the current stage o
 - `docs/balance-pass-2026-04-17.md`
 - `docs/balance-pass-2026-04-20.md`
 - `docs/content-post-merge-execution-plan-2026-04-20.md`
+- `docs/spin-clash-ui-ux-governance-2026-04-20.md`
+- `docs/ui-shell-visual-productization-plan-2026-04-20.md`
 - `docs/top-balance-validation-plan-2026-04-20.md`
 - `docs/top-balance-validation-report-2026-04-20-phase-1a.md`
 - `docs/unlock-source-ui-design-2026-04-20.md`
 - `docs/unlock-source-ui-pass-2026-04-20.md`
 - `docs/session-handoff-2026-04-17.md`
+- `docs/session-handoff-2026-04-21.md`
 - `docs/launch-blockers.md`
 
 ## If You Need Local Run And Regression
 - `docs/local-operations.md`
 - `docs/manual-test-batches.md`
 - `docs/focused-human-playtest-2026-04-20.md`
+- `docs/visual-validation-protocol-2026-04-20.md`
 - `docs/release-checklist.md`
 - `docs/analytics-events.md`
 
@@ -62,6 +66,10 @@ Use this file as the shortest path to the right document for the current stage o
 - `docs/superpowers/specs/2026-04-17-next-phase-gameplay-expansion-design.md`
 - `docs/superpowers/specs/2026-04-17-ui-flow-combat-feedback-design.md`
 - `docs/superpowers/plans/2026-04-17-next-phase-gameplay-expansion.md`
+
+## If You Need Shell Design Governance
+- `docs/spin-clash-ui-ux-governance-2026-04-20.md`
+- `docs/visual-validation-protocol-2026-04-20.md`
 
 ## If You Need Change History
 - `progress.md`

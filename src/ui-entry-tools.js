@@ -58,12 +58,20 @@
 
     function showTitleOverlay(){
       const titleOverlay = document.getElementById('ov-title');
-      if(titleOverlay) titleOverlay.classList.remove('hide');
+      if(titleOverlay){
+        titleOverlay.classList.remove('hide');
+        titleOverlay.style.display = 'flex';
+        titleOverlay.style.visibility = 'visible';
+      }
     }
 
     function hideTitleOverlay(){
       const titleOverlay = document.getElementById('ov-title');
-      if(titleOverlay) titleOverlay.classList.add('hide');
+      if(titleOverlay){
+        titleOverlay.classList.add('hide');
+        titleOverlay.style.display = 'none';
+        titleOverlay.style.visibility = 'hidden';
+      }
     }
 
     function setBattleMode(mode){
@@ -316,6 +324,26 @@
       });
     }
 
+    function quickTopAction(){
+      const currentTopIndex = Math.max(0, Math.min(tops.length - 1, parseInt(getPlayerTopId(), 10) || 0));
+      if(isTopUnlocked(currentTopIndex)){
+        updateModeUI();
+        syncDebugPanel();
+        return true;
+      }
+      const top = tops[currentTopIndex] || null;
+      if(top && top.unlockSource === 'road'){
+        goPath();
+        return true;
+      }
+      attemptTopAccess(currentTopIndex).then(function(granted){
+        if(!granted) return;
+        updateModeUI();
+        syncDebugPanel();
+      });
+      return true;
+    }
+
     function handleSwapRematch(){
       resetMatch({ skipInitRound:true });
       applyRoute(getBattleReturnRoute() || (getCurrentMode() === 'challenge' ? 'path' : 'quick'), {
@@ -404,6 +432,7 @@
         enterWorkshop,
         enterSettings,
         selectTop:selectPlayerTopById,
+        quickTopAction,
         startFight,
         replay:handleResultReturn,
         swapRematch:handleSwapRematch,
@@ -442,6 +471,7 @@
       prevQuickArena,
       nextQuickArena,
       selectPlayerTopById,
+      quickTopAction,
       startFight,
       handleSwapRematch,
       setMode,

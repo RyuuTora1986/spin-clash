@@ -50,6 +50,7 @@
       : function(index){ return index; };
     const analyticsService = options.analyticsService || null;
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
+    const goPathRoute = typeof options.goPathRoute === 'function' ? options.goPathRoute : function(){};
     const rewardService = options.rewardService || null;
     const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
     const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
@@ -249,12 +250,18 @@
         event.stopPropagation();
       });
       secondary.addEventListener('click', function(){
+        if(pendingTopPurchase && typeof pendingTopPurchase.secondaryAction === 'function'){
+          pendingTopPurchase.secondaryAction();
+        }
         closeTopPurchaseDialog(false);
       });
       primary.addEventListener('click', function(){
         if(pendingTopPurchase && pendingTopPurchase.mode === 'confirm'){
           confirmTopPurchaseDialog();
           return;
+        }
+        if(pendingTopPurchase && typeof pendingTopPurchase.primaryAction === 'function'){
+          pendingTopPurchase.primaryAction();
         }
         closeTopPurchaseDialog(false);
       });
@@ -275,7 +282,9 @@
       pendingTopPurchase = {
         mode:config.mode,
         topIndex:config.topIndex,
-        resolve:config.resolve
+        resolve:config.resolve,
+        primaryAction:typeof config.primaryAction === 'function' ? config.primaryAction : null,
+        secondaryAction:typeof config.secondaryAction === 'function' ? config.secondaryAction : null
       };
       setText('purchase-dialog-kicker', config.kicker || '');
       setText('purchase-dialog-title', config.title || '');
@@ -539,7 +548,12 @@
     function updateCurrencyUI(){
       const save = getSave();
       const label = uiText.currencyLabel || 'SCRAP';
+      const bar = document.getElementById('currency-bar');
+      if(bar){
+        bar.style.display = 'none';
+      }
       setText('currency-bar', label+': '+save.currency);
+      setText('workshop-balance', label+': '+save.currency);
       setText('mt-wallet', (uiText.walletLabel || 'BALANCE')+' '+save.currency+' '+label);
     }
 
@@ -646,12 +660,18 @@
     }
 
     function updateFeaturedTopUI(){
+      const route = getUiRoute();
       const topIndex = getPlayerTopId();
       const top = getTopConfig(topIndex);
       const cardText = getCardText(topIndex) || {};
       const locked = !isTopUnlocked(topIndex);
       const traits = Array.isArray(cardText.traits) ? cardText.traits : [];
-      setText('featured-top-title', uiText.featuredTopTitle || 'SELECTED TOP');
+      setText(
+        'featured-top-title',
+        route === 'path'
+          ? (uiText.challengeCurrentTopTitle || uiText.featuredTopTitle || 'CURRENT LOADOUT')
+          : (uiText.featuredTopTitle || 'SELECTED TOP')
+      );
       setText('featured-top-name', top.name || 'TOP');
       setText('featured-top-type', getTopTypeLine(top, cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP')));
       setText(
@@ -741,13 +761,91 @@
       };
     }
 
+    function getQuickTopRequirement(top, locked){
+      if(!top) return '';
+      const currencyLabel = uiText.currencyLabel || 'SCRAP';
+      if(locked){
+        if(top.unlockSource === 'road'){
+          return getRoadUnlockText(top);
+        }
+        if(top.unlockSource === 'shop'){
+          return getShopUnlockText(top, currencyLabel);
+        }
+        return uiText.quickTopLockedHint || uiText.lockedTop || 'LOCKED';
+      }
+      if(top.unlockSource === 'starter'){
+        return uiText.quickTopOwnedStarterHint || uiText.topSourceStarter || 'STARTER';
+      }
+      if(top.unlockSource === 'road'){
+        return uiText.quickTopOwnedRoadHint || uiText.topSourceRoadReward || 'ROAD REWARD';
+      }
+      if(top.unlockSource === 'shop'){
+        return uiText.quickTopOwnedShopHint || uiText.topSourceWorkshop || 'SCRAP UNLOCK';
+      }
+      return uiText.quickTopOwnedReadyHint || uiText.quickTopReady || 'READY';
+    }
+
+    function getQuickTopWalletText(top, locked){
+      if(!top || top.unlockSource !== 'shop'){
+        return '';
+      }
+      const currencyLabel = uiText.currencyLabel || 'SCRAP';
+      const balance = getSave().currency || 0;
+      const cost = typeof top.unlockCost === 'number' ? top.unlockCost : 0;
+      return formatText(
+        locked
+          ? (uiText.quickTopWalletNeedLine || 'BALANCE {balance} {currency} · PRICE {cost} {currency}')
+          : (uiText.quickTopWalletOwnedLine || 'BALANCE {balance} {currency}'),
+        {
+          balance,
+          cost,
+          currency:currencyLabel
+        }
+      );
+    }
+
+    function getQuickTopActionState(top, locked){
+      if(!top || !locked){
+        return { label:'', visible:false, kind:'none' };
+      }
+      const balance = getSave().currency || 0;
+      const cost = typeof top.unlockCost === 'number' ? top.unlockCost : 0;
+      if(top.unlockSource === 'road'){
+        return {
+          label:uiText.quickTopPathAction || uiText.challengeMode || 'CHAMPIONSHIP PATH',
+          visible:true,
+          kind:'path'
+        };
+      }
+      if(top.unlockSource === 'shop' && balance >= cost){
+        return {
+          label:uiText.topPurchaseConfirmButton || 'BUY NOW',
+          visible:true,
+          kind:'purchase'
+        };
+      }
+      return {
+        label:uiText.quickTopEarnAction || uiText.challengeMode || 'CHAMPIONSHIP PATH',
+        visible:true,
+        kind:'path'
+      };
+    }
+
     function updateQuickBattleUI(){
       const state = getQuickStartState();
+      const topLocked = !isTopUnlocked(state.topIndex);
+      const topActionState = getQuickTopActionState(state.top, topLocked);
+      const topSourceLabel = getTopSourceLabel(state.top) || '';
+      const topRequirement = getQuickTopRequirement(state.top, topLocked);
+      const topMetaLine = normalizeCompareText(topRequirement) === normalizeCompareText(topSourceLabel)
+        ? ''
+        : topRequirement;
       const prevButton = document.getElementById('btn-quick-arena-prev');
       const nextButton = document.getElementById('btn-quick-arena-next');
       const fightButton = document.getElementById('btn-fight');
       const arenaStatus = document.getElementById('quick-arena-status');
       const topStatus = document.getElementById('quick-selected-top-status');
+      const topActionButton = document.getElementById('btn-quick-top-action');
       const panel = document.getElementById('quick-battle-panel');
       if(panel){
         panel.classList.toggle('top-locked', state.topLocked);
@@ -765,9 +863,18 @@
 
       setText('quick-selected-top-kicker', uiText.quickTopTitle || 'DEPLOYED TOP');
       setText('quick-selected-top-name', state.top.name || 'TOP');
-      setText('quick-selected-top-status', '');
+      setText('quick-selected-top-status', topSourceLabel || (topLocked ? (uiText.lockedTop || 'LOCKED') : (uiText.quickTopReady || 'READY')));
+      setText('quick-selected-top-source', topMetaLine);
+      setText('quick-selected-top-requirement', topLocked ? state.hint : topRequirement);
+      setText('quick-selected-top-wallet', getQuickTopWalletText(state.top, topLocked));
       setText('quick-start-hint', state.hint);
       setText('btn-fight', state.buttonLabel);
+      if(topActionButton){
+        topActionButton.textContent = topActionState.label;
+        topActionButton.classList.toggle('hide', !topActionState.visible);
+        topActionButton.classList.toggle('is-path', topActionState.kind === 'path');
+        topActionButton.classList.toggle('is-purchase', topActionState.kind === 'purchase');
+      }
 
       if(prevButton) prevButton.disabled = arenas.length <= 1;
       if(nextButton) nextButton.disabled = arenas.length <= 1;
@@ -783,8 +890,8 @@
         arenaStatus.classList.toggle('unlocked', state.arenaUnlocked);
       }
       if(topStatus){
-        topStatus.classList.remove('locked');
-        topStatus.classList.remove('unlocked');
+        topStatus.classList.toggle('locked', topLocked);
+        topStatus.classList.toggle('unlocked', !topLocked);
       }
     }
 
@@ -974,7 +1081,6 @@
     function updateModeUI(){
       ensureTopCards();
       ensureTopPurchaseDialogBindings();
-      const save = getSave();
       const currentNode = getCurrentChallengeNode();
       const uiRoute = getUiRoute();
       const isPathRoute = uiRoute === 'path';
@@ -1001,7 +1107,12 @@
       const localeSwitcher = document.getElementById('locale-settings-switcher');
       const musicToggle = document.getElementById('btn-settings-music');
       const sfxToggle = document.getElementById('btn-settings-sfx');
+      const loadoutOverlay = document.getElementById('ov-loadout');
 
+      if(loadoutOverlay){
+        loadoutOverlay.classList.remove('route-home','route-path','route-quick','route-workshop','route-settings');
+        loadoutOverlay.classList.add('route-'+uiRoute);
+      }
       if(routeActions) routeActions.style.display = isPathRoute || isQuickRoute ? '' : 'none';
       if(quickTab) quickTab.style.display = 'none';
       if(challengeTab) challengeTab.style.display = 'none';
@@ -1011,9 +1122,9 @@
       }
       if(challengePanel) challengePanel.classList.toggle('hide', !isPathRoute);
       if(quickBattlePanel) quickBattlePanel.classList.toggle('hide', !isQuickRoute);
-      if(featuredPanel) featuredPanel.style.display = isPathRoute ? '' : 'none';
+      if(featuredPanel) featuredPanel.style.display = 'none';
       if(arenaPanel) arenaPanel.style.display = 'none';
-      if(cardsPanel) cardsPanel.style.display = isPathRoute ? '' : 'none';
+      if(cardsPanel) cardsPanel.style.display = isQuickRoute ? '' : 'none';
       if(fightButton) fightButton.style.display = isQuickRoute ? '' : 'none';
       if(pathFightButton) pathFightButton.style.display = isPathRoute ? '' : 'none';
       if(settingsPanel) settingsPanel.classList.toggle('hide', !isSettingsRoute);
@@ -1049,12 +1160,18 @@
         const enemyPreset = getEnemyPresetById(currentNode.enemyPresetId);
         const enemyTop = enemyPreset ? getTopById(enemyPreset.topId) : null;
         const activeChallengeIndex = getActiveChallengeIndex();
-        const chapterLabel = getChapterLabel(currentNode);
         const roadRank = getSelectedRoadRank();
         const tierLabel = getTierLabel(currentNode);
+        const currentTopIndex = Math.max(0, Math.min(tops.length - 1, parseInt(getPlayerTopId(), 10) || 0));
+        const currentTop = getTopConfig(currentTopIndex);
+        const currentTopCard = getCardText(currentTopIndex) || {};
         const enemyLabel = enemyPreset
           ? (enemyPreset.label || (enemyTop ? enemyTop.name : 'TOP'))
           : (enemyTop ? enemyTop.name : 'TOP');
+        const challengeKicker = document.getElementById('challenge-kicker');
+        const currentTopKicker = document.getElementById('challenge-current-top-kicker');
+        const currentTopName = document.getElementById('challenge-current-top-name');
+        const currentTopNote = document.getElementById('challenge-current-top-note');
         const detailBits = [
           formatText(uiText.challengeArenaInfo || 'Arena {value}', { value:getArenaLabel(currentNode.arenaIndex) }),
           formatText(uiText.challengeEnemyInfo || 'Enemy {value}', { value:enemyLabel }),
@@ -1080,15 +1197,23 @@
           currentNode.checkpointOnClear ? (uiText.challengeCheckpointInfo || 'Checkpoint on clear') : null
         ].filter(Boolean);
         setText('challenge-node-name', [
-          chapterLabel,
-          formatNodeLabel(activeChallengeIndex+1),
           currentNode.name,
           tierLabel
-        ].filter(Boolean).join(' · '));
-        setText('challenge-node-detail', detailBits.join(' · '));
-        setText('challenge-progress', [
-          progressBits.join(' · ')
-        ].filter(Boolean).join(''));
+        ].filter(Boolean).join(' - '));
+        setText('challenge-node-detail', detailBits.join(' - '));
+        setText('challenge-progress', progressBits.join(' - '));
+        setText('challenge-kicker', [
+          uiText.challengeMode || 'CHAMPIONSHIP PATH',
+          roadRank ? roadRank.label : null,
+          formatNodeLabel(activeChallengeIndex + 1)
+        ].filter(Boolean).join(' - '));
+        setText('challenge-current-top-kicker', uiText.challengeCurrentTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
+        setText('challenge-current-top-name', currentTop.name || 'TOP');
+        setText('challenge-current-top-note', [
+          currentTopCard.type || (currentTop.family ? String(currentTop.family).toUpperCase() : null),
+          getTopSourceLabel(currentTop) || (uiText.homeTopUnlocked || 'UNLOCKED'),
+          currentTopCard.skill || currentTop.skill || null
+        ].filter(Boolean).join(' - '));
       }
       updateLocaleButtons();
     }
@@ -1266,16 +1391,19 @@
       const save = getSave();
       if(save.currency < top.unlockCost){
         if(!openTopPurchaseDialog({
-          mode:'insufficient',
-          topIndex:index,
-          resolve:function(granted){ return granted; },
-          kicker:uiText.topPurchaseNeedMoreKicker || 'SCRAP SHORT',
-          title:top.name || (uiText.lockedTop || 'TOP'),
-          copy:getTopPurchaseEarnCopy(top),
-          cost:getTopPurchaseShortfallLine(top, save),
-          primaryLabel:uiText.topPurchaseCloseButton || 'GOT IT',
-          secondaryLabel:''
-        })){
+            mode:'insufficient',
+            topIndex:index,
+            resolve:function(granted){ return granted; },
+            kicker:uiText.topPurchaseNeedMoreKicker || 'SCRAP SHORT',
+            title:top.name || (uiText.lockedTop || 'TOP'),
+            copy:getTopPurchaseEarnCopy(top),
+            cost:getTopPurchaseShortfallLine(top, save),
+            primaryLabel:uiText.quickTopEarnAction || uiText.challengeMode || 'CHAMPIONSHIP PATH',
+            secondaryLabel:uiText.topPurchaseCancelButton || 'NOT YET',
+            primaryAction:function(){
+              goPathRoute();
+            }
+          })){
           showMsg(getTopPurchaseShortfallLine(top, save),1.2);
           refresh();
         }

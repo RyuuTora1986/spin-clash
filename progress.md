@@ -1612,3 +1612,292 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the home/loadout/settings/path shell now reads closer to a shipped game UI and less like a development harness
   - the next intended step is live user experience validation on the deployed site, not another speculative copy expansion pass
+
+2026-04-20 UI/UX governance draft written for Spin Clash
+- Wrote a project-specific shell-governance document by extracting and narrowing the most relevant local skill logic from:
+  - `frontend-skill`
+  - `animejs-front-end-skill`
+  - `develop-web-game`
+- New design source of truth:
+  - `docs/spin-clash-ui-ux-governance-2026-04-20.md`
+- What the document covers:
+  - screen purpose boundaries
+  - the four-question closure rule
+  - preview-vs-action separation
+  - copy-tone discipline
+  - motion justification
+  - a re-analysis of the current `Home / Championship Path / Quick Battle / Workshop / Settings` shell using that governance layer
+- Updated discovery surface:
+  - `docs/docs-index.md`
+- Practical meaning:
+  - future shell changes can now be judged against one project-specific UI/UX standard instead of mixing generic frontend advice ad hoc
+  - the next correct step is user review of the governance document itself, then a narrow shell pass guided by it, not immediate generic-skill packaging
+
+2026-04-20 shell visual productization pass shipped
+- Locked the construction brief in:
+  - `docs/ui-shell-visual-productization-plan-2026-04-20.md`
+- Main runtime files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/loadout-ui-tools.js`
+  - `src/ui-entry-tools.js`
+  - `src/main.js`
+  - `src/config-text.js`
+  - `package.json`
+- Main shell outcomes:
+  - `Championship Path` no longer presents as a roster-first page:
+    - the top card wall now belongs to `Quick Battle`
+    - the path page now centers current node, route strip, rank band, reward summary, and current loadout
+  - `Quick Battle` now behaves more like a real pre-fight page:
+    - selected top gains source / requirement / wallet / action closure
+    - locked `SCRAP` tops can now route into purchase or path-earn flows without guessing
+  - the insufficient-funds purchase dialog now points players back to `Championship Path` instead of dead-ending on acknowledgement copy
+  - desktop shell surfaces were widened and rebalanced so:
+    - home feels closer to a hero/poster entry
+    - workshop/settings feel more like full pages and less like small floating panels
+  - release-facing shell cache busting and visible version were moved to `1.0.3`
+- Verification:
+  - `npm run verify:release`
+2026-04-20 real-player-window shell compression pass completed
+- Context:
+  - user requested a real browser-window visual review before any new hands-on experience
+  - validation target was the actual attached Chrome window at roughly `1280x608` CSS px, not code-only judgement
+- Main runtime files changed:
+  - `scripts/local-browser-qa.js`
+  - `index.html`
+  - `css/game.css`
+  - `src/loadout-ui-tools.js`
+- Main shell outcomes:
+  - screenshot capture for local browser QA now defaults to viewport-true screenshots instead of forced full-page output
+  - workshop balance moved into the workshop surface, removing the need for a generic top currency bar
+  - short-height desktop shell now compresses `Home / Quick Battle / Championship Path / Workshop / Settings` more aggressively
+  - short-height home prioritizes route progress + CTA before the preview block
+  - short-height quick prioritizes deployed-top closure before the arena preview
+- Real-browser evidence:
+  - captured screenshot sets from the actual attached player window:
+    - `output/real-player-window-2026-04-20-pass3`
+    - `output/real-player-window-2026-04-20-pass3-resized`
+  - measured first-fold CTA visibility in the attached window:
+    - home primary CTA visible
+    - path challenge CTA visible
+    - quick fight CTA visible
+- Verification:
+  - `npm run preflight`
+- Practical meaning:
+  - this shell pass is ready for real user hands-on validation
+  - the next highest-value step is your focused体验，而不是继续盲改文案或布局
+2026-04-20 home-and-quick-shell refinement pass completed
+- Context:
+  - after switching to user-supplied real screenshots as the trustworthy visual basis, the highest-priority remaining shell issues were narrowed to `Home` and `Quick Battle`
+  - goal was not another global polish pass, but a tighter two-page productization step aligned with `docs/spin-clash-ui-ux-governance-2026-04-20.md`
+- Main runtime files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `scripts/check-shell-presentation.js`
+- Main shell outcomes:
+  - `Home` now binds route progress, CTA cluster, and showcase into one explicit hero composition via `home-hero-panel` / `home-command-panel`
+  - desktop `Home` no longer treats the showcase as a detached block below the buttons
+  - `Quick Battle` now introduces a dedicated `quick-ready-band` so the selected top and launch CTA read as one pre-fight decision surface
+  - the selected-top state badge is back, but now used intentionally as a concise acquisition/state marker instead of empty chrome
+  - quick-battle copy was shortened so the page reads more like a battle-prep surface and less like a module explainer
+- Verification:
+  - `npm run check:shellpresentation`
+  - `npm run check:dom`
+  - `npm run check:localization`
+  - `npm run check:loadout`
+  - `npm run preflight`
+  - `npm run verify:release`
+- Practical meaning:
+  - the next review should focus on whether the new `Home` hero now feels like one composition and whether `Quick Battle` still feels too long in your real browser
+  - if another shell pass is needed, it should remain constrained to those two pages unless your real screenshots show a new high-severity issue elsewhere
+2026-04-20 visual-validation protocol documented
+- Context:
+  - user explicitly called out that another Codex session could capture correct full-browser screenshots without manual approval prompts, while this session's direct attached-Chrome captures were cropped / misaligned
+  - conclusion was locked: the issue was the screenshot chain, not the game's UI itself
+- Main docs changed:
+  - `docs/spin-clash-ui-ux-governance-2026-04-20.md`
+  - `docs/visual-validation-protocol-2026-04-20.md`
+  - `docs/docs-index.md`
+  - `README.md`
+- Main protocol outcome:
+  - direct CDP attachment to a live user Chrome session is no longer trusted by default for final design review
+  - real visible-window screenshots are now the highest-trust evidence for shell judgement in this project
+  - automated screenshots may still be used for structural debugging, but not for final aesthetic/layout approval unless the chain is revalidated
+- Verification:
+  - `npm run check:docs`
+- Practical meaning:
+  - future UI review sessions should stop earlier when screenshot evidence is questionable instead of continuing to reason from invalid captures
+
+2026-04-21 proxy-chain visual flow replay validation completed
+- Context:
+  - user requested a video-style full-scene visual validation covering shell pages, live battle HUD, and result surfaces
+  - final visual evidence was required to use the trusted Codex browser proxy chain rather than direct attached-Chrome CDP screenshots
+- Main runtime files changed:
+  - `scripts/proxy-visual-flow-capture.js`
+- Main validation outcomes:
+  - added a proxy-driven capture script that:
+    - starts the local static server
+    - revalidates the proxy capture chain with visible corner/center diagnostics
+    - captures `Home / Championship Path / Workshop / Settings / Quick Battle`
+    - enters a real Challenge Road fight
+    - captures battle HUD, round-result overlay, and match-result overlay
+    - emits a replayable HTML timeline plus a markdown report
+  - latest artifact set:
+    - `output/proxy-visual-flow-video-2026-04-20T15-10-59/`
+    - `replay.html`
+    - `report.md`
+- Verification:
+  - `node --check scripts/proxy-visual-flow-capture.js`
+  - proxy-chain capture run completed successfully with 13 frames
+- Practical meaning:
+  - future visual review can reuse the same proxy-driven replay workflow instead of ad-hoc screenshots
+  - the current build now has trustworthy captured evidence for shell pages, battle HUD, and settlement UI
+
+2026-04-21 shell polish pass 2 completed after proxy replay
+- Context:
+  - proxy replay evidence confirmed three remaining presentation issues:
+    - `Home` still placed the top showcase below the command surface
+    - `Quick Battle` still read as a tall stacked page with a roster wall
+    - result screens still lacked strong dedicated panel surfaces and leaked residual overlay text
+- Main runtime files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/round-flow-tools.js`
+  - `src/match-flow-tools.js`
+- Main shell outcomes:
+  - `Home` now restores the requested model-first composition: title -> showcase -> progress/CTA command panel
+  - `Quick Battle` now compresses the pre-fight shell into a two-column desktop composition and turns the roster into a horizontal selection belt instead of a multi-row wall
+  - `Round Result` and `Match Result` now render inside dedicated centered result shells with clearer hierarchy and action grouping
+  - result-state cleanup now forcibly clears transient combat callouts and prevents prior overlay ghosts from leaking into `Match Result`
+- Trusted visual evidence:
+  - refreshed proxy replay artifact set:
+    - `output/proxy-visual-flow-video-2026-04-20T15-31-51/`
+    - `replay.html`
+    - `report.md`
+- Verification:
+  - `npm run check:shellpresentation`
+  - `npm run check:dom`
+  - `npm run check:localization`
+  - `npm run check:loadout`
+  - `npm run check:roundflow`
+  - `npm run check:matchflow`
+  - `npm run preflight`
+  - proxy-chain replay capture completed successfully
+- Practical meaning:
+  - the next human review should focus on taste and remaining polish rather than layout correctness
+  - `Home / Quick Battle / Result` now have a reliable visual baseline backed by trusted proxy-chain evidence
+
+2026-04-21 battle skill cluster redesign completed
+- Context:
+  - user requested a fresh pass on the three in-battle skill buttons using the established UI/UX governance rules, with focus on recognizability, comprehension, tapability, and not obscuring the arena
+- Main runtime files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/ui-shell-tools.js`
+  - `src/round-flow-tools.js`
+  - `src/match-flow-tools.js`
+  - `scripts/check-shell-presentation.js`
+- Main HUD outcomes:
+  - the skill controls are no longer a narrow vertical tool strip beside the player panel
+  - desktop battle HUD now uses a bottom-center horizontal skill cluster that sits in the lower safe band instead of eating into the left arena edge
+  - each skill button now exposes a direct state line (`READY / CD / BURST / ACTIVE`) so players do not need to infer readiness from color alone
+  - the cluster uses larger rectangular tap targets with a stronger icon / label / secondary state hierarchy
+  - mobile and low-height landscape breakpoints were updated so the cluster remains horizontal and thumb-reachable without covering core arena space
+  - transient battle callouts are explicitly cleared before settlement overlays so the combat HUD does not ghost through result screens
+- Trusted visual evidence:
+  - refreshed proxy replay artifact set:
+    - `output/proxy-visual-flow-video-2026-04-20T15-49-01/`
+    - `replay.html`
+    - `report.md`
+- Verification:
+  - `npm run check:shellpresentation`
+  - `npm run check:dom`
+  - `npm run check:ui`
+  - `npm run preflight`
+  - proxy-chain replay capture completed successfully
+- Practical meaning:
+  - battle input now reads as a player-facing control surface rather than a debug-adjacent utility stack
+  - the next human review should focus on final taste and wording rather than button discoverability or gross layout conflict
+
+2026-04-21 mobile proxy-chain visual replay validation added
+- Context:
+  - user explicitly called out that desktop-only video validation was insufficient because `spin-clash` is expected to be primarily played on phones
+  - the repo needed a first-class mobile replay flow using the trusted Codex browser proxy chain, not ad-hoc screenshots
+- Main tooling/files changed:
+  - `scripts/check-proxy-visual-flow-capture.js`
+  - `scripts/proxy-visual-flow-capture.js`
+  - `package.json`
+  - `docs/visual-validation-protocol-2026-04-20.md`
+  - global proxy runtime: `C:\Users\29940\.codex-proxy\skills\web-access\scripts\cdp-proxy.mjs`
+- Main validation outcomes:
+  - proxy chain now supports explicit viewport/device emulation through a `/viewport` endpoint backed by `Emulation.setDeviceMetricsOverride`
+  - `proxy-visual-flow-capture.js` now supports `--profile desktop|mobile` plus `--dry-run` contract verification
+  - mobile profile contract is locked to `390x844`, `dpr=3`, `mobile=true`, `touch=true`
+  - trusted mobile replay artifact set:
+    - `output/proxy-visual-flow-video-mobile-2026-04-20T16-12-22/`
+    - `replay.html`
+    - `report.md`
+- Mobile review findings:
+  - `Home` is readable and coherent on phone, with model-first composition preserved
+  - `Quick Battle` is understandable on phone, but the roster strip still reads as a cramped bottom layer and should be reviewed again before final polish
+  - battle HUD skill cluster remains thumb-reachable and does not dominate the arena on phone
+  - `Match Result` is clearly visible on phone
+  - the frame captured during `roundResult` state still visually looks like battle HUD rather than a distinct round-settlement panel, which means mobile round-settlement presentation remains a real open issue even though match settlement is present
+- Verification:
+  - `node scripts/check-proxy-visual-flow-capture.js`
+  - `node --check scripts/proxy-visual-flow-capture.js`
+  - `node --check C:\Users\29940\.codex-proxy\skills\web-access\scripts\cdp-proxy.mjs`
+  - trusted proxy-chain mobile replay run completed successfully
+- Practical meaning:
+ - future important UI work in this repo now requires both desktop and mobile trusted replay coverage before asking the user for visual acceptance
+ - the next UI pass should prioritize mobile `roundResult` visibility and then revisit `Quick Battle` bottom-strip density on phone
+
+2026-04-21 mobile battle HUD scheme-B refactor landed
+- Context:
+  - user explicitly chose `方案 B`: move battle status to the top and keep only the skill controls in the bottom thumb zone
+  - the concrete issue was that the three mobile skill buttons were colliding with the left/right HUD panels, making the combat HUD feel crowded and visually unstable
+  - this pass followed the `D:\Game-UI-Polish` principle set: separate information layers by task importance, keep touch targets in the thumb zone, and avoid stealing arena visibility for secondary metadata
+- Main files changed:
+  - `css/game.css`
+  - `scripts/check-shell-presentation.js`
+- Main UI changes:
+  - mobile portrait battle HUD now uses top-corner compact status rails for player and enemy instead of bottom-corner panels
+  - the bottom action lane is now reserved for the three skill buttons, with reduced width and tighter icon/text packing instead of competing with status panels
+  - the mobile `swap` control is relocated out of the top-right corner so it does not collide with the enemy status rail
+  - battle hint placement is retuned to sit above the skill lane rather than drifting into the same bottom interaction band
+- Verification:
+  - `npm run check:shellpresentation`
+  - `npm run check:ui`
+  - `npm run preflight`
+  - trusted proxy-chain mobile replay run:
+    - `output/proxy-visual-flow-video-mobile-2026-04-20T16-43-33/`
+- Proxy replay visual conclusion:
+  - battle frames now show a clean three-layer structure on phone: top status rails, central arena, bottom skill controls
+  - the skill cluster no longer visibly collides with the left/right status presentation on phone
+ - round-result presentation is still a separate open issue, but the specific bottom-HUD collision problem is materially improved
+- Practical meaning:
+  - mobile combat HUD is now aligned with the project’s “information on top, action on bottom” rule instead of trying to reuse the desktop bottom-layer layout
+
+2026-04-21 handoff package prepared for next Codex thread
+- Context:
+  - user asked to sync the latest local state to GitHub and explicitly wanted a reliable handoff for starting a fresh conversation
+- Main files changed:
+  - `docs/session-handoff-2026-04-21.md`
+  - `docs/docs-index.md`
+  - `README.md`
+- Main outcome:
+  - the repo now includes an explicit handoff document that freezes:
+    - current branch strategy
+    - today’s UI/UX and mobile HUD work
+    - trusted replay evidence paths
+    - current open issues
+    - recommended next-step order
+    - next-conversation re-entry checklist
+- Verification:
+  - `npm run check:docs`
+  - `npm run verify:release`
+- Practical meaning:
+  - the next conversation no longer needs to reconstruct today’s state from chat history alone
+  - re-entry can start from `progress.md` plus `docs/session-handoff-2026-04-21.md`

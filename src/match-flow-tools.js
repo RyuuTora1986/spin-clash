@@ -523,7 +523,22 @@
       const reward = resultContext.reward;
       const matchStartedAt = getMatchStartedAt();
       const durationSec = matchStartedAt ? Math.max(0, Math.round((Date.now() - matchStartedAt) / 1000)) : null;
+      const msgTxt = document.getElementById('msg-txt');
+      const roundOverlay = document.getElementById('ov-round');
+      if(roundOverlay){
+        roundOverlay.classList.add('hide');
+      }
+      if(msgTxt){
+        msgTxt.style.opacity = '0';
+        msgTxt.textContent = '';
+      }
 
+      const matchKicker = document.getElementById('mt-kicker');
+      if(matchKicker){
+        matchKicker.textContent = won
+          ? (uiText.shareMoments && uiText.shareMoments.victory) || 'VICTORY'
+          : (uiText.shareMoments && uiText.shareMoments.defeat) || 'DEFEAT';
+      }
       document.getElementById('mt-txt').textContent = won
         ? (uiText.shareCardVictory || 'VICTORY')
         : (uiText.shareCardDefeat || 'DEFEAT');
@@ -539,6 +554,10 @@
       document.getElementById('mt-breakdown').textContent = buildBreakdownText(resultContext)+' - '+(uiText.resultRewardLabel || 'Reward')+' '+reward+' '+uiText.currencyLabel;
       document.getElementById('mt-next').textContent = buildNextText(resultContext);
       grantMatchReward(1);
+      if(msgTxt){
+        msgTxt.style.opacity = '0';
+        msgTxt.textContent = '';
+      }
       document.getElementById('btn-replay').textContent = getResultReturnLabel();
       document.getElementById('btn-swap-rematch').textContent = getResultAdjustLabel();
       document.getElementById('btn-double-reward').textContent = getDoubleRewardUsed() ? uiText.rewardClaimed : uiText.rewardDouble;

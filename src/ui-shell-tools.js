@@ -20,6 +20,8 @@
 
     function clearOverlayInlineState(overlay){
       if(!overlay) return;
+      overlay.style.display='';
+      overlay.style.visibility='';
       overlay.style.opacity='';
       overlay.style.pointerEvents='';
       overlay.style.zIndex='';
@@ -28,13 +30,21 @@
     function showLoadoutOverlay(){
       const overlay = getLoadoutOverlay();
       clearOverlayInlineState(overlay);
-      if(overlay) overlay.classList.remove('hide');
+      if(overlay){
+        overlay.classList.remove('hide');
+        overlay.style.display='flex';
+        overlay.style.visibility='visible';
+      }
     }
 
     function hideLoadoutOverlay(){
       const overlay = getLoadoutOverlay();
       clearOverlayInlineState(overlay);
-      if(overlay) overlay.classList.add('hide');
+      if(overlay){
+        overlay.classList.add('hide');
+        overlay.style.display='none';
+        overlay.style.visibility='hidden';
+      }
     }
 
     function syncArenaSelectionUI(){
@@ -208,18 +218,22 @@
       const dashBtn=document.getElementById('act-dash');
       const dashCdEl=document.getElementById('dash-cd');
       const dashCdTxt=document.getElementById('dash-cd-txt');
+      const dashState=document.getElementById('dash-state');
       if(tp.dashCD>0){
         dashBtn.className='sk-btn dash-cooldown';
         dashCdEl.style.height=(tp.dashCD/tp.DASH_CD*100)+'%';
         dashCdTxt.textContent=tp.dashCD.toFixed(1);
+        if(dashState) dashState.textContent='CD '+tp.dashCD.toFixed(1);
       }else{
         dashBtn.className='sk-btn dash-ready';
         dashCdEl.style.height='0%';
         dashCdTxt.textContent='';
+        if(dashState) dashState.textContent=uiText.statusReady || 'READY';
       }
       const guardBtn=document.getElementById('act-guard');
       const guardCdEl=document.getElementById('guard-cd');
       const guardCdTxt=document.getElementById('guard-cd-txt');
+      const guardState=document.getElementById('guard-state');
       const guardEnabled = getGuardEnabled(tp.template);
       const guardConfig = getGuardActionConfig(tp.template);
       if(guardBtn){
@@ -229,20 +243,26 @@
             guardBtn.className='sk-btn guard-active';
             guardCdEl.style.height=((tp.guardT/(guardConfig.duration||tp.GUARD_T||0.82))*100)+'%';
             guardCdTxt.textContent='';
+            if(guardState) guardState.textContent=uiText.statusGuarding || 'ACTIVE';
           }else if(tp.guardCD>0){
             guardBtn.className='sk-btn guard-cooldown';
             guardCdEl.style.height=(tp.guardCD/(guardConfig.cooldown||tp.GUARD_CD||4.0)*100)+'%';
             guardCdTxt.textContent=tp.guardCD.toFixed(1);
+            if(guardState) guardState.textContent='CD '+tp.guardCD.toFixed(1);
           }else{
             guardBtn.className='sk-btn guard-ready';
             guardCdEl.style.height='0%';
             guardCdTxt.textContent='';
+            if(guardState) guardState.textContent=uiText.statusReady || 'READY';
           }
+        }else if(guardState){
+          guardState.textContent='';
         }
       }
       const skillBtn=document.getElementById('act-skill');
       const skillCdEl=document.getElementById('skill-cd');
       const skillCdTxt=document.getElementById('skill-cd-txt');
+      const skillState=document.getElementById('skill-state');
       const burstCircle=document.querySelector('#burst-ring circle');
       const CIRC=157;
       const skillMeta = getSignatureSkillMeta(tp.template);
@@ -265,18 +285,21 @@
         skillCdTxt.textContent=tp.skillCD.toFixed(1);
         burstCircle.style.strokeDashoffset=CIRC;
         burstCircle.style.stroke='rgba(255,180,0,0.2)';
+        if(skillState) skillState.textContent='CD '+tp.skillCD.toFixed(1);
       }else if(tp.burst<100){
         skillBtn.className='sk-btn state-need-energy';
         skillCdEl.style.height='0%';
         skillCdTxt.textContent='';
         burstCircle.style.strokeDashoffset=CIRC*(1-tp.burst/100);
         burstCircle.style.stroke=accent && accent.chargeStroke ? accent.chargeStroke : 'rgba(255,180,0,0.6)';
+        if(skillState) skillState.textContent='BURST '+Math.round(tp.burst)+'%';
       }else{
         skillBtn.className='sk-btn state-ready';
         skillCdEl.style.height='0%';
         skillCdTxt.textContent='';
         burstCircle.style.strokeDashoffset=0;
         burstCircle.style.stroke=accent && accent.readyStroke ? accent.readyStroke : 'rgba(255,210,0,0.9)';
+        if(skillState) skillState.textContent=uiText.statusReady || 'READY';
       }
     }
 
