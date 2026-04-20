@@ -941,6 +941,41 @@ function checkMobileBattleHudTopRailContract() {
   );
 }
 
+function checkMobileRoundResultTakeoverContract() {
+  const css = fs.readFileSync(path.join(repoRoot, 'css', 'game.css'), 'utf8');
+  const mobilePortraitMatch = css.match(/@media\(max-width:540px\) and \(orientation:portrait\)\{[\s\S]*?\n\}/);
+  assert(mobilePortraitMatch, 'Expected game.css to define a mobile portrait result contract block.');
+  const mobilePortraitBlock = mobilePortraitMatch[0];
+
+  assert(
+    css.includes('body.round-result-takeover'),
+    'Expected game.css to define a body.round-result-takeover hook for mobile round settlement.'
+  );
+  assert(
+    mobilePortraitBlock.includes('body.round-result-takeover #skill-panel')
+      && mobilePortraitBlock.includes('display:none'),
+    'Expected the mobile round-result takeover contract to hide the bottom skill cluster.'
+  );
+  assert(
+    mobilePortraitBlock.includes('body.round-result-takeover #p-panel')
+      && mobilePortraitBlock.includes('body.round-result-takeover #e-panel'),
+    'Expected the mobile round-result takeover contract to hide both top status rails.'
+  );
+  assert(
+    mobilePortraitBlock.includes('body.round-result-takeover #act-swap')
+      && mobilePortraitBlock.includes('body.round-result-takeover #hint-bar'),
+    'Expected the mobile round-result takeover contract to remove swap and hint surfaces during settlement.'
+  );
+  assert(
+    mobilePortraitBlock.includes('body.round-result-takeover #ov-round.result-overlay'),
+    'Expected the mobile round-result takeover contract to strengthen the round-result overlay background.'
+  );
+  assert(
+    mobilePortraitBlock.includes('body.round-result-takeover .round-result-shell'),
+    'Expected the mobile round-result takeover contract to strengthen the dedicated round-result shell.'
+  );
+}
+
 function checkResultPresentation() {
   const { context, document } = createBaseContext();
   loadScript('src/match-flow-tools.js', context);
@@ -1161,6 +1196,7 @@ function main() {
   checkBattleHudPresentation();
   checkMobileBattleHudTopRailContract();
   checkResultPresentation();
+  checkMobileRoundResultTakeoverContract();
   console.log('Shell presentation check passed.');
 }
 
