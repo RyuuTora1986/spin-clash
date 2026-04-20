@@ -1,5 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const {
+  applyVersionToIndexHtml,
+  readPackageVersion
+} = require('./static-asset-versioning');
 
 const repoRoot = path.resolve(__dirname, '..');
 const outputDir = path.join(repoRoot, 'dist-static');
@@ -120,6 +124,8 @@ function copyPath(srcPath, destPath) {
 }
 
 function main() {
+  const version = readPackageVersion(repoRoot);
+
   removeDir(outputDir);
   ensureDir(outputDir);
 
@@ -131,6 +137,10 @@ function main() {
     }
     copyPath(srcPath, destPath);
   }
+
+  const outputIndexHtmlPath = path.join(outputDir, 'index.html');
+  const outputIndexHtml = fs.readFileSync(outputIndexHtmlPath, 'utf8');
+  fs.writeFileSync(outputIndexHtmlPath, applyVersionToIndexHtml(outputIndexHtml, version), 'utf8');
 
   writeProviderOverrideFile(outputDir);
 

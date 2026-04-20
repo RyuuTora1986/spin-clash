@@ -1,5 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const {
+  collectVersioningFailures,
+  readPackageVersion
+} = require('./static-asset-versioning');
 
 const repoRoot = path.resolve(__dirname, '..');
 const srcDir = path.join(repoRoot, 'src');
@@ -56,8 +60,10 @@ function collectHtmlIds() {
 }
 
 function main() {
+  const packageVersion = readPackageVersion(repoRoot);
   const referencedIds = collectReferencedIds();
   const htmlIds = collectHtmlIds();
+  const html = fs.readFileSync(indexHtmlPath, 'utf8');
   const requiredIds = [
     'locale-title-switcher',
     'locale-loadout-switcher',
@@ -84,6 +90,10 @@ function main() {
     if (!htmlIds.has(id)) {
       failures.push(`Missing required localization DOM id in index.html: ${id}`);
     }
+  }
+
+  for (const failure of collectVersioningFailures(html, packageVersion)) {
+    failures.push(`Static runtime asset version mismatch: ${failure}`);
   }
 
   if (failures.length) {

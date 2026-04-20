@@ -4,6 +4,7 @@
   "description": "Static single-player spinning-top arena battle prototype refactor.",
   "scripts": {
     "serve": "node scripts/serve-local.js",
+    "sync:staticversion": "node scripts/sync-static-asset-versions.js",
     "build:static": "node scripts/build-static-release.js",
     "check:static": "node scripts/check-static-package.js",
     "check:syntax": "node -e \"const fs=require('fs'); const path=require('path'); const cp=require('child_process'); for (const name of fs.readdirSync('src')) { if (!name.endsWith('.js')) continue; cp.execFileSync(process.execPath, ['--check', path.join('src', name)], { stdio: 'inherit' }); }\"",

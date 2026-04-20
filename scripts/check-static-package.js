@@ -1,5 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const {
+  collectVersioningFailures,
+  readPackageVersion
+} = require('./static-asset-versioning');
 
 const repoRoot = path.resolve(__dirname, '..');
 const distRoot = path.join(repoRoot, 'dist-static');
@@ -20,6 +24,7 @@ function expectMissing(relPath) {
 }
 
 function main() {
+  const packageVersion = readPackageVersion(repoRoot);
   if (!fs.existsSync(distRoot)) {
     failures.push('dist-static is missing. Run `npm run build:static` first.');
   } else {
@@ -33,6 +38,11 @@ function main() {
       path.join('assets', 'vendor', 'three.min.js')
     ].forEach(expectExists);
     ['docs', 'originals', 'scripts', 'package.json', 'README.md', 'progress.md'].forEach(expectMissing);
+
+    const packagedIndexHtml = fs.readFileSync(path.join(distRoot, 'index.html'), 'utf8');
+    for (const failure of collectVersioningFailures(packagedIndexHtml, packageVersion)) {
+      failures.push(`Packaged static runtime asset version mismatch: ${failure}`);
+    }
   }
 
   if (failures.length) {
