@@ -89,22 +89,22 @@ This work is approved in principle but not implemented yet.
 - The repo has only one visible git commit in local history at the moment:
   - `dc241d2 chore: reset repo and establish static shell baseline`
 - The current code findings behind the approved route refactor are documented in:
-  - [2026-04-17-ui-flow-combat-feedback-design.md](C:\Users\29940\spin-clash\docs\superpowers\specs\2026-04-17-ui-flow-combat-feedback-design.md)
+  - [2026-04-17-ui-flow-combat-feedback-design.md](./superpowers/specs/2026-04-17-ui-flow-combat-feedback-design.md)
 - The current product completion snapshot is documented in:
-  - [project-status-2026-04-17.md](C:\Users\29940\spin-clash\docs\project-status-2026-04-17.md)
+  - [project-status-2026-04-17.md](./project-status-2026-04-17.md)
 - The latest balance baseline is documented in:
-  - [balance-pass-2026-04-17.md](C:\Users\29940\spin-clash\docs\balance-pass-2026-04-17.md)
+  - [balance-pass-2026-04-17.md](./balance-pass-2026-04-17.md)
 
 ## Resume Source Of Truth
 
 If a new Codex session starts for this project, read these files in this order:
 
-1. [session-handoff-2026-04-17.md](C:\Users\29940\spin-clash\docs\session-handoff-2026-04-17.md)
-2. [2026-04-17-ui-flow-combat-feedback-design.md](C:\Users\29940\spin-clash\docs\superpowers\specs\2026-04-17-ui-flow-combat-feedback-design.md)
-3. [2026-04-17-next-phase-gameplay-expansion-design.md](C:\Users\29940\spin-clash\docs\superpowers\specs\2026-04-17-next-phase-gameplay-expansion-design.md)
-4. [project-status-2026-04-17.md](C:\Users\29940\spin-clash\docs\project-status-2026-04-17.md)
-5. [balance-pass-2026-04-17.md](C:\Users\29940\spin-clash\docs\balance-pass-2026-04-17.md)
-6. [progress.md](C:\Users\29940\spin-clash\progress.md)
+1. [session-handoff-2026-04-17.md](./session-handoff-2026-04-17.md)
+2. [2026-04-17-ui-flow-combat-feedback-design.md](./superpowers/specs/2026-04-17-ui-flow-combat-feedback-design.md)
+3. [2026-04-17-next-phase-gameplay-expansion-design.md](./superpowers/specs/2026-04-17-next-phase-gameplay-expansion-design.md)
+4. [project-status-2026-04-17.md](./project-status-2026-04-17.md)
+5. [balance-pass-2026-04-17.md](./balance-pass-2026-04-17.md)
+6. [progress.md](../progress.md)
 
 Do not rely on the shared `AI-Memory` active pointer for this project.
 
