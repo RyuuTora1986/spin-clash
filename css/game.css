@@ -556,6 +556,20 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   background:rgba(255,180,120,.04);
   color:rgba(255,210,150,.58);
 }
+.title-build-meta{
+  width:min(420px,92vw);
+  margin-top:18px;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  align-items:center;
+  text-align:center;
+}
+.title-build-line{
+  font-size:8px;
+  letter-spacing:1.4px;
+  color:rgba(220,232,245,.34);
+}
 
 
 #ov-loadout h2{font-family:var(--font-display);font-size:18px;font-weight:700;
@@ -1055,6 +1069,94 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   background:rgba(255,180,0,.05);
   color:rgba(255,220,150,.84);
 }
+.purchase-dialog-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:120;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(2,4,12,.68);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+.purchase-dialog-backdrop.hide{
+  display:none;
+}
+.purchase-dialog{
+  width:min(460px,94vw);
+  padding:18px 18px 16px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.1);
+  background:linear-gradient(180deg,rgba(12,18,34,.96),rgba(8,12,24,.98));
+  box-shadow:0 22px 60px rgba(0,0,0,.45);
+}
+.purchase-dialog-kicker{
+  font:700 9px var(--font-display);
+  letter-spacing:3px;
+  color:rgba(255,220,150,.82);
+}
+.purchase-dialog-title{
+  margin-top:8px;
+  font:700 22px var(--font-display);
+  letter-spacing:3px;
+  color:#f4fffd;
+}
+.purchase-dialog-copy{
+  margin-top:10px;
+  font-size:10px;
+  line-height:1.8;
+  letter-spacing:1px;
+  color:rgba(230,242,255,.82);
+}
+.purchase-dialog-cost{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1px solid rgba(255,180,0,.16);
+  background:rgba(255,180,0,.06);
+  color:rgba(255,220,150,.94);
+  font:700 9px var(--font-display);
+  letter-spacing:2px;
+  text-align:center;
+}
+.purchase-dialog-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+.purchase-dialog-btn{
+  flex:1 1 0;
+  min-width:0;
+  padding:11px 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.02);
+  color:rgba(220,235,245,.78);
+  cursor:pointer;
+  font:700 10px var(--font-display);
+  letter-spacing:2px;
+  transition:all .2s;
+}
+.purchase-dialog-btn:hover{
+  border-color:rgba(255,255,255,.32);
+  color:#fff;
+  background:rgba(255,255,255,.06);
+}
+.purchase-dialog-btn.primary{
+  border-color:rgba(0,255,200,.28);
+  background:rgba(0,255,200,.08);
+  color:rgba(200,255,244,.98);
+}
+.purchase-dialog-btn.primary:hover{
+  border-color:rgba(0,255,200,.5);
+  background:rgba(0,255,200,.14);
+  color:#f4fffd;
+}
+.purchase-dialog-btn.hide{
+  display:none;
+}
 .workshop-title{
   font:700 10px var(--font-display);
   letter-spacing:3px;
@@ -1313,6 +1415,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
     padding:11px 36px;
     font-size:11px;
   }
+  .title-build-meta{margin-top:14px}
   .title-alt-btn{
     padding:8px 18px;
     font-size:9px;
@@ -1390,6 +1493,10 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   .big-btn{padding:12px 32px;font-size:11px;margin-top:16px;margin-bottom:max(20px,env(safe-area-inset-bottom,20px))}
   .title-actions{width:100%}
   .title-status{width:100%}
+  .title-build-meta{
+    width:100%;
+    margin-top:12px;
+  }
   .home-top-panel{
     width:100%;
     grid-template-columns:36px minmax(0,1fr) 36px;
@@ -1414,6 +1521,16 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   }
   .locale-switcher{width:100%}
   .locale-btn{flex:1 1 0;min-width:0}
+  .purchase-dialog{
+    width:100%;
+    padding:16px 14px 14px;
+  }
+  .purchase-dialog-title{
+    font-size:18px;
+  }
+  .purchase-dialog-actions{
+    flex-direction:column;
+  }
   .battle-intro{top:86px}
 }
 
@@ -1453,6 +1570,10 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   .locale-switcher{width:100%}
   .locale-btn{flex:1 1 0;min-width:0}
   .mode-hint{width:100%;margin-bottom:8px}
+  .title-build-meta{
+    width:100%;
+    margin-top:10px;
+  }
   .challenge-panel{margin-bottom:8px}
   .challenge-rank-btn{min-width:82px;padding:5px 9px}
   .currency-bar{margin-bottom:8px}
@@ -1494,6 +1615,13 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
     min-width:96px;
     padding:8px 12px;
     align-self:center;
+  }
+  .purchase-dialog{
+    width:min(420px,96vw);
+    padding:16px 14px 14px;
+  }
+  .purchase-dialog-title{
+    font-size:18px;
   }
   .cards{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:7px}
   .card{width:104px;padding:9px 8px}

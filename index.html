@@ -153,6 +153,10 @@
     <button class="title-alt-btn" id="btn-enter-workshop" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
     <button class="title-alt-btn" id="btn-enter-settings" onclick="return window.__spinClashInvoke('goSettings')"></button>
   </div>
+  <div class="title-build-meta" id="title-build-meta">
+    <div class="title-build-line" id="title-build-version"></div>
+    <div class="title-build-line" id="title-build-copyright"></div>
+  </div>
 </div>
 <div class="ov hide" id="ov-loadout">
   <h2 id="loadout-title"></h2>
@@ -292,6 +296,18 @@
   </div>
   <div class="cards" id="top-card-list"></div>
   <button class="big-btn path-fight-btn" id="btn-path-fight" onclick="return window.__spinClashInvoke('startFight')"></button>
+</div>
+<div class="purchase-dialog-backdrop hide" id="purchase-dialog-backdrop">
+  <div class="purchase-dialog" id="purchase-dialog" role="dialog" aria-modal="true" aria-labelledby="purchase-dialog-title">
+    <div class="purchase-dialog-kicker" id="purchase-dialog-kicker"></div>
+    <div class="purchase-dialog-title" id="purchase-dialog-title"></div>
+    <div class="purchase-dialog-copy" id="purchase-dialog-copy"></div>
+    <div class="purchase-dialog-cost" id="purchase-dialog-cost"></div>
+    <div class="purchase-dialog-actions">
+      <button class="purchase-dialog-btn subtle" id="purchase-dialog-secondary" type="button"></button>
+      <button class="purchase-dialog-btn primary" id="purchase-dialog-primary" type="button"></button>
+    </div>
+  </div>
 </div>
 <div class="battle-intro hide" id="battle-intro">
   <div class="battle-intro-title" id="battle-intro-title"></div>

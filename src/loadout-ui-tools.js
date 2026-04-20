@@ -53,6 +53,8 @@
     const rewardService = options.rewardService || null;
     const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
     const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
+    let purchaseDialogBound = false;
+    let pendingTopPurchase = null;
 
     function syncActiveArenaState(index){
       const arena = getArenaConfig(index);
@@ -71,11 +73,72 @@
       if(el) el.innerHTML = value;
     }
 
+    function setVisible(id, visible){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.toggle('hide', !visible);
+    }
+
     function formatText(template, tokens){
       const source = String(template == null ? '' : template);
       return source.replace(/\{(\w+)\}/g, function(match, key){
         return Object.prototype.hasOwnProperty.call(tokens || {}, key) ? String(tokens[key]) : match;
       });
+    }
+
+    function getCurrencyLabel(){
+      return uiText.currencyLabel || 'SCRAP';
+    }
+
+    function getTopPurchaseCostLine(top, save){
+      const currencyLabel = getCurrencyLabel();
+      const currentSave = save || getSave();
+      const balance = currentSave && typeof currentSave.currency === 'number' ? currentSave.currency : 0;
+      const cost = top && typeof top.unlockCost === 'number' ? top.unlockCost : 0;
+      return formatText(
+        uiText.topPurchaseCostLine || 'PRICE {cost} {currency} - BALANCE {balance} {currency}',
+        {
+          cost,
+          balance,
+          currency:currencyLabel
+        }
+      );
+    }
+
+    function getTopPurchaseShortfallLine(top, save){
+      const currencyLabel = getCurrencyLabel();
+      const currentSave = save || getSave();
+      const balance = currentSave && typeof currentSave.currency === 'number' ? currentSave.currency : 0;
+      const cost = top && typeof top.unlockCost === 'number' ? top.unlockCost : 0;
+      return formatText(
+        uiText.topPurchaseShortfallLine || 'PRICE {cost} {currency} - SHORT {shortfall} {currency}',
+        {
+          cost,
+          shortfall:Math.max(0, cost - balance),
+          currency:currencyLabel
+        }
+      );
+    }
+
+    function getTopPurchaseEarnCopy(top){
+      return formatText(
+        uiText.topPurchaseEarnCopy || 'Push deeper into the Championship Path. Node clears, first-clear bonuses, and reruns all feed your SCRAP balance.',
+        {
+          top:top && top.name ? top.name : (uiText.lockedTop || 'TOP'),
+          currency:getCurrencyLabel()
+        }
+      );
+    }
+
+    function getTopPurchaseConfirmCopy(top){
+      return formatText(
+        uiText.topPurchaseConfirmCopy || 'Spend {cost} {currency} now to unlock {top}. This unlock is permanent in your local save.',
+        {
+          top:top && top.name ? top.name : (uiText.lockedTop || 'TOP'),
+          cost:top && typeof top.unlockCost === 'number' ? top.unlockCost : 0,
+          currency:getCurrencyLabel()
+        }
+      );
     }
 
     function updateLocaleButtons(){
@@ -89,6 +152,140 @@
           button.classList.toggle('active', locale === localeId);
         });
       });
+    }
+
+    function updateBuildMetaUI(){
+      const metaWrap = document.getElementById('title-build-meta');
+      const versionText = uiText.titleBuildVersion || '';
+      const copyrightText = uiText.titleCopyright || '';
+      setText('title-build-version', versionText);
+      setText('title-build-copyright', copyrightText);
+      if(metaWrap){
+        metaWrap.style.display = versionText || copyrightText ? '' : 'none';
+      }
+    }
+
+    function closeTopPurchaseDialog(granted){
+      const backdrop = document.getElementById('purchase-dialog-backdrop');
+      if(backdrop){
+        backdrop.classList.add('hide');
+      }
+      if(pendingTopPurchase && typeof pendingTopPurchase.resolve === 'function'){
+        pendingTopPurchase.resolve(!!granted);
+      }
+      pendingTopPurchase = null;
+    }
+
+    function completeTopPurchase(index){
+      const top = getTopConfig(index);
+      const save = getSave();
+      const currencyBefore = save.currency;
+      saveProgress((draft)=>{
+        draft.currency -= top.unlockCost;
+        draft.unlocks = draft.unlocks || { arenas:[], tops:[] };
+        draft.unlocks.tops = Array.isArray(draft.unlocks.tops) ? draft.unlocks.tops : [];
+        if(!draft.unlocks.tops.includes(top.id)){
+          draft.unlocks.tops.push(top.id);
+        }
+        return draft;
+      });
+      if(analyticsService){
+        analyticsService.track('unlock_grant',{
+          kind:'top',
+          grantType:'purchase',
+          source:'loadout_shop',
+          mode:getCurrentMode(),
+          topId:top.id,
+          topLabel:top.name,
+          cost:top.unlockCost,
+          currencyBefore,
+          currencyAfter:currencyBefore - top.unlockCost
+        });
+        analyticsService.track('unlock_purchase',{
+          kind:'top',
+          topId:top.id,
+          topLabel:top.name,
+          cost:top.unlockCost,
+          currencyBefore,
+          currencyAfter:currencyBefore - top.unlockCost
+        });
+      }
+      showMsg(top.name+' '+uiText.unlockTop,1.2);
+      refresh();
+    }
+
+    function confirmTopPurchaseDialog(){
+      if(!pendingTopPurchase || pendingTopPurchase.mode !== 'confirm'){
+        closeTopPurchaseDialog(false);
+        return false;
+      }
+      const topIndex = pendingTopPurchase.topIndex;
+      completeTopPurchase(topIndex);
+      closeTopPurchaseDialog(true);
+      return true;
+    }
+
+    function ensureTopPurchaseDialogBindings(){
+      if(purchaseDialogBound) return;
+      const backdrop = document.getElementById('purchase-dialog-backdrop');
+      const dialog = document.getElementById('purchase-dialog');
+      const secondary = document.getElementById('purchase-dialog-secondary');
+      const primary = document.getElementById('purchase-dialog-primary');
+      if(!backdrop || !dialog || !secondary || !primary) return;
+      if(
+        typeof backdrop.addEventListener !== 'function'
+        || typeof dialog.addEventListener !== 'function'
+        || typeof secondary.addEventListener !== 'function'
+        || typeof primary.addEventListener !== 'function'
+      ){
+        return;
+      }
+      backdrop.addEventListener('click', function(event){
+        if(event.target !== backdrop) return;
+        closeTopPurchaseDialog(false);
+      });
+      dialog.addEventListener('click', function(event){
+        event.stopPropagation();
+      });
+      secondary.addEventListener('click', function(){
+        closeTopPurchaseDialog(false);
+      });
+      primary.addEventListener('click', function(){
+        if(pendingTopPurchase && pendingTopPurchase.mode === 'confirm'){
+          confirmTopPurchaseDialog();
+          return;
+        }
+        closeTopPurchaseDialog(false);
+      });
+      purchaseDialogBound = true;
+    }
+
+    function openTopPurchaseDialog(config){
+      ensureTopPurchaseDialogBindings();
+      const backdrop = document.getElementById('purchase-dialog-backdrop');
+      const primary = document.getElementById('purchase-dialog-primary');
+      const secondary = document.getElementById('purchase-dialog-secondary');
+      if(!backdrop || !primary || !secondary){
+        return false;
+      }
+      if(pendingTopPurchase && typeof pendingTopPurchase.resolve === 'function'){
+        pendingTopPurchase.resolve(false);
+      }
+      pendingTopPurchase = {
+        mode:config.mode,
+        topIndex:config.topIndex,
+        resolve:config.resolve
+      };
+      setText('purchase-dialog-kicker', config.kicker || '');
+      setText('purchase-dialog-title', config.title || '');
+      setText('purchase-dialog-copy', config.copy || '');
+      setText('purchase-dialog-cost', config.cost || '');
+      setText('purchase-dialog-primary', config.primaryLabel || '');
+      setText('purchase-dialog-secondary', config.secondaryLabel || '');
+      primary.classList.toggle('hide', !config.primaryLabel);
+      secondary.classList.toggle('hide', !config.secondaryLabel);
+      backdrop.classList.remove('hide');
+      return true;
     }
 
     function escapeHtml(value){
@@ -214,10 +411,10 @@
         return uiText.topSourceRoadReward || 'ROAD REWARD';
       }
       if(top.unlockSource === 'shop'){
-        return uiText.topSourceWorkshop || 'WORKSHOP';
+        return uiText.topSourceWorkshop || 'SCRAP UNLOCK';
       }
       if(top.unlockSource === 'road_or_shop'){
-        return uiText.topSourceRoadShop || 'ROAD REWARD / WORKSHOP';
+        return uiText.topSourceRoadShop || 'ROAD REWARD / SCRAP UNLOCK';
       }
       return '';
     }
@@ -258,10 +455,10 @@
         return (uiText.topSourceRoadReward || 'ROAD REWARD')+' · '+getRoadUnlockText(top);
       }
       if(top.unlockSource === 'shop'){
-        return (uiText.topSourceWorkshop || 'WORKSHOP')+' · '+getShopUnlockText(top, currencyLabel);
+        return (uiText.topSourceWorkshop || 'SCRAP UNLOCK')+' · '+getShopUnlockText(top, currencyLabel);
       }
       if(top.unlockSource === 'road_or_shop'){
-        return (uiText.topSourceRoadShop || 'ROAD REWARD / WORKSHOP')+' · '+(uiText.homeTopLockedHintRoadShop || uiText.lockedTop || 'LOCKED');
+        return (uiText.topSourceRoadShop || 'ROAD REWARD / SCRAP UNLOCK')+' · '+(uiText.homeTopLockedHintRoadShop || uiText.lockedTop || 'LOCKED');
       }
       return (uiText.lockedTop || 'LOCKED')+' - '+(top.unlockCost || 0)+' '+currencyLabel;
     }
@@ -802,6 +999,7 @@
 
     function updateModeUI(){
       ensureTopCards();
+      ensureTopPurchaseDialogBindings();
       const save = getSave();
       const currentNode = getCurrentChallengeNode();
       const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex : 0;
@@ -902,6 +1100,7 @@
       updateRoadRankUI();
       updateChallengeRouteUI();
       updateTitleSummary();
+      updateBuildMetaUI();
 
       if(isPathRoute && currentNode){
         const modifier = getModifierById(currentNode.modifierId);
@@ -940,6 +1139,7 @@
 
     function applyStaticText(){
       ensureTopCards();
+      ensureTopPurchaseDialogBindings();
       setText('title-main', uiText.titleMain);
       setText('title-sub', uiText.titleSub);
       setText('title-tagline', uiText.titleTagline);
@@ -1000,6 +1200,7 @@
       updateRoadRankUI();
       updateChallengeRouteUI();
       updateTitleSummary();
+      updateBuildMetaUI();
       updateLocaleButtons();
     }
 
@@ -1108,44 +1309,38 @@
       }
       const save = getSave();
       if(save.currency < top.unlockCost){
-        showMsg(uiText.lockedTop+' '+top.unlockCost+' '+(uiText.currencyLabel || 'SCRAP'),1.2);
-        refresh();
+        if(!openTopPurchaseDialog({
+          mode:'insufficient',
+          topIndex:index,
+          resolve:function(granted){ return granted; },
+          kicker:uiText.topPurchaseNeedMoreKicker || 'SCRAP SHORT',
+          title:top.name || (uiText.lockedTop || 'TOP'),
+          copy:getTopPurchaseEarnCopy(top),
+          cost:getTopPurchaseShortfallLine(top, save),
+          primaryLabel:uiText.topPurchaseCloseButton || 'GOT IT',
+          secondaryLabel:''
+        })){
+          showMsg(getTopPurchaseShortfallLine(top, save),1.2);
+          refresh();
+        }
         return Promise.resolve(false);
       }
-      const currencyBefore = save.currency;
-      saveProgress((draft)=>{
-        draft.currency -= top.unlockCost;
-        draft.unlocks = draft.unlocks || { arenas:[], tops:[] };
-        draft.unlocks.tops = Array.isArray(draft.unlocks.tops) ? draft.unlocks.tops : [];
-        if(!draft.unlocks.tops.includes(top.id)){
-          draft.unlocks.tops.push(top.id);
+      return new Promise(function(resolve){
+        if(!openTopPurchaseDialog({
+          mode:'confirm',
+          topIndex:index,
+          resolve,
+          kicker:uiText.topPurchaseConfirmKicker || 'UNLOCK TOP',
+          title:top.name || (uiText.lockedTop || 'TOP'),
+          copy:getTopPurchaseConfirmCopy(top),
+          cost:getTopPurchaseCostLine(top, save),
+          primaryLabel:uiText.topPurchaseConfirmButton || 'BUY NOW',
+          secondaryLabel:uiText.topPurchaseCancelButton || 'NOT YET'
+        })){
+          completeTopPurchase(index);
+          resolve(true);
         }
-        return draft;
       });
-      if(analyticsService){
-        analyticsService.track('unlock_grant',{
-          kind:'top',
-          grantType:'purchase',
-          source:'loadout_shop',
-          mode:getCurrentMode(),
-          topId:top.id,
-          topLabel:top.name,
-          cost:top.unlockCost,
-          currencyBefore,
-          currencyAfter:currencyBefore - top.unlockCost
-        });
-        analyticsService.track('unlock_purchase',{
-          kind:'top',
-          topId:top.id,
-          topLabel:top.name,
-          cost:top.unlockCost,
-          currencyBefore,
-          currencyAfter:currencyBefore - top.unlockCost
-        });
-      }
-      showMsg(top.name+' '+uiText.unlockTop,1.2);
-      refresh();
-      return Promise.resolve(true);
     }
 
     function toggleWorkshopOpen(){
