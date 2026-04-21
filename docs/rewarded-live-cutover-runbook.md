@@ -4,7 +4,7 @@ This runbook is the operator path for the final rewarded-ad closeout after the e
 
 Use it only after:
 - the relevant AdSense account is approved
-- a real Google Ad Manager workspace opens successfully
+- H5 game ads access is approved if the primary path is `AdSense H5`
 - the game host is reachable on the intended production domain
 
 This document is intentionally practical.
@@ -15,14 +15,13 @@ It is the exact sequence to move from:
 - rewarded prep already complete
 
 to:
-- one real rewarded ad unit configured
+- one real live rewarded provider configuration applied
 - one live deployment produced
 - one manual rewarded validation run recorded
 
 ## 1. Preconditions
 
 Do not start this runbook until all of the following are true:
-- the intended Google account can enter Ad Manager without falling back to the public marketing page
 - the intended Google account is not blocked by pending AdSense review
 - the intended host is the production validation target:
   - `play.hakurokudo.com`
@@ -31,39 +30,70 @@ Do not start this runbook until all of the following are true:
   - `npm run check:providers`
   - `npm run preflight`
 
-Current strongest account path from the latest investigation:
-- retry first on the current `authuser=0` path after AdSense approval
+## 2. Choose The Live Provider Path
 
-Reference:
-- `docs/admanager-access-check-2026-04-19.md`
+Primary path:
+- `adsense_h5_rewarded`
 
-## 2. Create The Rewarded Ad Unit In Ad Manager
+Fallback path:
+- `adsense_rewarded`
 
-In Ad Manager:
-1. sign in with the approved account
-2. open:
-   - `Inventory`
-   - `Ad units`
-3. create:
-   - `New ad unit`
+Use `adsense_h5_rewarded` unless:
+- H5 access is not approved yet
+- H5 live validation fails in a way that is clearly provider-side rather than integration-side
 
-Recommended project convention:
-- name:
-  - `Spin Clash Rewarded Web`
-- code:
-  - `spin_clash_rewarded_web`
+Use `adsense_rewarded` only if:
+- Ad Manager access is working
+- a real rewarded ad unit path exists
 
-Important:
-- copy the exact full ad unit path shown by Ad Manager after creation
-- do not guess the final network code
-- do not shorten parent segments if Ad Manager nests the unit under a parent path
+## 3. Prepare The Live Variables
 
-Expected final shape:
-- `/NETWORK_CODE/spin_clash_rewarded_web`
+In GitHub:
+1. open repository `Settings`
+2. open `Secrets and variables`
+3. open `Actions`
+4. open `Variables`
 
-but the real value must be copied from the UI, not inferred from this example
+Canonical variable names:
+- `SPIN_CLASH_REWARD_ADAPTER`
+- `SPIN_CLASH_ADSENSE_ENABLED`
+- `SPIN_CLASH_ADSENSE_H5_ENABLED`
+- `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID`
+- `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT`
+- `SPIN_CLASH_ADSENSE_H5_TEST_MODE`
+- `SPIN_CLASH_ADSENSE_H5_PRELOAD`
+- `SPIN_CLASH_ADSENSE_H5_SOUND`
+- `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH`
 
-## 3. Keep Live Scope Narrow
+### A. AdSense H5 test pass
+
+Set:
+- `SPIN_CLASH_REWARD_ADAPTER=adsense_h5_rewarded`
+- `SPIN_CLASH_ADSENSE_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_H5_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID=<real ca-pub-...>`
+- `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT=<same ca-pub-... unless operator setup requires otherwise>`
+- `SPIN_CLASH_ADSENSE_H5_TEST_MODE=true`
+
+Optional:
+- `SPIN_CLASH_ADSENSE_H5_PRELOAD=auto`
+- `SPIN_CLASH_ADSENSE_H5_SOUND=off`
+
+### B. AdSense H5 production pass
+
+Keep the same H5 variables but set:
+- `SPIN_CLASH_ADSENSE_H5_TEST_MODE=false`
+
+### C. GPT / Ad Manager fallback pass
+
+Set:
+- `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
+- `SPIN_CLASH_ADSENSE_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH=<exact copied full ad unit path>`
+
+Only use this fallback if the Ad Manager prerequisites are actually satisfied.
+
+## 4. Keep Live Scope Narrow
 
 Do not widen placement scope during the first real cutover.
 
@@ -78,30 +108,6 @@ Anything else should still fail safely with:
 Reference:
 - `docs/rewarded-integration-prep-checklist.md`
 
-## 4. Set Deployment Variables
-
-In GitHub:
-1. open repository `Settings`
-2. open `Secrets and variables`
-3. open `Actions`
-4. open `Variables`
-
-For the rewarded live pass, set:
-- `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
-- `SPIN_CLASH_REWARD_ENABLED=true`
-- `SPIN_CLASH_REWARDED_AD_UNIT_PATH=<exact copied full ad unit path>`
-
-Optional:
-- `SPIN_CLASH_REWARD_SCRIPT_URL`
-  - use only if the default GPT script URL must be overridden
-
-Do not change:
-- committed source defaults
-- rewarded placement allowlist in source
-
-Reference:
-- `docs/github-pages-deploy.md`
-
 ## 5. Produce The Live Deployment
 
 After the variable update:
@@ -115,7 +121,7 @@ Why the hard refresh matters:
 Before browser validation, confirm the live build is really in rewarded mode through the debug/runtime provider snapshot.
 
 Expected rewarded state:
-- `rewardAdapter: "adsense_rewarded"`
+- `rewardAdapter: "adsense_h5_rewarded"` or `rewardAdapter: "adsense_rewarded"`
 - `rewardEnabled: true`
 - `rewardedAdUnitConfigured: true`
 - `rewardAllowedPlacements` contains exactly the approved live placements
@@ -147,6 +153,7 @@ Run one real manual pass for each of these:
 ### D. Negative / fallback observations
 - confirm no unrelated placement suddenly uses live rewarded
 - confirm a missing or denied reward does not corrupt the flow
+- confirm H5 test mode is off before any real production monetization pass
 - record whether the provider behavior looked like:
   - granted
   - declined / closed
@@ -159,7 +166,10 @@ At minimum, record:
 - date
 - host URL
 - Google account / auth path used
-- exact rewarded ad unit path used
+- which provider path was used:
+  - `adsense_h5_rewarded`
+  - `adsense_rewarded`
+- exact publisher id or rewarded ad unit path used, whichever applies
 - deployment run identifier
 - which placements were tested
 - what each placement did
@@ -188,14 +198,14 @@ If the run fails, record:
 
 Treat the pass as `go` only if all of the following are true:
 - live rewarded mode is actually enabled in the deployed runtime
-- the configured rewarded ad unit path is real and copied from Ad Manager
+- the configured live provider credentials are real and not placeholder values
 - at least one approved placement completes correctly on the real host
 - no non-approved placement leaks into live rewarded behavior
 - failure and decline behavior still degrade safely
 
 Treat the pass as `no-go` if:
-- the account still cannot reach a usable Ad Manager workspace
-- the ad unit path is still guessed rather than copied
+- the H5 account path is still not approved
+- the live credentials are still guessed rather than copied
 - the host still lacks stable HTTPS
 - the deployment still shows mock mode
 - the real rewarded flow cannot settle cleanly on the live host

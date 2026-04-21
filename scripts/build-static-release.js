@@ -25,11 +25,31 @@ function parseBooleanEnv(name) {
   throw new Error(`Invalid boolean env for ${name}: ${raw}`);
 }
 
+function parseBooleanEnvAny(names) {
+  for (const name of names) {
+    const value = parseBooleanEnv(name);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
 function parseStringEnv(name) {
   const raw = process.env[name];
   if (typeof raw !== 'string') return undefined;
   const normalized = raw.trim();
   return normalized || undefined;
+}
+
+function parseStringEnvAny(names) {
+  for (const name of names) {
+    const value = parseStringEnv(name);
+    if (value !== undefined) {
+      return value;
+    }
+  }
+  return undefined;
 }
 
 function setDeep(target, pathParts, value) {
@@ -50,14 +70,15 @@ function buildProviderOverrides() {
 
   setDeep(overrides, ['reward', 'adapter'], parseStringEnv('SPIN_CLASH_REWARD_ADAPTER'));
   setDeep(overrides, ['reward', 'mockMode'], parseStringEnv('SPIN_CLASH_REWARD_MOCK_MODE'));
-  setDeep(overrides, ['reward', 'adsense', 'enabled'], parseBooleanEnv('SPIN_CLASH_REWARD_ENABLED'));
-  setDeep(overrides, ['reward', 'adsense', 'scriptUrl'], parseStringEnv('SPIN_CLASH_REWARD_SCRIPT_URL'));
-  setDeep(overrides, ['reward', 'adsense', 'rewardedAdUnitPath'], parseStringEnv('SPIN_CLASH_REWARDED_AD_UNIT_PATH'));
+  setDeep(overrides, ['reward', 'adsense', 'enabled'], parseBooleanEnvAny(['SPIN_CLASH_ADSENSE_ENABLED', 'SPIN_CLASH_REWARD_ENABLED']));
+  setDeep(overrides, ['reward', 'adsense', 'scriptUrl'], parseStringEnvAny(['SPIN_CLASH_ADSENSE_GPT_SCRIPT_URL', 'SPIN_CLASH_REWARD_SCRIPT_URL']));
+  setDeep(overrides, ['reward', 'adsense', 'rewardedAdUnitPath'], parseStringEnvAny(['SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH', 'SPIN_CLASH_REWARDED_AD_UNIT_PATH']));
   setDeep(overrides, ['reward', 'adsense', 'gamInterstitialAdUnitPath'], parseStringEnv('SPIN_CLASH_GAM_INTERSTITIAL_AD_UNIT_PATH'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'enabled'], parseBooleanEnv('SPIN_CLASH_ADSENSE_H5_ENABLED'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'scriptUrl'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_SCRIPT_URL'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'publisherId'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'dataAdClient'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'testMode'], parseBooleanEnv('SPIN_CLASH_ADSENSE_H5_TEST_MODE'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'preloadHints', 'preload'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_PRELOAD'));
   setDeep(overrides, ['reward', 'adsense', 'h5', 'preloadHints', 'sound'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_SOUND'));
 
@@ -82,7 +103,7 @@ function validateProviderOverrides(overrides) {
   const posthog = analytics.posthog || {};
 
   if (reward.adapter === 'adsense_rewarded' && rewardAdsense.enabled === true && !rewardAdsense.rewardedAdUnitPath) {
-    throw new Error('SPIN_CLASH_REWARDED_AD_UNIT_PATH is required when live rewarded ads are enabled for the release build.');
+    throw new Error('SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH is required when the GPT rewarded adapter is enabled for the release build.');
   }
 
   if (

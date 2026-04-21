@@ -21,6 +21,7 @@
           scriptUrl: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
           publisherId: '',
           dataAdClient: '',
+          testMode: false,
           preloadHints: {
             sound: 'off',
             preload: 'auto'

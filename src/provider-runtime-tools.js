@@ -219,6 +219,18 @@
     return baseUrl + (baseUrl.indexOf('?') >= 0 ? '&' : '?') + 'client=' + encodeURIComponent(clientId);
   }
 
+  function buildAdsenseH5ScriptOptions(config){
+    const clientId = getAdsenseH5ClientId(config);
+    const attributes = {
+      crossorigin:'anonymous',
+      'data-ad-client':clientId
+    };
+    if(config && config.testMode === true){
+      attributes['data-adbreak-test'] = 'on';
+    }
+    return { attributes };
+  }
+
   function ensureAdsenseH5Globals(){
     window.adsbygoogle = Array.isArray(window.adsbygoogle) ? window.adsbygoogle : [];
     if(typeof window.adBreak === 'function' && typeof window.adConfig === 'function'){
@@ -290,12 +302,7 @@
       'reward-adsense-h5',
       scriptUrl,
       timeoutMs,
-      {
-        attributes:{
-          crossorigin:'anonymous',
-          'data-ad-client':clientId
-        }
-      }
+      buildAdsenseH5ScriptOptions(safeConfig)
     ).then(function(){
       return new Promise(function(resolve, reject){
         if(!hasAdsenseH5Api()){
@@ -395,6 +402,7 @@
     hasGptRewardedApi,
     hasPosthogApi,
     buildAdsenseH5ScriptUrl,
+    buildAdsenseH5ScriptOptions,
     ensureAdsenseH5Globals,
     hasAdsenseH5Api,
     initAdsenseH5,

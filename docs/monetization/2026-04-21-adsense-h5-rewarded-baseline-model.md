@@ -315,6 +315,223 @@ These are inferences from the formulas above.
 - `continue_once` is likely the second-largest contributor even with much lower volume, because its accept rate and yield can both be stronger than `double_reward`.
 - `trial_unlock_arena` is expected to stay under `5%` of direct rewarded revenue in early traffic unless arena browsing becomes a much larger loop.
 
+## Baseline C: Paid Acquisition Model
+
+### Purpose
+
+This baseline extends the rewarded-ads revenue model into a real user-acquisition model.
+
+- Baseline A answers what can be measured from the current event structure.
+- Baseline B answers what rewarded revenue might look like under product-planning assumptions.
+- Baseline C answers whether paid acquisition can be justified economically.
+
+Use it to answer:
+- whether rewarded-ad LTV can repay acquisition cost
+- how quickly the product can pay back spend
+- whether the scaling blocker is retention, ad yield, or CPI
+
+### Additional Variables
+
+#### Acquisition
+
+- `N`: new installs or acquired first visits per day
+- `CPI`: cost per install
+- `Activation`: share of installs that reach a valid first gameplay session
+
+#### Retention
+
+- `R1`: day-1 retention
+- `R3`: day-3 retention
+- `R7`: day-7 retention
+- `R30`: day-30 retention
+
+#### Monetization
+
+- `ARPDAU_1`: ad revenue per active user on day 0/1
+- `ARPDAU_3`: ad revenue per active user during days 1-3
+- `ARPDAU_7`: ad revenue per active user during days 4-7
+- `ARPDAU_30`: ad revenue per active user during days 8-30
+- `Decay`: late-tail multiplier used to avoid overestimating the long-tail ad cohort
+
+#### Output
+
+- `CAC_day0`
+- `Revenue_D0`
+- `Revenue_D7`
+- `Revenue_D30`
+- `LTV_ad`
+- `ROAS_D1`
+- `ROAS_D7`
+- `ROAS_D30`
+- `Payback_days`
+
+### Core Formulas
+
+#### Acquisition cost
+
+- `CAC_day0 = N * CPI`
+
+#### Activation
+
+- `Activated_users = N * Activation`
+
+#### Cohort revenue approximation
+
+- `Revenue_D0 = Activated_users * ARPDAU_1`
+- `Users_D1 = Activated_users * R1`
+- `Users_D3 = Activated_users * R3`
+- `Users_D7 = Activated_users * R7`
+- `Users_D30 = Activated_users * R30`
+
+#### Simplified ad LTV
+
+- `LTV_0 = Activation * ARPDAU_1`
+- `LTV_1_3 = 3 * Activation * R1 * ARPDAU_3`
+- `LTV_4_7 = 4 * Activation * R3 * ARPDAU_7`
+- `LTV_8_30 = 23 * Activation * R7 * ARPDAU_30 * Decay`
+- `LTV_ad = LTV_0 + LTV_1_3 + LTV_4_7 + LTV_8_30`
+
+This is a planning approximation, not a production finance model.
+
+#### ROAS
+
+- `ROAS_D1 = Revenue_D0 / CAC_day0`
+- `ROAS_D7 = Revenue_D0_to_D7 / CAC_day0`
+- `ROAS_D30 = Revenue_D0_to_D30 / CAC_day0`
+
+#### Payback
+
+- `Payback_days = earliest day where cumulative cohort ad revenue >= CAC_day0`
+
+For a rewarded-ad-heavy H5 product, payback speed is a hard operating constraint.
+
+### Planning Assumptions For Baseline C
+
+These assumptions intentionally reuse the relative monetization strength implied by Baseline B.
+
+#### Conservative
+
+- `N=1000`
+- `CPI=0.55`
+- `Activation=0.72`
+- `R1=0.28`
+- `R3=0.16`
+- `R7=0.09`
+- `R30=0.025`
+- `Decay=0.55`
+
+Yield inputs:
+- `global blended`
+  - `ARPDAU_1=0.0113`
+  - `ARPDAU_3=0.0085`
+  - `ARPDAU_7=0.0060`
+  - `ARPDAU_30=0.0030`
+- `mobile-web zh-skewed`
+  - `ARPDAU_1=0.0076`
+  - `ARPDAU_3=0.0057`
+  - `ARPDAU_7=0.0040`
+  - `ARPDAU_30=0.0020`
+
+#### Base
+
+- `N=1000`
+- `CPI=0.40`
+- `Activation=0.78`
+- `R1=0.34`
+- `R3=0.20`
+- `R7=0.11`
+- `R30=0.03`
+- `Decay=0.65`
+
+Yield inputs:
+- `global blended`
+  - `ARPDAU_1=0.0360`
+  - `ARPDAU_3=0.0270`
+  - `ARPDAU_7=0.0190`
+  - `ARPDAU_30=0.0090`
+- `mobile-web zh-skewed`
+  - `ARPDAU_1=0.0242`
+  - `ARPDAU_3=0.0180`
+  - `ARPDAU_7=0.0120`
+  - `ARPDAU_30=0.0060`
+
+#### Aggressive
+
+- `N=1000`
+- `CPI=0.28`
+- `Activation=0.84`
+- `R1=0.40`
+- `R3=0.24`
+- `R7=0.14`
+- `R30=0.04`
+- `Decay=0.75`
+
+Yield inputs:
+- `global blended`
+  - `ARPDAU_1=0.0909`
+  - `ARPDAU_3=0.0680`
+  - `ARPDAU_7=0.0450`
+  - `ARPDAU_30=0.0200`
+- `mobile-web zh-skewed`
+  - `ARPDAU_1=0.0614`
+  - `ARPDAU_3=0.0460`
+  - `ARPDAU_7=0.0310`
+  - `ARPDAU_30=0.0140`
+
+### Scenario Output
+
+#### `global blended`
+
+| Scenario | `CAC_day0` | `Revenue_D0` | `Revenue_D7` | `Revenue_D30` | `LTV_ad` | `ROAS_D1` | `ROAS_D7` | `ROAS_D30` | `Payback_days` | CPI ceiling |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Conservative | `$550.00` | `$8.14` | `$16.04` | `$18.50` | `$0.0185` | `1.48%` | `2.92%` | `3.36%` | `>30` | `$0.0185` |
+| Base | `$400.00` | `$28.08` | `$61.42` | `$72.96` | `$0.0730` | `7.02%` | `15.35%` | `18.24%` | `>30` | `$0.0730` |
+| Aggressive | `$280.00` | `$76.36` | `$181.19` | `$221.76` | `$0.2218` | `27.27%` | `64.71%` | `79.20%` | `>30` | `$0.2218` |
+
+#### `mobile-web zh-skewed`
+
+| Scenario | `CAC_day0` | `Revenue_D0` | `Revenue_D7` | `Revenue_D30` | `LTV_ad` | `ROAS_D1` | `ROAS_D7` | `ROAS_D30` | `Payback_days` | CPI ceiling |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Conservative | `$550.00` | `$5.47` | `$10.76` | `$12.40` | `$0.0124` | `0.99%` | `1.96%` | `2.25%` | `>30` | `$0.0124` |
+| Base | `$400.00` | `$18.88` | `$40.68` | `$48.38` | `$0.0484` | `4.72%` | `10.17%` | `12.10%` | `>30` | `$0.0484` |
+| Aggressive | `$280.00` | `$51.58` | `$122.94` | `$151.34` | `$0.1513` | `18.42%` | `43.91%` | `54.05%` | `>30` | `$0.1513` |
+
+### Operator Interpretation
+
+Use Baseline C to answer five questions:
+
+1. Is the current rewarded stack sufficient to support paid acquisition?
+2. What CPI ceiling can the product tolerate?
+3. Is recovery viable by D7, D30, or not at all?
+4. Should spend be increased, held flat, or reduced?
+5. Is the revenue problem caused by weak retention, weak ad yield, or expensive acquisition?
+
+Current model conclusion:
+- under all three planning scenarios above, rewarded-ad LTV alone does not repay the acquisition costs assumed here
+- even the aggressive `global blended` case reaches only `79.20%` D30 ROAS
+- this means the current rewarded stack should not be treated as paid-UA-scalable without either:
+  - materially lower CPI
+  - materially stronger retention
+  - materially higher ad revenue per active user
+
+### Practical Warning
+
+If:
+- `double_reward` is the dominant revenue driver
+- `continue_once` must remain trust-protected
+- `trial_unlock_arena` stays low-volume
+
+then the rewarded revenue base is structurally narrow.
+
+A healthy internal rewarded funnel does not automatically imply scalable paid acquisition.
+
+### Recommended Decision Thresholds
+
+- `LTV_ad < CPI`: do not scale
+- `LTV_ad ~= CPI`: limited testing only
+- `LTV_ad > CPI`: candidate for controlled scaling
+- long payback window: high cash-flow risk even if nominally profitable
+
 ## Player-Experience Guardrails
 
 These are not optional tuning ideas. They are the constraints that keep the monetization model compatible with the current product promise.

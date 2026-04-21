@@ -87,8 +87,11 @@ Inspect local analytics buffer or debug console and confirm these event families
   - `challenge_clear`
 - reward:
   - `reward_offer_show`
+  - `reward_request_start`
   - `reward_complete`
   - `reward_decline`
+  - `locked_arena_click`
+  - `locked_arena_shortfall`
   - `trial_unlock_start`
   - `trial_unlock_complete`
   - `continue_used`
@@ -106,10 +109,20 @@ Reference:
 - build remains fully playable with mock services only
 - no gameplay code calls provider SDK globals directly
 - reward/share/analytics integration still routes through service modules
+- canonical reward live variable names are used for new deploys:
+  - `SPIN_CLASH_REWARD_ADAPTER`
+  - `SPIN_CLASH_ADSENSE_ENABLED`
 - if enabling live rewarded ads for a release build:
-  - `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
-  - `SPIN_CLASH_REWARD_ENABLED=true`
-  - `SPIN_CLASH_REWARDED_AD_UNIT_PATH` is set
+  - H5 primary path:
+    - `SPIN_CLASH_REWARD_ADAPTER=adsense_h5_rewarded`
+    - `SPIN_CLASH_ADSENSE_ENABLED=true`
+    - `SPIN_CLASH_ADSENSE_H5_ENABLED=true`
+    - `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID` is set
+    - `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT` is set
+  - GPT fallback path:
+    - `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
+    - `SPIN_CLASH_ADSENSE_ENABLED=true`
+    - `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH` is set
 - if enabling PostHog forwarding for a release build:
   - `SPIN_CLASH_ANALYTICS_ADAPTER=posthog`
   - `SPIN_CLASH_ANALYTICS_ENABLE_FORWARDING=true`

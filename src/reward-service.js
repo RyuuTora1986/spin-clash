@@ -137,6 +137,7 @@
       scriptUrl:adsenseH5Config.scriptUrl || '',
       publisherId:adsenseH5Config.publisherId || '',
       dataAdClient:adsenseH5Config.dataAdClient || '',
+      testMode:adsenseH5Config.testMode === true,
       preloadHints:{
         sound:adsenseH5Config.preloadHints && adsenseH5Config.preloadHints.sound ? adsenseH5Config.preloadHints.sound : 'off',
         preload:adsenseH5Config.preloadHints && adsenseH5Config.preloadHints.preload ? adsenseH5Config.preloadHints.preload : 'auto'

@@ -3,9 +3,12 @@
 This document records the current state of the real reward-provider path.
 
 ## Chosen Provider Path
-- chosen live reward path:
+- chosen primary live reward path:
+  - AdSense H5 rewarded through the Ad Placement API
+- fallback live reward path:
   - Google Publisher Tag rewarded out-of-page slot through the AdSense / GAM web path
-- locked adapter id:
+- locked adapter ids:
+  - `adsense_h5_rewarded`
   - `adsense_rewarded`
 - locked gameplay contract:
   - callers stay on `rewardService.request(placement, context)`
@@ -18,7 +21,7 @@ This document records the current state of the real reward-provider path.
 Task 1 is complete only if all of the following stay true:
 - committed base config still defaults to `mock`
 - live reward enablement only happens through provider config / deploy-time override
-- `adsense_rewarded` remains the only supported real reward adapter id
+- `adsense_h5_rewarded` and `adsense_rewarded` remain the only supported real reward adapter ids
 - unsupported reward adapter ids do not silently fall back to `mock`
 - provider bootstrap, success, deny, timeout, and error paths stay normalized behind `rewardService`
 - gameplay callers do not import GPT globals directly
@@ -34,7 +37,8 @@ Task 1 is complete only if all of the following stay true:
 ## What Exists Now
 - explicit reward adapter selection
 - default `mock` adapter
-- reserved live adapter path:
+- reserved live adapter paths:
+  - `adsense_h5_rewarded`
   - `adsense_rewarded`
 - explicit live rewarded placement allowlist in config:
   - `config.providers.reward.livePlacements`
@@ -50,7 +54,10 @@ Task 1 is complete only if all of the following stay true:
 
 ## Runtime Boundary
 Provider bootstrap:
-- `rewardService` selects `adsense_rewarded` only when `config.providers.reward.adapter === 'adsense_rewarded'`
+- `rewardService` selects either:
+  - `adsense_h5_rewarded`
+  - `adsense_rewarded`
+- H5 bootstrap stays inside `providerRuntime.initAdsenseH5(...)`
 - GPT bootstrap stays inside `providerRuntime.loadScriptOnce(...)` and `providerRuntime.waitForScript(...)`
 - the first request can wait through GPT script load instead of failing immediately while load is in flight
 - if the configured reward adapter id is unsupported, the service exposes `provider_misconfigured` and rejects instead of switching to `mock`
@@ -80,7 +87,25 @@ Error path:
   - `provider_unavailable`
 - unsupported adapter debug state keeps `lastRequestReason:null` until a real request is attempted
 
-## What The Live Adapter Does Today
+## What The Live Adapters Do Today
+If `adapter === 'adsense_h5_rewarded'`:
+- `isRewardAvailable(placement)` returns a structured availability result
+- `getAdapterInfo()` exposes H5 readiness state for debug inspection
+- the adapter can report:
+  - `provider_disabled`
+  - `provider_misconfigured`
+  - `placement_not_enabled`
+  - `provider_loading`
+  - `provider_timeout`
+  - `provider_unavailable`
+- the runtime bootstraps the AdSense H5 script once and calls page-level `adConfig(...)` once
+- H5 test-mode is now supported through:
+  - `SPIN_CLASH_ADSENSE_H5_TEST_MODE`
+- rewarded completion semantics are normalized as:
+  - `adViewed` -> resolves with `granted:true`
+  - `adDismissed` -> resolves with `granted:false` and `reason:'slot_closed'`
+  - `adBreakDone` with unavailable/timeout states -> rejects with a safe normalized provider error
+
 If `adapter === 'adsense_rewarded'`:
 - `isRewardAvailable(placement)` returns a structured availability result
 - `getAdapterInfo()` exposes live adapter readiness state for debug inspection
@@ -132,10 +157,17 @@ Base config remains in `src/config-providers.js`.
 
 For GitHub Pages deployment, the preferred path is now GitHub Actions repository variables instead of editing committed source.
 
-Minimum live reward variables:
+Minimum live reward variables for AdSense H5:
+- `SPIN_CLASH_REWARD_ADAPTER=adsense_h5_rewarded`
+- `SPIN_CLASH_ADSENSE_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_H5_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID=ca-pub-...`
+- `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT=ca-pub-...`
+
+Minimum live reward variables for GPT fallback:
 - `SPIN_CLASH_REWARD_ADAPTER=adsense_rewarded`
-- `SPIN_CLASH_REWARD_ENABLED=true`
-- `SPIN_CLASH_REWARDED_AD_UNIT_PATH=/YOUR_NETWORK_CODE/YOUR_REWARDED_UNIT`
+- `SPIN_CLASH_ADSENSE_ENABLED=true`
+- `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH=/YOUR_NETWORK_CODE/YOUR_REWARDED_UNIT`
 
 The release build writes these values into the packaged `dist-static/src/config-providers-override.js`.
 
@@ -143,7 +175,7 @@ If you need a source-level example, the equivalent shape is:
 
 ```js
 reward: {
-  adapter: 'adsense_rewarded',
+  adapter: 'adsense_h5_rewarded',
   livePlacements: {
     double_reward: true,
     continue_once: true,
@@ -152,8 +184,15 @@ reward: {
   adsense: {
     enabled: true,
     scriptUrl: 'https://securepubads.g.doubleclick.net/tag/js/gpt.js',
-    rewardedAdUnitPath: '/YOUR_NETWORK_CODE/YOUR_REWARDED_UNIT',
-    gamInterstitialAdUnitPath: ''
+    rewardedAdUnitPath: '',
+    gamInterstitialAdUnitPath: '',
+    h5: {
+      enabled: true,
+      scriptUrl: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+      publisherId: 'ca-pub-...',
+      dataAdClient: 'ca-pub-...',
+      testMode: false
+    }
   }
 }
 ```

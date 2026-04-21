@@ -1990,3 +1990,39 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - the codebase is now implementation-ready for `AdSense H5 rewarded-only` without adding any forced ad format or changing the existing player-facing reward timing
   - live monetization is still externally gated by approved AdSense account status plus H5 game ads access approval
   - no Google account/backend automation was performed in this slice
+
+2026-04-21 adsense h5 live config naming and paid acquisition baseline pass completed
+- Context:
+  - after the H5 rewarded fallback landed, the next gap was operator clarity rather than gameplay logic
+  - the repo needed a cleaner canonical naming scheme for live reward deployment variables, an explicit H5 test/prod cutover path, and a paid-acquisition baseline that could judge whether rewarded-ad economics justify spend
+- Main files changed:
+  - `src/config-providers.js`
+  - `src/provider-runtime-tools.js`
+  - `src/reward-service.js`
+  - `scripts/build-static-release.js`
+  - `scripts/check-provider-services.js`
+  - `docs/github-pages-deploy.md`
+  - `docs/rewarded-live-cutover-runbook.md`
+  - `docs/release-checklist.md`
+  - `docs/reward-live-adapter-status.md`
+  - `docs/monetization/2026-04-21-adsense-h5-rewarded-baseline-model.md`
+- Main operator outcomes:
+  - release-time reward variable naming now has a canonical scheme:
+    - `SPIN_CLASH_ADSENSE_ENABLED`
+    - `SPIN_CLASH_ADSENSE_GPT_*`
+    - `SPIN_CLASH_ADSENSE_H5_*`
+  - older GPT-era env names are still accepted as compatibility aliases, so existing deploy muscle memory does not break
+  - AdSense H5 now supports an explicit test-mode switch through `SPIN_CLASH_ADSENSE_H5_TEST_MODE`, which maps to the AdSense H5 script tag instead of relying on undocumented manual edits
+  - deploy docs now separate:
+    - H5 rewarded test pass
+    - H5 rewarded production pass
+    - GPT / Ad Manager fallback pass
+  - the monetization model now includes `Baseline C: Paid Acquisition Model`, so acquisition can be judged against rewarded-ad LTV, ROAS, CPI ceiling, and payback speed instead of internal funnel health alone
+- Verification:
+  - `npm run check:providers`
+  - `npm run check:config`
+  - `npm run check:docs`
+  - `npm run verify:release`
+- Practical meaning:
+  - the repo now has a clearer operator contract for switching between H5 test, H5 production, and GPT fallback without touching committed gameplay code
+  - the current planning model still suggests rewarded-ad revenue is structurally too narrow to justify serious paid acquisition scaling under the baseline assumptions; CPI, retention, or ARPDAU would need to improve materially before that changes

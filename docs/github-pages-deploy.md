@@ -48,12 +48,62 @@ Open:
 3. `Actions`
 4. `Variables`
 
-For the smallest live reward validation pass, add:
+Canonical reward override names:
+- common selector:
+  - `SPIN_CLASH_REWARD_ADAPTER`
+- shared Google reward root switch:
+  - `SPIN_CLASH_ADSENSE_ENABLED`
+- GPT rewarded fallback:
+  - `SPIN_CLASH_ADSENSE_GPT_SCRIPT_URL`
+  - `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH`
+- AdSense H5 rewarded:
+  - `SPIN_CLASH_ADSENSE_H5_ENABLED`
+  - `SPIN_CLASH_ADSENSE_H5_SCRIPT_URL`
+  - `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID`
+  - `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT`
+  - `SPIN_CLASH_ADSENSE_H5_TEST_MODE`
+  - `SPIN_CLASH_ADSENSE_H5_PRELOAD`
+  - `SPIN_CLASH_ADSENSE_H5_SOUND`
+
+Legacy compatibility:
+- the release build still accepts the older GPT-era names:
+  - `SPIN_CLASH_REWARD_ENABLED`
+  - `SPIN_CLASH_REWARD_SCRIPT_URL`
+  - `SPIN_CLASH_REWARDED_AD_UNIT_PATH`
+- prefer the canonical names above for all new operator setup
+
+For the smallest AdSense H5 rewarded test pass, add:
+- `SPIN_CLASH_REWARD_ADAPTER`
+  - value: `adsense_h5_rewarded`
+- `SPIN_CLASH_ADSENSE_ENABLED`
+  - value: `true`
+- `SPIN_CLASH_ADSENSE_H5_ENABLED`
+  - value: `true`
+- `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID`
+  - value: your real `ca-pub-...` publisher id
+- `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT`
+  - value: same as publisher id unless your operator setup requires otherwise
+- `SPIN_CLASH_ADSENSE_H5_TEST_MODE`
+  - value: `true`
+
+Optional:
+- `SPIN_CLASH_ADSENSE_H5_SCRIPT_URL`
+  - only set this if you need to override the default AdSense H5 script URL
+- `SPIN_CLASH_ADSENSE_H5_PRELOAD`
+  - default: `auto`
+- `SPIN_CLASH_ADSENSE_H5_SOUND`
+  - default: `off`
+
+For the smallest AdSense H5 rewarded production pass, use the same H5 variables but set:
+- `SPIN_CLASH_ADSENSE_H5_TEST_MODE`
+  - value: `false`
+
+For the smallest GPT rewarded fallback validation pass, add:
 - `SPIN_CLASH_REWARD_ADAPTER`
   - value: `adsense_rewarded`
-- `SPIN_CLASH_REWARD_ENABLED`
+- `SPIN_CLASH_ADSENSE_ENABLED`
   - value: `true`
-- `SPIN_CLASH_REWARDED_AD_UNIT_PATH`
+- `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH`
   - value: your real GPT rewarded ad unit path
 
 Important:
@@ -64,9 +114,10 @@ Important:
   - `trial_unlock_arena`
 - there is no separate Pages variable for widening rewarded placement scope in this prep slice
 - if you need to widen live rewarded placement scope later, treat that as a separate reviewed code change instead of a deploy toggle
+- `adsense_h5_rewarded` and `adsense_rewarded` share the same gameplay placement allowlist; only the provider runtime changes
 
 Optional:
-- `SPIN_CLASH_REWARD_SCRIPT_URL`
+- `SPIN_CLASH_ADSENSE_GPT_SCRIPT_URL`
   - only set this if you need to override the default GPT script URL
 
 For the smallest live PostHog forwarding pass, add:
@@ -90,7 +141,8 @@ Optional:
 
 Important:
 - if these variables are absent, Pages deploy stays on the default safe mock config
-- if live reward is enabled without `SPIN_CLASH_REWARDED_AD_UNIT_PATH`, the release build now fails instead of silently deploying a broken live setup
+- if GPT rewarded mode is enabled without `SPIN_CLASH_ADSENSE_GPT_REWARDED_AD_UNIT_PATH`, the release build now fails instead of silently deploying a broken live setup
+- if AdSense H5 rewarded mode is enabled without `SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID` or `SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT`, the release build now fails instead of silently deploying a broken live setup
 - if live PostHog forwarding is enabled without `SPIN_CLASH_POSTHOG_PROJECT_API_KEY`, the release build now fails instead of silently deploying a broken live setup
 - in the current runtime implementation, live PostHog validation should also set `SPIN_CLASH_POSTHOG_SCRIPT_URL`; otherwise the adapter can switch to `posthog` mode while the SDK remains unavailable
 - after changing provider variables, an already-open browser tab may need a hard refresh before it picks up the latest deployed provider override file

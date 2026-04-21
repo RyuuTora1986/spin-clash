@@ -512,6 +512,7 @@ async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
   context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
   context.SpinClash.config.providers.reward.adsense.h5.publisherId = 'ca-pub-1234567890123456';
   context.SpinClash.config.providers.reward.adsense.h5.dataAdClient = 'ca-pub-1234567890123456';
+  context.SpinClash.config.providers.reward.adsense.h5.testMode = true;
   loadScript(path.join('src', 'reward-service.js'), context);
 
   const reward = context.SpinClash.services.reward;
@@ -523,6 +524,7 @@ async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
   await new Promise((resolve) => setTimeout(resolve, 0));
   assert(head.appended.length === 1, 'Expected H5 reward adapter to inject the AdSense script on first request.');
   assert(head.appended[0].src.includes('client=ca-pub-1234567890123456'), 'Expected H5 reward adapter to append the publisher id to the AdSense script URL.');
+  assert(head.appended[0].dataset && head.appended[0].dataset.adbreakTest === 'on', 'Expected H5 reward adapter to enable AdSense H5 test mode on the script tag when configured.');
   assert(settled === false, 'Expected H5 reward request to wait for bootstrap before settling.');
 
   context.adsbygoogle = [];
