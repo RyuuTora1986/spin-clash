@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.1.2 - 2026-04-21
+
+### Summary
+- Added in-shell public information pages and tightened their mobile presentation so the site reads as a more complete, reviewable product surface.
+
+### User-visible changes
+- Home and Settings now expose `About`, `Contact`, `Privacy`, and `Terms` inside the game shell.
+- The public info pages now switch with the current `English / 中文 / 日本語` locale.
+- Mobile info-page headers no longer collapse into a broken back-button/title layout.
+
+### Technical changes
+- Threaded the new `info` route and `infoPage` state through the runtime shell.
+- Added regression coverage for public-info DOM ids, localization keys, route actions, settings/info shell presentation, and info-route return behavior.
+- Kept copy constrained to confirmed operator/contact/product facts without adding invented legal or corporate details.
+
+### Verification
+- `npm run preflight`
+- Local browser QA against `http://127.0.0.1:4173/index.html`
+- Desktop verification of Home/Settings public-info entry and return flow
+- Mobile verification of info-page readability and header layout
 ## 1.1.1 - 2026-04-21
 
 ### Summary
