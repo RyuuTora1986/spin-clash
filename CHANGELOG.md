@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.1.0 - 2026-04-21
+
+### Summary
+- Promoted rewarded ads from a test-only integration project into the first real monetization-capable release line.
+
+### User-visible changes
+- Rewarded ad entry points now run through the live AdSense H5 path instead of the old mock-grant behavior.
+- Reward CTA failures now surface as clear, placement-specific guidance instead of silent or easily missed feedback.
+- Release-visible versioning is now aligned across runtime asset cache-busting, packaged output, and the in-game build label.
+
+### Technical changes
+- Hardened the AdSense H5 bootstrap, head injection, and ready-state wiring so real user-gesture requests can advance into the Google placement display stage.
+- Locked `preloadAdBreaks=on` into the live release path used for the current production rollout.
+- Finalized rewarded-ops monitoring and provider closeout documentation for post-launch observation.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run verify:release`
+- Live browser verification against `https://play.hakurokudo.com/`
+- Real-device validation on iPhone 15 Pro Max Chrome with no visible CTA flow issues
+
 ## 1.0.8 - 2026-04-21
 
 ### Summary
