@@ -332,6 +332,62 @@ function testAdsenseDisabledRewardFallback() {
   assert(availability.reason === 'provider_disabled', 'Expected provider_disabled reason when adsense adapter is disabled.');
 }
 
+function testAdsenseH5DisabledRewardFallback() {
+  const { context } = createBaseContext();
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = false;
+  loadScript(path.join('src', 'reward-service.js'), context);
+  const reward = context.SpinClash.services.reward;
+  const info = reward.getAdapterInfo();
+  const availability = reward.isRewardAvailable('double_reward');
+
+  assert(info.adapter === 'adsense_h5_rewarded', 'Expected adsense_h5_rewarded adapter when configured.');
+  assert(info.ready === false, 'Expected H5 reward adapter to report not ready when disabled.');
+  assert(info.rewardEnabled === false, 'Expected disabled H5 reward adapter to report rewardEnabled:false.');
+  assert(Array.isArray(info.allowedPlacements), 'Expected disabled H5 reward adapter to expose allowedPlacements.');
+  assert(info.allowedPlacements.includes('double_reward'), 'Expected disabled H5 reward adapter to preserve double_reward in allowedPlacements.');
+  assert(info.allowedPlacements.includes('continue_once'), 'Expected disabled H5 reward adapter to preserve continue_once in allowedPlacements.');
+  assert(info.allowedPlacements.includes('trial_unlock_arena'), 'Expected disabled H5 reward adapter to preserve trial_unlock_arena in allowedPlacements.');
+  assert(availability.available === false, 'Expected disabled H5 reward adapter to report unavailable.');
+  assert(availability.reason === 'provider_disabled', 'Expected disabled H5 reward adapter to normalize to provider_disabled.');
+}
+
+async function testAdsenseH5MissingPublisherIdIsMisconfigured() {
+  const { context, save } = createBaseContext();
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  const reward = context.SpinClash.services.reward;
+  const info = reward.getAdapterInfo();
+  const availability = reward.isRewardAvailable('double_reward');
+
+  assert(info.adapter === 'adsense_h5_rewarded', 'Expected H5 reward adapter info to preserve the configured adapter id.');
+  assert(info.ready === false, 'Expected H5 reward adapter to report not ready when publisher config is missing.');
+  assert(availability.available === false, 'Expected H5 reward adapter without publisher config to report unavailable.');
+  assert(availability.reason === 'provider_misconfigured', 'Expected H5 reward adapter without publisher config to normalize to provider_misconfigured.');
+
+  let rejected = false;
+  try {
+    await reward.request('double_reward', { source: 'h5-misconfigured' });
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'provider_misconfigured', 'Expected H5 reward adapter without publisher config to reject with provider_misconfigured.');
+  }
+  assert(rejected, 'Expected H5 reward adapter without publisher config to reject.');
+
+  const rewardDeclineEvent = save.analytics.find((event) => event.name === 'reward_decline');
+  assert(rewardDeclineEvent, 'Expected reward_decline analytics after a misconfigured H5 reward request.');
+  assert(rewardDeclineEvent.payload && rewardDeclineEvent.payload.reason === 'provider_misconfigured', 'Expected H5 reward decline analytics to preserve provider_misconfigured.');
+}
+
 async function testAdsensePlacementAllowlistRejectsUnknownPlacement() {
   const { context, save } = createBaseContext();
   loadScript(path.join('src', 'config-providers.js'), context);
@@ -440,6 +496,118 @@ async function testAdsenseConfiguredRewardFallback() {
     );
   }
   assert(rejected, 'Expected adsense reward request to reject while provider is unavailable.');
+}
+
+async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
+  const { context, head, save } = createBaseContext();
+  let settled = false;
+  let result = null;
+
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.scriptUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+  context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.h5.publisherId = 'ca-pub-1234567890123456';
+  context.SpinClash.config.providers.reward.adsense.h5.dataAdClient = 'ca-pub-1234567890123456';
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  const reward = context.SpinClash.services.reward;
+  const pending = reward.request('double_reward', { source: 'h5-grant-flow' }).then((value) => {
+    result = value;
+    settled = true;
+  });
+
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  assert(head.appended.length === 1, 'Expected H5 reward adapter to inject the AdSense script on first request.');
+  assert(head.appended[0].src.includes('client=ca-pub-1234567890123456'), 'Expected H5 reward adapter to append the publisher id to the AdSense script URL.');
+  assert(settled === false, 'Expected H5 reward request to wait for bootstrap before settling.');
+
+  context.adsbygoogle = [];
+  context.adConfig = function(config) {
+    assert(config && config.preloadAdBreaks, 'Expected H5 reward adapter to pass preloadAdBreaks into adConfig.');
+    if (typeof config.onReady === 'function') {
+      config.onReady();
+    }
+  };
+  context.adBreak = function(config) {
+    assert(config && config.type === 'reward', 'Expected H5 reward adapter to request reward placements.');
+    assert(config && config.name === 'double_reward', 'Expected H5 reward adapter to preserve the reward placement name.');
+    assert(typeof config.beforeReward === 'function', 'Expected H5 reward adapter to provide beforeReward.');
+    assert(typeof config.adViewed === 'function', 'Expected H5 reward adapter to provide adViewed.');
+    assert(typeof config.adBreakDone === 'function', 'Expected H5 reward adapter to provide adBreakDone.');
+    let showCalls = 0;
+    config.beforeReward(function() {
+      showCalls += 1;
+    });
+    assert(showCalls === 1, 'Expected H5 reward adapter to show the ad immediately after the user explicitly requests a reward.');
+    config.adViewed();
+    config.adBreakDone({
+      breakType: 'reward',
+      breakName: 'double_reward',
+      breakFormat: 'reward',
+      breakStatus: 'viewed'
+    });
+  };
+
+  assert(typeof head.appended[0].onload === 'function', 'Expected injected H5 AdSense script to expose onload.');
+  head.appended[0].onload();
+  await pending;
+
+  assert(settled === true, 'Expected H5 reward request to settle after bootstrap and adBreak execution.');
+  assert(result && result.granted === true, 'Expected H5 reward flow to resolve with granted:true after adViewed.');
+  assert(result.adapter === 'adsense_h5_rewarded', 'Expected H5 reward flow to report the H5 adapter id.');
+
+  const rewardCompleteEvent = save.analytics.find((event) => event.name === 'reward_complete');
+  assert(rewardCompleteEvent, 'Expected reward_complete analytics after a granted H5 reward.');
+  assert(rewardCompleteEvent.payload && rewardCompleteEvent.payload.adapter === 'adsense_h5_rewarded', 'Expected H5 reward analytics to preserve the H5 adapter id.');
+}
+
+async function testAdsenseH5DismissedRewardDoesNotGrant() {
+  const { context, head, save } = createBaseContext();
+
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.scriptUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+  context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.h5.publisherId = 'ca-pub-1234567890123456';
+  context.SpinClash.config.providers.reward.adsense.h5.dataAdClient = 'ca-pub-1234567890123456';
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  const reward = context.SpinClash.services.reward;
+  const pending = reward.request('continue_once', { source: 'h5-dismiss-flow' });
+
+  context.adsbygoogle = [];
+  context.adConfig = function(config) {
+    if (typeof config.onReady === 'function') {
+      config.onReady();
+    }
+  };
+  context.adBreak = function(config) {
+    config.beforeReward(function() {});
+    config.adDismissed();
+    config.adBreakDone({
+      breakType: 'reward',
+      breakName: 'continue_once',
+      breakFormat: 'reward',
+      breakStatus: 'dismissed'
+    });
+  };
+
+  head.appended[0].onload();
+  const result = await pending;
+
+  assert(result && result.granted === false, 'Expected dismissed H5 reward flow to resolve with granted:false.');
+  assert(result.reason === 'slot_closed', 'Expected dismissed H5 reward flow to normalize to slot_closed.');
+
+  const rewardDeclineEvent = save.analytics.find((event) => event.name === 'reward_decline');
+  assert(rewardDeclineEvent, 'Expected reward_decline analytics after a dismissed H5 reward.');
+  assert(rewardDeclineEvent.payload && rewardDeclineEvent.payload.reason === 'slot_closed', 'Expected H5 reward decline analytics to preserve slot_closed.');
 }
 
 async function testAdsenseRequestWaitsForScriptLoad() {
@@ -872,9 +1040,13 @@ async function main() {
   testPosthogTopLevelFallbackNormalizesUnexpectedFailureReason();
   testPosthogSdkPresentButConfigMissingStaysMisconfigured();
   testAdsenseDisabledRewardFallback();
+  testAdsenseH5DisabledRewardFallback();
+  await testAdsenseH5MissingPublisherIdIsMisconfigured();
   await testAdsensePlacementAllowlistRejectsUnknownPlacement();
   await testUnknownRewardAdapterDoesNotFallbackToMock();
   await testAdsenseConfiguredRewardFallback();
+  await testAdsenseH5RequestWaitsForBootstrapAndGrantsReward();
+  await testAdsenseH5DismissedRewardDoesNotGrant();
   await testAdsenseRequestWaitsForScriptLoad();
   await testAdsenseRewardGrantFlow();
   await testAdsenseRewardDeclineOnCloseWithoutGrant();

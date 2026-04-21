@@ -56,6 +56,12 @@
     const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
     let purchaseDialogBound = false;
     let pendingTopPurchase = null;
+    let trialUnlockContextCounter = 0;
+
+    function createTrialUnlockContextId(arenaId){
+      trialUnlockContextCounter += 1;
+      return 'trial_'+String(arenaId || 'arena')+'_'+Date.now().toString(36)+'_'+trialUnlockContextCounter.toString(36);
+    }
 
     function syncActiveArenaState(index){
       const arena = getArenaConfig(index);
@@ -1331,6 +1337,16 @@
       }
 
       const save = getSave();
+      if(analyticsService){
+        analyticsService.track('locked_arena_click',{
+          mode:getCurrentMode(),
+          arenaId:arena.id,
+          arenaLabel:arena.label,
+          unlockCost:arena.unlockCost,
+          currency:save.currency,
+          affordable:save.currency >= arena.unlockCost
+        });
+      }
       if(save.currency >= arena.unlockCost){
         const currencyBefore = save.currency;
         saveProgress((draft)=>{
@@ -1374,16 +1390,42 @@
         return Promise.resolve(false);
       }
 
+      const trialUnlockContextId = createTrialUnlockContextId(arena.id);
+
+      if(analyticsService){
+        analyticsService.track('locked_arena_shortfall',{
+          mode:getCurrentMode(),
+          arenaId:arena.id,
+          arenaLabel:arena.label,
+          unlockCost:arena.unlockCost,
+          currency:save.currency,
+          shortfall:Math.max(0, arena.unlockCost - save.currency),
+          trial_unlock_context_id:trialUnlockContextId
+        });
+        analyticsService.track('reward_offer_show',{
+          placement:'trial_unlock_arena',
+          source:'quick_battle_locked_arena',
+          mode:getCurrentMode(),
+          arenaId:arena.id,
+          arenaLabel:arena.label,
+          trial_unlock_context_id:trialUnlockContextId
+        });
+      }
+
       if(analyticsService){
         analyticsService.track('trial_unlock_start',{
           kind:'arena',
           mode:getCurrentMode(),
           arenaId:arena.id,
-          arenaLabel:arena.label
+          arenaLabel:arena.label,
+          trial_unlock_context_id:trialUnlockContextId
         });
       }
 
-      return rewardService.request('trial_unlock_arena',{ arenaId:arena.id }).then((result)=>{
+      return rewardService.request('trial_unlock_arena',{
+        arenaId:arena.id,
+        trial_unlock_context_id:trialUnlockContextId
+      }).then((result)=>{
         if(typeof rewardService.wasGranted === 'function' && !rewardService.wasGranted(result)){
           showRewardFailureFeedback('trial_unlock_arena', result);
           return false;
@@ -1394,7 +1436,9 @@
             kind:'arena',
             mode:getCurrentMode(),
             arenaId:arena.id,
-            arenaLabel:arena.label
+            arenaLabel:arena.label,
+            reward_attempt_id:result && result.reward_attempt_id ? result.reward_attempt_id : null,
+            trial_unlock_context_id:trialUnlockContextId
           });
         }
         syncActiveArenaState(index);

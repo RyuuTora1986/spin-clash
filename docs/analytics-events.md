@@ -95,6 +95,7 @@ Forwarding contract notes:
 - Source: `src/match-flow-tools.js`
 - Trigger: `showMatchResult()`
 - Payload:
+  - `result_context_id`
   - `mode`
   - `arena`
   - `arenaId`
@@ -125,6 +126,7 @@ Forwarding contract notes:
 - Source: `src/match-flow-tools.js`
 - Trigger: Challenge Road result screen after a loss
 - Payload:
+  - `result_context_id`
   - `nodeIndex`
   - `nodeId`
 
@@ -152,6 +154,7 @@ Forwarding contract notes:
 - Source: `src/match-flow-tools.js`
 - Trigger: Challenge Road result screen after a node win
 - Payload:
+  - `result_context_id`
   - `nodeIndex`
   - `nodeId`
   - `chapterId`
@@ -184,18 +187,39 @@ Forwarding contract notes:
   - `roadRankLabel`
 
 ### `reward_offer_show`
+- Source:
+  - `src/match-flow-tools.js`
+  - `src/loadout-ui-tools.js`
+- Trigger:
+  - reward CTA becomes visible on the match result surface
+  - rewarded arena-trial CTA is surfaced after an affordability shortfall
+- Payload:
+  - `placement`
+  - `source`
+  - `mode`
+  - optional `arenaId`
+  - optional `arenaLabel`
+  - optional `challengeNode`
+  - optional `challengeNodeId`
+  - optional `result_context_id`
+  - optional `trial_unlock_context_id`
+
+### `reward_request_start`
 - Source: `src/reward-service.js`
-- Trigger: every `rewardService.request(...)`
+- Trigger: every explicit `rewardService.request(...)` call after the player taps a reward CTA
 - Payload:
   - `placement`
   - `context`
   - `adapter`
   - `resultValue`
   - `mockMode`
+  - `reward_attempt_id`
+  - optional `result_context_id`
+  - optional `trial_unlock_context_id`
 
 ### `reward_complete`
 - Source: `src/reward-service.js`
-- Trigger: resolved mock reward completion
+- Trigger: reward request resolves with `granted:true`
 - Payload:
   - `placement`
   - `context`
@@ -203,6 +227,9 @@ Forwarding contract notes:
   - `adapter`
   - `resultValue`
   - `mockMode`
+  - `reward_attempt_id`
+  - optional `result_context_id`
+  - optional `trial_unlock_context_id`
 
 ### `reward_decline`
 - Source: `src/reward-service.js`
@@ -217,6 +244,9 @@ Forwarding contract notes:
   - `resultValue`
   - `reason`
   - `mockMode`
+  - `reward_attempt_id`
+  - optional `result_context_id`
+  - optional `trial_unlock_context_id`
 
 ### `share_click`
 - Source: `src/share-service.js`
@@ -342,6 +372,29 @@ Forwarding contract notes:
   - optional `nodeIndex`
   - optional `nodeId`
 
+### `locked_arena_click`
+- Source: `src/loadout-ui-tools.js`
+- Trigger: player taps a locked arena in Quick Battle loadout
+- Payload:
+  - `mode`
+  - `arenaId`
+  - `arenaLabel`
+  - `unlockCost`
+  - `currency`
+  - `affordable`
+
+### `locked_arena_shortfall`
+- Source: `src/loadout-ui-tools.js`
+- Trigger: player taps a locked arena but lacks enough SCRAP for permanent unlock
+- Payload:
+  - `mode`
+  - `arenaId`
+  - `arenaLabel`
+  - `unlockCost`
+  - `currency`
+  - `shortfall`
+  - `trial_unlock_context_id`
+
 ### `trial_unlock_start`
 - Source: `src/loadout-ui-tools.js`
 - Trigger: locked arena trial reward request begins in Quick Battle loadout
@@ -350,6 +403,7 @@ Forwarding contract notes:
   - `mode`
   - `arenaId`
   - `arenaLabel`
+  - `trial_unlock_context_id`
 
 ### `trial_unlock_complete`
 - Source: `src/loadout-ui-tools.js`
@@ -359,6 +413,8 @@ Forwarding contract notes:
   - `mode`
   - `arenaId`
   - `arenaLabel`
+  - `reward_attempt_id`
+  - `trial_unlock_context_id`
 
 ### `continue_used`
 - Source: `src/match-flow-tools.js`
@@ -366,6 +422,8 @@ Forwarding contract notes:
 - Payload:
   - `nodeIndex`
   - `nodeId`
+  - `reward_attempt_id`
+  - `result_context_id`
 
 ## Implemented Event Coverage By Flow
 
@@ -389,8 +447,11 @@ Forwarding contract notes:
 
 ### Rewarded Flows
 - `reward_offer_show`
+- `reward_request_start`
 - `reward_complete`
 - `reward_decline`
+- `locked_arena_click`
+- `locked_arena_shortfall`
 - `trial_unlock_start`
 - `trial_unlock_complete`
 - `continue_used`

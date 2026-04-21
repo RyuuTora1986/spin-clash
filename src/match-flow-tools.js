@@ -49,6 +49,7 @@
     const getMatchStartedAt = typeof options.getMatchStartedAt === 'function' ? options.getMatchStartedAt : function(){ return null; };
     const setMatchStartedAt = typeof options.setMatchStartedAt === 'function' ? options.setMatchStartedAt : function(){};
     let lastResultContext = null;
+    let resultContextCounter = 0;
 
     function formatNodeLabel(number){
       return (uiText.battleIntroNodeLabel || uiText.resultNodeLabel || 'NODE')+' '+number;
@@ -140,6 +141,11 @@
       return getRewardParts().total;
     }
 
+    function createResultContextId(mode){
+      resultContextCounter += 1;
+      return 'result_'+String(mode || 'match')+'_'+Date.now().toString(36)+'_'+resultContextCounter.toString(36);
+    }
+
     function buildResultContext(){
       const score = getScore();
       const currentMode = getCurrentMode();
@@ -162,6 +168,7 @@
       const checkpointReached = checkpointResumeNodeIndex != null
         && (challenge.checkpointNodeIndex || 0) < checkpointResumeNodeIndex;
       return {
+        resultContextId:createResultContextId(currentMode),
         mode:currentMode,
         result:won ? 'win' : 'loss',
         arenaIndex:currentArenaIndex,
@@ -563,12 +570,14 @@
       document.getElementById('btn-double-reward').textContent = getDoubleRewardUsed() ? uiText.rewardClaimed : uiText.rewardDouble;
       document.getElementById('btn-double-reward').disabled = getDoubleRewardUsed();
       document.getElementById('btn-double-reward').style.opacity = getDoubleRewardUsed() ? '.5' : '1';
-      document.getElementById('btn-continue').style.display = currentMode==='challenge' && !won && isChallengeContinueEnabled() && !getChallengeContinueUsed() ? '' : 'none';
+      const continueVisible = currentMode==='challenge' && !won && isChallengeContinueEnabled() && !getChallengeContinueUsed();
+      document.getElementById('btn-continue').style.display = continueVisible ? '' : 'none';
       document.getElementById('ov-match').classList.remove('hide');
       updateCurrencyUI();
 
       if(analyticsService){
         analyticsService.track('match_end',{
+          result_context_id:resultContext.resultContextId,
           mode:resultContext.mode,
           arena:resultContext.arenaLabel,
           arenaId:resultContext.arenaId,
@@ -596,11 +605,13 @@
         });
         if(currentMode==='challenge' && !won){
           analyticsService.track('challenge_fail',{
+            result_context_id:resultContext.resultContextId,
             nodeIndex:resultContext.challengeNodeIndex,
             nodeId:resultContext.challengeNodeId
           });
         }else if(currentMode==='challenge' && won){
           analyticsService.track('challenge_clear',{
+            result_context_id:resultContext.resultContextId,
             nodeIndex:resultContext.challengeNodeIndex,
             nodeId:resultContext.challengeNodeId,
             chapterId:resultContext.chapterId,
@@ -617,6 +628,28 @@
             rewardNode:resultContext.rewardParts.nodeReward,
             rewardFirstClearBonus:resultContext.rewardParts.firstClearBonus,
             rewardRankBonus:resultContext.rewardParts.rankBonusAmount
+          });
+        }
+        if(!getDoubleRewardUsed()){
+          analyticsService.track('reward_offer_show',{
+            placement:'double_reward',
+            source:'match_result',
+            mode:resultContext.mode,
+            arenaId:resultContext.arenaId,
+            challengeNode:resultContext.mode==='challenge' ? resultContext.challengeNodeIndex : null,
+            challengeNodeId:resultContext.mode==='challenge' ? resultContext.challengeNodeId : null,
+            result_context_id:resultContext.resultContextId
+          });
+        }
+        if(continueVisible){
+          analyticsService.track('reward_offer_show',{
+            placement:'continue_once',
+            source:'match_result',
+            mode:resultContext.mode,
+            arenaId:resultContext.arenaId,
+            challengeNode:resultContext.challengeNodeIndex,
+            challengeNodeId:resultContext.challengeNodeId,
+            result_context_id:resultContext.resultContextId
           });
         }
       }
@@ -648,7 +681,8 @@
       const resultContext = getResultContext();
       rewardService.request('double_reward',{
         mode:resultContext.mode,
-        challengeNode:resultContext.mode==='challenge' ? resultContext.challengeNodeIndex : null
+        challengeNode:resultContext.mode==='challenge' ? resultContext.challengeNodeIndex : null,
+        result_context_id:resultContext.resultContextId
       }).then((result)=>{
         if(typeof rewardService.wasGranted === 'function' && !rewardService.wasGranted(result)){
           showRewardFailureFeedback('double_reward', result);
@@ -672,7 +706,13 @@
     function handleContinueReward(){
       const score = getScore();
       if(getCurrentMode()!=='challenge' || !isChallengeContinueEnabled() || getChallengeContinueUsed() || score[0] >= 2 || !rewardService || typeof rewardService.request !== 'function') return;
-      rewardService.request('continue_once',{ nodeIndex:getActiveChallengeIndex() }).then((result)=>{
+      const resultContext = getResultContext();
+      rewardService.request('continue_once',{
+        nodeIndex:getActiveChallengeIndex(),
+        mode:resultContext.mode,
+        challengeNode:resultContext.challengeNodeIndex,
+        result_context_id:resultContext.resultContextId
+      }).then((result)=>{
         if(typeof rewardService.wasGranted === 'function' && !rewardService.wasGranted(result)){
           showRewardFailureFeedback('continue_once', result);
           return;
@@ -680,7 +720,9 @@
         if(analyticsService){
           analyticsService.track('continue_used',{
             nodeIndex:getActiveChallengeIndex(),
-            nodeId:getCurrentChallengeNode() ? getCurrentChallengeNode().id : null
+            nodeId:getCurrentChallengeNode() ? getCurrentChallengeNode().id : null,
+            reward_attempt_id:result && result.reward_attempt_id ? result.reward_attempt_id : null,
+            result_context_id:resultContext.resultContextId
           });
         }
         setChallengeContinueUsed(true);

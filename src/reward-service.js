@@ -5,10 +5,12 @@
   const providerConfig = (root.config && root.config.providers && root.config.providers.reward) || {};
   const livePlacements = providerConfig.livePlacements || {};
   const adsenseConfig = providerConfig.adsense || {};
+  const adsenseH5Config = adsenseConfig.h5 || {};
   const SCRIPT_LOAD_TIMEOUT_MS = 4000;
   let mockMode = providerConfig.mockMode === 'deny' || providerConfig.mockMode === 'error'
     ? providerConfig.mockMode
     : 'grant';
+  let rewardAttemptCounter = 0;
 
   function getResultValue(placement, context){
     const payloadContext = context || {};
@@ -68,13 +70,18 @@
     };
   }
 
+  function createRewardAttemptId(){
+    rewardAttemptCounter += 1;
+    return 'reward_'+Date.now().toString(36)+'_'+rewardAttemptCounter.toString(36);
+  }
+
   function createMockAdapter(){
     return {
       name:'mock',
       isAvailable(){
         return true;
       },
-      request(placement, payloadContext, resultValue){
+      request(placement, payloadContext, resultValue, rewardAttemptId){
         if(mockMode === 'deny'){
           return Promise.resolve({
             placement,
@@ -82,6 +89,7 @@
             granted:false,
             context:payloadContext,
             resultValue,
+            reward_attempt_id:rewardAttemptId,
             reason:'mock_decline'
           });
         }
@@ -93,8 +101,306 @@
           adapter:'mock',
           granted:true,
           context: payloadContext,
-          resultValue
+          resultValue,
+          reward_attempt_id:rewardAttemptId
         });
+      }
+    };
+  }
+
+  function getAllowedPlacements(){
+    return Object.keys(livePlacements).filter(function(placementId){
+      return livePlacements[placementId] === true;
+    });
+  }
+
+  function getPlacementConfig(placement){
+    if(livePlacements[placement] === true){
+      return {
+        kind:'rewarded',
+        enabled:true
+      };
+    }
+    return {
+      kind:'unknown',
+      enabled:false
+    };
+  }
+
+  function getAdsenseH5ClientId(){
+    return (adsenseH5Config.dataAdClient || adsenseH5Config.publisherId || '').trim();
+  }
+
+  function buildAdsenseH5BootstrapConfig(){
+    return {
+      enabled:adsenseH5Config.enabled === true,
+      scriptUrl:adsenseH5Config.scriptUrl || '',
+      publisherId:adsenseH5Config.publisherId || '',
+      dataAdClient:adsenseH5Config.dataAdClient || '',
+      preloadHints:{
+        sound:adsenseH5Config.preloadHints && adsenseH5Config.preloadHints.sound ? adsenseH5Config.preloadHints.sound : 'off',
+        preload:adsenseH5Config.preloadHints && adsenseH5Config.preloadHints.preload ? adsenseH5Config.preloadHints.preload : 'auto'
+      }
+    };
+  }
+
+  function createAdsenseH5RewardedAdapter(){
+    const state = {
+      lastAvailabilityReason:null,
+      providerWaitInFlight:false,
+      activeRequestInFlight:false,
+      activePlacement:null,
+      lastRequestReason:null
+    };
+
+    function hasRewardedApi(){
+      return providerRuntime && typeof providerRuntime.hasAdsenseH5Api === 'function'
+        ? providerRuntime.hasAdsenseH5Api()
+        : !!(
+          Array.isArray(window.adsbygoogle)
+          && typeof window.adBreak === 'function'
+          && typeof window.adConfig === 'function'
+        );
+    }
+
+    function getRuntimeState(){
+      return providerRuntime && typeof providerRuntime.getAdsenseH5State === 'function'
+        ? providerRuntime.getAdsenseH5State()
+        : null;
+    }
+
+    function getAvailability(placement){
+      if(adsenseConfig.enabled !== true || adsenseH5Config.enabled !== true){
+        state.lastAvailabilityReason = 'provider_disabled';
+        return { available:false, reason:'provider_disabled' };
+      }
+      const placementConfig = getPlacementConfig(placement);
+      if(placementConfig.enabled !== true){
+        state.lastAvailabilityReason = 'placement_not_enabled';
+        return { available:false, reason:'placement_not_enabled' };
+      }
+      if(!getAdsenseH5ClientId()){
+        state.lastAvailabilityReason = 'provider_misconfigured';
+        return { available:false, reason:'provider_misconfigured' };
+      }
+      const runtimeState = getRuntimeState();
+      if(hasRewardedApi() && runtimeState && runtimeState.ready === true){
+        state.lastAvailabilityReason = null;
+        return { available:true };
+      }
+      if(runtimeState && runtimeState.lastError){
+        state.lastAvailabilityReason = runtimeState.lastError;
+        return { available:false, reason:runtimeState.lastError };
+      }
+      state.lastAvailabilityReason = 'provider_loading';
+      return { available:false, reason:'provider_loading' };
+    }
+
+    function waitForProvider(placement){
+      const availability = getAvailability(placement);
+      if(availability.available){
+        return Promise.resolve();
+      }
+      if(
+        availability.reason === 'provider_disabled'
+        || availability.reason === 'placement_not_enabled'
+        || availability.reason === 'provider_misconfigured'
+      ){
+        return Promise.reject(new Error(availability.reason));
+      }
+      if(!providerRuntime || typeof providerRuntime.initAdsenseH5 !== 'function'){
+        return Promise.reject(new Error('provider_unavailable'));
+      }
+      state.providerWaitInFlight = true;
+      let waitPromise = null;
+      try{
+        waitPromise = providerRuntime.initAdsenseH5(buildAdsenseH5BootstrapConfig(), SCRIPT_LOAD_TIMEOUT_MS);
+      }catch(error){
+        state.providerWaitInFlight = false;
+        state.lastAvailabilityReason = 'provider_unavailable';
+        return Promise.reject(new Error('provider_unavailable'));
+      }
+      return waitPromise.then(function(){
+        const finalAvailability = getAvailability(placement);
+        if(!finalAvailability.available){
+          throw new Error(finalAvailability.reason || 'provider_unavailable');
+        }
+      }).catch(function(error){
+        const reason = error && error.message ? error.message : 'provider_unavailable';
+        if(
+          reason === 'provider_disabled'
+          || reason === 'placement_not_enabled'
+          || reason === 'provider_misconfigured'
+          || reason === 'provider_timeout'
+        ){
+          throw error;
+        }
+        throw new Error('provider_unavailable');
+      }).finally(function(){
+        state.providerWaitInFlight = false;
+      });
+    }
+
+    function buildRequestResult(placement, payloadContext, resultValue, rewardAttemptId, granted, reason, reward){
+      const result = {
+        placement,
+        adapter:'adsense_h5_rewarded',
+        granted:granted === true,
+        context:payloadContext,
+        resultValue,
+        reward_attempt_id:rewardAttemptId
+      };
+      if(reason){
+        result.reason = reason;
+      }
+      if(reward){
+        result.reward = reward;
+      }
+      return result;
+    }
+
+    function normalizeBreakDoneReason(placementInfo){
+      const breakStatus = placementInfo && placementInfo.breakStatus ? placementInfo.breakStatus : 'other';
+      if(breakStatus === 'viewed'){
+        return null;
+      }
+      if(breakStatus === 'dismissed' || breakStatus === 'ignored'){
+        return 'slot_closed';
+      }
+      if(breakStatus === 'notReady' || breakStatus === 'noAdPreloaded'){
+        return 'provider_loading';
+      }
+      if(breakStatus === 'timeout'){
+        return 'provider_timeout';
+      }
+      return 'provider_unavailable';
+    }
+
+    function requestRewardedPlacement(placement, payloadContext, resultValue, rewardAttemptId){
+      const REQUEST_TIMEOUT_MS = 30000;
+      state.activePlacement = placement;
+      state.activeRequestInFlight = true;
+      state.lastRequestReason = 'request_start';
+
+      return new Promise(function(resolve, reject){
+        let settled = false;
+        let granted = false;
+        let dismissed = false;
+        const timeoutId = setTimeout(function(){
+          state.lastRequestReason = 'provider_timeout';
+          finishError(new Error('provider_timeout'));
+        }, REQUEST_TIMEOUT_MS);
+
+        function finishResult(result){
+          if(settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          state.activePlacement = null;
+          state.activeRequestInFlight = false;
+          resolve(result);
+        }
+
+        function finishError(error){
+          if(settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          state.activePlacement = null;
+          state.activeRequestInFlight = false;
+          reject(error);
+        }
+
+        if(typeof window.adBreak !== 'function'){
+          state.lastRequestReason = 'provider_unavailable';
+          finishError(new Error('provider_unavailable'));
+          return;
+        }
+
+        try{
+          window.adBreak({
+            type:'reward',
+            name:placement,
+            beforeReward:function(showAdFn){
+              state.lastRequestReason = 'reward_prompt';
+              if(typeof showAdFn !== 'function'){
+                state.lastRequestReason = 'provider_unavailable';
+                finishError(new Error('provider_unavailable'));
+                return;
+              }
+              try{
+                showAdFn();
+                state.lastRequestReason = 'slot_visible';
+              }catch(error){
+                state.lastRequestReason = 'provider_unavailable';
+                finishError(new Error('provider_unavailable'));
+              }
+            },
+            adDismissed:function(){
+              dismissed = true;
+              state.lastRequestReason = 'slot_closed';
+            },
+            adViewed:function(){
+              granted = true;
+              state.lastRequestReason = 'reward_granted';
+            },
+            adBreakDone:function(placementInfo){
+              if(granted){
+                finishResult(buildRequestResult(placement, payloadContext, resultValue, rewardAttemptId, true));
+                return;
+              }
+              if(dismissed){
+                finishResult(buildRequestResult(placement, payloadContext, resultValue, rewardAttemptId, false, 'slot_closed'));
+                return;
+              }
+              const reason = normalizeBreakDoneReason(placementInfo);
+              state.lastRequestReason = reason;
+              if(reason === 'slot_closed'){
+                finishResult(buildRequestResult(placement, payloadContext, resultValue, false, 'slot_closed'));
+                return;
+              }
+              finishError(new Error(reason || 'provider_unavailable'));
+            }
+          });
+        }catch(error){
+          state.lastRequestReason = 'provider_unavailable';
+          finishError(new Error('provider_unavailable'));
+        }
+      });
+    }
+
+    return {
+      name:'adsense_h5_rewarded',
+      isAvailable(placement){
+        return getAvailability(placement);
+      },
+      request(placement, payloadContext, resultValue, rewardAttemptId){
+        state.lastRequestReason = null;
+        if(state.activeRequestInFlight || state.providerWaitInFlight){
+          state.lastRequestReason = 'request_in_flight';
+          return Promise.reject(new Error('request_in_flight'));
+        }
+        return waitForProvider(placement).then(function(){
+          return requestRewardedPlacement(placement, payloadContext, resultValue, rewardAttemptId);
+        }).catch(function(error){
+          state.lastRequestReason = error && error.message ? error.message : 'request_failed';
+          throw error;
+        });
+      },
+      getState(){
+        const runtimeState = getRuntimeState();
+        return {
+          rewardEnabled:adsenseConfig.enabled === true && adsenseH5Config.enabled === true,
+          ready:!!(runtimeState && runtimeState.ready && hasRewardedApi()),
+          loading:!!(
+            state.providerWaitInFlight
+            || state.activeRequestInFlight
+            || (runtimeState && runtimeState.initializing)
+          ),
+          lastAvailabilityReason:state.lastAvailabilityReason,
+          lastRequestReason:state.lastRequestReason,
+          activePlacement:state.activePlacement,
+          allowedPlacements:getAllowedPlacements(),
+          rewardedAdUnitConfigured:!!getAdsenseH5ClientId()
+        };
       }
     };
   }
@@ -142,12 +448,6 @@
         adUnitPath:'',
         enabled:false
       };
-    }
-
-    function getAllowedPlacements(){
-      return Object.keys(livePlacements).filter(function(placementId){
-        return livePlacements[placementId] === true;
-      });
     }
 
     function loadScriptOnce(){
@@ -280,13 +580,14 @@
       state.activeRequestInFlight = false;
     }
 
-    function buildRequestResult(placement, payloadContext, resultValue, granted, reason, reward){
+    function buildRequestResult(placement, payloadContext, resultValue, rewardAttemptId, granted, reason, reward){
       const result = {
         placement,
         adapter:'adsense_rewarded',
         granted:granted === true,
         context:payloadContext,
-        resultValue
+        resultValue,
+        reward_attempt_id:rewardAttemptId
       };
       if(reason){
         result.reason = reason;
@@ -301,7 +602,7 @@
       return new Error('provider_unavailable');
     }
 
-    function requestRewardedSlot(placement, payloadContext, resultValue){
+    function requestRewardedSlot(placement, payloadContext, resultValue, rewardAttemptId){
       const placementConfig = getPlacementConfig(placement);
       const REQUEST_TIMEOUT_MS = 30000;
       state.activePlacement = placement;
@@ -405,6 +706,7 @@
                 placement,
                 payloadContext,
                 resultValue,
+                rewardAttemptId,
                 true,
                 null,
                 rewardPayload
@@ -416,6 +718,7 @@
               placement,
               payloadContext,
               resultValue,
+              rewardAttemptId,
               false,
               'slot_closed',
               null
@@ -455,14 +758,14 @@
       isAvailable(placement){
         return getAvailability(placement, true);
       },
-      request(placement, payloadContext, resultValue){
+      request(placement, payloadContext, resultValue, rewardAttemptId){
         state.lastRequestReason = null;
         if(state.activeRequestInFlight || state.providerWaitInFlight){
           state.lastRequestReason = 'request_in_flight';
           return Promise.reject(new Error('request_in_flight'));
         }
         return waitForProvider(placement).then(function(){
-          return requestRewardedSlot(placement, payloadContext, resultValue);
+          return requestRewardedSlot(placement, payloadContext, resultValue, rewardAttemptId);
         }).catch(function(error){
           state.lastRequestReason = error && error.message ? error.message : 'request_failed';
           throw error;
@@ -520,6 +823,9 @@
 
   function createAdapter(){
     const adapterName = providerConfig.adapter || 'mock';
+    if(adapterName === 'adsense_h5_rewarded'){
+      return createAdsenseH5RewardedAdapter();
+    }
     if(adapterName === 'adsense_rewarded'){
       return createAdsenseRewardedAdapter();
     }
@@ -562,7 +868,7 @@
         mockMode,
         rewardEnabled:adapterState && typeof adapterState.rewardEnabled === 'boolean'
           ? adapterState.rewardEnabled
-          : (adapter.name === 'adsense_rewarded' && adsenseConfig.enabled === true),
+          : false,
         ready:adapter.name === 'mock'
           ? true
           : !!(adapterState && adapterState.ready),
@@ -572,7 +878,7 @@
           : allowedPlacements,
         rewardedAdUnitConfigured:adapterState && typeof adapterState.rewardedAdUnitConfigured === 'boolean'
           ? adapterState.rewardedAdUnitConfigured
-          : !!adsenseConfig.rewardedAdUnitPath,
+          : false,
         lastAvailabilityReason:adapter.name === 'mock'
           ? null
           : (adapterState && adapterState.lastAvailabilityReason ? adapterState.lastAvailabilityReason : null),
@@ -587,14 +893,20 @@
     request(placement, context){
       const payloadContext = context || {};
       const resultValue = getResultValue(placement, payloadContext);
-      analytics().track('reward_offer_show', {
+      const rewardAttemptId = createRewardAttemptId();
+      const resultContextId = payloadContext.result_context_id || null;
+      const trialUnlockContextId = payloadContext.trial_unlock_context_id || null;
+      analytics().track('reward_request_start', {
         placement,
         context: payloadContext,
         adapter:adapter.name,
         resultValue,
-        mockMode
+        mockMode,
+        reward_attempt_id:rewardAttemptId,
+        result_context_id:resultContextId,
+        trial_unlock_context_id:trialUnlockContextId
       });
-      return adapter.request(placement, payloadContext, resultValue).then((result)=>{
+      return adapter.request(placement, payloadContext, resultValue, rewardAttemptId).then((result)=>{
         if(!result || result.granted === false){
           analytics().track('reward_decline', {
             placement,
@@ -603,7 +915,10 @@
             adapter:result && result.adapter ? result.adapter : adapter.name,
             resultValue:result && result.resultValue ? result.resultValue : resultValue,
             reason: result && result.reason ? result.reason : 'not_granted',
-            mockMode
+            mockMode,
+            reward_attempt_id:result && result.reward_attempt_id ? result.reward_attempt_id : rewardAttemptId,
+            result_context_id:resultContextId,
+            trial_unlock_context_id:trialUnlockContextId
           });
           return result;
         }
@@ -613,7 +928,10 @@
           granted:true,
           adapter:result.adapter || adapter.name,
           resultValue:result.resultValue || resultValue,
-          mockMode
+          mockMode,
+          reward_attempt_id:result.reward_attempt_id || rewardAttemptId,
+          result_context_id:resultContextId,
+          trial_unlock_context_id:trialUnlockContextId
         });
         return result;
       }).catch((error)=>{
@@ -624,7 +942,10 @@
           adapter:adapter.name,
           resultValue,
           reason:error && error.message ? error.message : 'request_failed',
-          mockMode
+          mockMode,
+          reward_attempt_id:rewardAttemptId,
+          result_context_id:resultContextId,
+          trial_unlock_context_id:trialUnlockContextId
         });
         throw error;
       });

@@ -1951,3 +1951,42 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - `output/proxy-visual-flow-video-mobile-2026-04-20T17-43-25/`
 - Visual conclusion:
   - trusted mobile replay now shows the round-result card as the first visual anchor, with the top status rails, bottom skill buttons, swap, and hint/message surfaces cleared out of `roundResult`; the arena remains only as weak background context, and `12-match-result.png` still reads as a correct full-screen match-settlement screen.
+
+2026-04-21 adsense h5 rewarded fallback and monetization model pass completed
+- Context:
+  - user decided not to block Google monetization on Ad Manager approval alone
+  - the repo needed a primary `AdSense H5 rewarded-only` route while preserving the existing three player-facing rewarded moments and keeping the GPT / Ad Manager path as a fallback
+  - the repo also needed a math-based baseline for trigger frequency and early revenue estimation before live traffic data exists
+- Main runtime files changed:
+  - `src/config-providers.js`
+  - `src/provider-runtime-tools.js`
+  - `src/reward-service.js`
+  - `src/match-flow-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `scripts/build-static-release.js`
+  - `scripts/check-config.js`
+  - `scripts/check-provider-services.js`
+  - `scripts/check-debug-runtime-snapshots.js`
+  - `docs/analytics-events.md`
+  - `docs/monetization/2026-04-21-adsense-h5-rewarded-baseline-model.md`
+- Main implementation outcomes:
+  - the repo now supports `mock`, `adsense_h5_rewarded`, and `adsense_rewarded` reward adapters without changing gameplay call sites
+  - `adsense_h5_rewarded` now boots through shared provider runtime helpers, preserves rewarded-only semantics, and normalizes H5 completion / dismiss / unavailable states into the existing reward-service contract
+  - the GPT / Ad Manager rewarded path remains available as a fallback
+  - reward analytics now distinguish reward CTA visibility from explicit request start, and each request now carries `reward_attempt_id`
+  - result-bound reward flows now carry `result_context_id`, and the arena-trial flow now carries `trial_unlock_context_id`
+  - Quick Battle arena-trial analytics now include denominator events for locked-arena click and affordability shortfall
+  - the repo now includes an operator-facing dual-baseline monetization model for real-current measurement and planning scenarios
+- Verification:
+  - `npm run check:providers`
+  - `npm run check:config`
+  - `npm run check:debugruntime`
+  - `npm run check:analytics`
+  - `npm run check:matchflow`
+  - `npm run check:loadout`
+  - `npm run preflight`
+  - `npm run verify:release`
+- Practical meaning:
+  - the codebase is now implementation-ready for `AdSense H5 rewarded-only` without adding any forced ad format or changing the existing player-facing reward timing
+  - live monetization is still externally gated by approved AdSense account status plus H5 game ads access approval
+  - no Google account/backend automation was performed in this slice

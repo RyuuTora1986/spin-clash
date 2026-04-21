@@ -124,11 +124,11 @@ function main() {
       },
       getAdapterInfo() {
         return {
-          adapter: 'adsense_rewarded',
+          adapter: 'adsense_h5_rewarded',
           rewardEnabled: true,
           ready: false,
           loading: false,
-          lastAvailabilityReason: 'provider_unavailable',
+          lastAvailabilityReason: 'provider_loading',
           lastRequestReason: 'provider_timeout',
           activePlacement: 'continue_once',
           allowedPlacements: ['double_reward', 'continue_once', 'trial_unlock_arena'],
@@ -287,10 +287,10 @@ function main() {
   const labels = captured.actions.map((action) => action.label);
   assert(labels.includes('COPY PROGRESSION'), 'Expected debug panel to expose COPY PROGRESSION.');
   assert(labels.includes('COPY RUNTIME'), 'Expected debug panel to expose COPY RUNTIME.');
-  assert(captured.panelInfo && captured.panelInfo.rewardAdapter === 'adsense_rewarded', 'Expected debug panel info to preserve the live reward adapter id under failure conditions.');
+  assert(captured.panelInfo && captured.panelInfo.rewardAdapter === 'adsense_h5_rewarded', 'Expected debug panel info to preserve the H5 reward adapter id under failure conditions.');
   assert(captured.panelInfo && captured.panelInfo.rewardReady === false, 'Expected debug panel info to show the reward adapter not ready during failure-state inspection.');
   assert(captured.panelInfo && captured.panelInfo.rewardEnabled === true, 'Expected debug panel info to expose whether live reward is enabled.');
-  assert(captured.panelInfo && captured.panelInfo.rewardAvailabilityReason === 'provider_unavailable', 'Expected debug panel info to expose reward availability failure reason.');
+  assert(captured.panelInfo && captured.panelInfo.rewardAvailabilityReason === 'provider_loading', 'Expected debug panel info to expose reward availability failure reason.');
   assert(captured.panelInfo && captured.panelInfo.rewardRequestReason === 'provider_timeout', 'Expected debug panel info to expose reward request failure reason.');
   assert(captured.panelInfo && captured.panelInfo.rewardActivePlacement === 'continue_once', 'Expected debug panel info to expose the active reward placement during failure-state inspection.');
   assert(Array.isArray(captured.panelInfo && captured.panelInfo.rewardAllowedPlacements), 'Expected debug panel info to expose reward allowedPlacements.');
@@ -305,6 +305,7 @@ function main() {
   assert(captured.panelInfo && captured.panelInfo.analyticsQueuedEvents === 2, 'Expected debug panel info to expose queued analytics events during forwarding failure.');
   assert(!('projectApiKey' in captured.panelInfo), 'Expected debug panel info to avoid exposing analytics credentials.');
   assert(!('rewardedAdUnitPath' in captured.panelInfo), 'Expected debug panel info to avoid exposing reward placement config.');
+  assert(!('publisherId' in captured.panelInfo), 'Expected debug panel info to avoid exposing H5 publisher config.');
   assert(labels.includes('COPY PROVIDERS'), 'Expected debug panel to expose COPY PROVIDERS.');
   const panelSnapshot = captured.actions ? tools.buildTuningSnapshot() : null;
   assert(panelSnapshot.economy.rewards.challengeWinBase === 20, 'Expected tuning snapshot to preserve challenge win base tuning.');

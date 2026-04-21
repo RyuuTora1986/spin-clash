@@ -3,6 +3,14 @@
   root.services = root.services || {};
 
   const scriptRegistry = {};
+  const adsenseH5State = {
+    initialized:false,
+    initializing:false,
+    ready:false,
+    lastError:null,
+    clientId:'',
+    promise:null
+  };
 
   function getEntry(key){
     return scriptRegistry[key] || null;
@@ -72,6 +80,39 @@
       || (url ? document.querySelector('script[src="'+url+'"]') : null);
   }
 
+  function applyScriptOptions(script, options){
+    if(!script || !options || !options.attributes) return;
+    Object.keys(options.attributes).forEach(function(attrName){
+      const value = options.attributes[attrName];
+      if(value == null || value === '') return;
+      if(attrName === 'crossorigin' || attrName === 'crossOrigin'){
+        script.crossOrigin = value;
+        if(typeof script.setAttribute === 'function'){
+          script.setAttribute('crossorigin', value);
+        }
+        return;
+      }
+      if(attrName.indexOf('data-') === 0){
+        if(script.dataset){
+          const datasetKey = attrName.slice(5).replace(/-([a-z])/g, function(_, chr){
+            return chr.toUpperCase();
+          });
+          script.dataset[datasetKey] = value;
+        }
+        if(typeof script.setAttribute === 'function'){
+          script.setAttribute(attrName, value);
+        }
+        return;
+      }
+      if(typeof script.setAttribute === 'function'){
+        script.setAttribute(attrName, value);
+      }
+      if(attrName in script){
+        script[attrName] = value;
+      }
+    });
+  }
+
   function attachScriptLifecycle(script, state){
     if(!script || script.__spinClashLifecycleAttached) return;
     script.__spinClashLifecycleAttached = true;
@@ -87,7 +128,7 @@
     };
   }
 
-  function loadScriptOnce(key, url){
+  function loadScriptOnce(key, url, options){
     const state = ensureScriptState(key, url);
     if(state.loaded || state.loading) return state;
     if(!url){
@@ -102,6 +143,7 @@
     const existing = findExistingScript(key, url);
     if(existing){
       state.node = existing;
+      applyScriptOptions(existing, options);
       const alreadyLoaded = (existing.dataset && existing.dataset.spinClashLoaded === '1')
         || existing.readyState === 'complete'
         || existing.readyState === 'loaded';
@@ -126,6 +168,7 @@
     script.src = url;
     script.dataset = script.dataset || {};
     script.dataset.spinClashProviderKey = key;
+    applyScriptOptions(script, options);
     state.node = script;
     attachScriptLifecycle(script, state);
     if(typeof script.setAttribute === 'function'){
@@ -135,8 +178,8 @@
     return state;
   }
 
-  function waitForScript(key, url, timeoutMs){
-    const state = loadScriptOnce(key, url);
+  function waitForScript(key, url, timeoutMs, options){
+    const state = loadScriptOnce(key, url, options);
     if(state.loaded) return Promise.resolve(state);
     if(state.error && !state.loading){
       return Promise.reject(new Error(state.lastError || 'script_load_failed'));
@@ -161,6 +204,150 @@
     const state = ensureScriptState(key, url);
     settleError(state, reason || 'script_load_failed');
     return state;
+  }
+
+  function getAdsenseH5ClientId(config){
+    if(!config || typeof config !== 'object') return '';
+    return (config.dataAdClient || config.publisherId || '').trim();
+  }
+
+  function buildAdsenseH5ScriptUrl(config){
+    const baseUrl = config && config.scriptUrl ? String(config.scriptUrl).trim() : '';
+    const clientId = getAdsenseH5ClientId(config);
+    if(!baseUrl || !clientId) return baseUrl;
+    if(/[?&]client=/.test(baseUrl)) return baseUrl;
+    return baseUrl + (baseUrl.indexOf('?') >= 0 ? '&' : '?') + 'client=' + encodeURIComponent(clientId);
+  }
+
+  function ensureAdsenseH5Globals(){
+    window.adsbygoogle = Array.isArray(window.adsbygoogle) ? window.adsbygoogle : [];
+    if(typeof window.adBreak === 'function' && typeof window.adConfig === 'function'){
+      return;
+    }
+    const dispatcher = function(options){
+      window.adsbygoogle.push(options);
+    };
+    dispatcher.__spinClashGenerated = true;
+    window.adBreak = dispatcher;
+    window.adConfig = dispatcher;
+  }
+
+  function hasAdsenseH5Api(){
+    return !!(
+      Array.isArray(window.adsbygoogle)
+      && typeof window.adBreak === 'function'
+      && typeof window.adConfig === 'function'
+    );
+  }
+
+  function resetAdsenseH5Error(reason, clientId){
+    adsenseH5State.initializing = false;
+    adsenseH5State.ready = false;
+    adsenseH5State.initialized = false;
+    adsenseH5State.lastError = reason || 'provider_unavailable';
+    adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
+    adsenseH5State.promise = null;
+  }
+
+  function markAdsenseH5Ready(clientId){
+    adsenseH5State.initializing = false;
+    adsenseH5State.ready = true;
+    adsenseH5State.initialized = true;
+    adsenseH5State.lastError = null;
+    adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
+    adsenseH5State.promise = null;
+  }
+
+  function initAdsenseH5(config, timeoutMs){
+    const safeConfig = config && typeof config === 'object' ? config : {};
+    const clientId = getAdsenseH5ClientId(safeConfig);
+    const scriptUrl = buildAdsenseH5ScriptUrl(safeConfig);
+    if(safeConfig.enabled !== true){
+      resetAdsenseH5Error('provider_disabled', clientId);
+      return Promise.reject(new Error('provider_disabled'));
+    }
+    if(!clientId){
+      resetAdsenseH5Error('provider_misconfigured', clientId);
+      return Promise.reject(new Error('provider_misconfigured'));
+    }
+    if(adsenseH5State.ready && adsenseH5State.clientId === clientId){
+      return Promise.resolve(getAdsenseH5State());
+    }
+    if(adsenseH5State.initializing && adsenseH5State.promise){
+      return adsenseH5State.promise;
+    }
+    if(adsenseH5State.initialized && adsenseH5State.clientId && adsenseH5State.clientId !== clientId){
+      resetAdsenseH5Error('provider_misconfigured', clientId);
+      return Promise.reject(new Error('provider_misconfigured'));
+    }
+
+    adsenseH5State.initializing = true;
+    adsenseH5State.lastError = null;
+    adsenseH5State.clientId = clientId;
+    ensureAdsenseH5Globals();
+
+    adsenseH5State.promise = waitForScript(
+      'reward-adsense-h5',
+      scriptUrl,
+      timeoutMs,
+      {
+        attributes:{
+          crossorigin:'anonymous',
+          'data-ad-client':clientId
+        }
+      }
+    ).then(function(){
+      return new Promise(function(resolve, reject){
+        if(!hasAdsenseH5Api()){
+          reject(new Error('provider_unavailable'));
+          return;
+        }
+        let settled = false;
+        const readyTimeoutMs = timeoutMs && timeoutMs > 0 ? timeoutMs : 0;
+        const readyTimeoutId = readyTimeoutMs ? setTimeout(function(){
+          if(settled) return;
+          settled = true;
+          reject(new Error('provider_timeout'));
+        }, readyTimeoutMs) : null;
+
+        function finishReady(){
+          if(settled) return;
+          settled = true;
+          if(readyTimeoutId) clearTimeout(readyTimeoutId);
+          resolve(getAdsenseH5State());
+        }
+
+        try{
+          window.adConfig({
+            sound:safeConfig.preloadHints && safeConfig.preloadHints.sound ? safeConfig.preloadHints.sound : 'off',
+            preloadAdBreaks:safeConfig.preloadHints && safeConfig.preloadHints.preload ? safeConfig.preloadHints.preload : 'auto',
+            onReady:finishReady
+          });
+        }catch(error){
+          if(readyTimeoutId) clearTimeout(readyTimeoutId);
+          reject(new Error('provider_unavailable'));
+        }
+      });
+    }).then(function(){
+      markAdsenseH5Ready(clientId);
+      return getAdsenseH5State();
+    }).catch(function(error){
+      const reason = error && error.message ? error.message : 'provider_unavailable';
+      resetAdsenseH5Error(reason, clientId);
+      throw new Error(reason);
+    });
+
+    return adsenseH5State.promise;
+  }
+
+  function getAdsenseH5State(){
+    return {
+      initialized:adsenseH5State.initialized,
+      initializing:adsenseH5State.initializing,
+      ready:adsenseH5State.ready,
+      lastError:adsenseH5State.lastError,
+      clientConfigured:!!adsenseH5State.clientId
+    };
   }
 
   function ensureGptQueue(){
@@ -206,6 +393,11 @@
     hasGptDisplayApi,
     hasGptPubAdsApi,
     hasGptRewardedApi,
-    hasPosthogApi
+    hasPosthogApi,
+    buildAdsenseH5ScriptUrl,
+    ensureAdsenseH5Globals,
+    hasAdsenseH5Api,
+    initAdsenseH5,
+    getAdsenseH5State
   };
 })();

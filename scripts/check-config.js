@@ -46,6 +46,7 @@ function main() {
   const rewardProvider = providers.reward || {};
   const analyticsProvider = providers.analytics || {};
   const adsense = rewardProvider.adsense || {};
+  const adsenseH5 = adsense.h5 || {};
   const livePlacements = rewardProvider.livePlacements || {};
   const posthog = analyticsProvider.posthog || {};
 
@@ -216,8 +217,12 @@ function main() {
     }
   });
 
-  if (!['mock', 'adsense_rewarded'].includes(rewardProvider.adapter)) {
+  if (!['mock', 'adsense_h5_rewarded', 'adsense_rewarded'].includes(rewardProvider.adapter)) {
     fail(`config.providers.reward.adapter is invalid: ${rewardProvider.adapter}`);
+  }
+
+  if (!adsenseH5 || typeof adsenseH5 !== 'object' || Array.isArray(adsenseH5)) {
+    fail('config.providers.reward.adsense.h5 is missing');
   }
 
   if (!livePlacements || typeof livePlacements !== 'object' || Array.isArray(livePlacements)) {
@@ -239,6 +244,15 @@ function main() {
     if (!adsense.rewardedAdUnitPath) fail('config.providers.reward.adsense.rewardedAdUnitPath is required when adsense reward adapter is enabled');
   }
 
+  if (rewardProvider.adapter === 'adsense_h5_rewarded') {
+    if (adsense.enabled !== true) fail('config.providers.reward.adsense.enabled is required when adsense_h5_rewarded is enabled');
+    if (adsenseH5.enabled !== true) fail('config.providers.reward.adsense.h5.enabled is required when adsense_h5_rewarded is enabled');
+    if (!adsenseH5.scriptUrl) fail('config.providers.reward.adsense.h5.scriptUrl is required when adsense_h5_rewarded is enabled');
+    if (!adsenseH5.publisherId && !adsenseH5.dataAdClient) {
+      fail('config.providers.reward.adsense.h5.publisherId or dataAdClient is required when adsense_h5_rewarded is enabled');
+    }
+  }
+
   if (analyticsProvider.adapter === 'posthog' && analyticsProvider.enableForwarding === true && posthog.enabled === true) {
     if (!posthog.projectApiKey) fail('config.providers.analytics.posthog.projectApiKey is required when PostHog forwarding is enabled');
     if (!posthog.apiHost) fail('config.providers.analytics.posthog.apiHost is required when PostHog forwarding is enabled');
@@ -247,6 +261,10 @@ function main() {
   const overrideRoot = { config: {}, services: {}, state: {}, debug: {} };
   loadConfigScript('src/config-providers.js', overrideRoot);
   const baseRewardPath = overrideRoot.config.providers.reward.adsense.rewardedAdUnitPath;
+  const baseAdsenseH5PublisherId = (
+    overrideRoot.config.providers.reward.adsense.h5
+    && overrideRoot.config.providers.reward.adsense.h5.publisherId
+  ) || '';
   const baseAnalyticsAdapter = overrideRoot.config.providers.analytics.adapter;
 
   const overrideContext = {
@@ -254,10 +272,14 @@ function main() {
       SpinClash: overrideRoot,
       __spinClashProviderOverrides: {
         reward: {
-          adapter: 'adsense_rewarded',
+          adapter: 'adsense_h5_rewarded',
           adsense: {
             enabled: true,
-            rewardedAdUnitPath: '/1234567/test_rewarded'
+            h5: {
+              enabled: true,
+              publisherId: 'ca-pub-1234567890123456',
+              dataAdClient: 'ca-pub-1234567890123456'
+            }
           }
         },
         analytics: {
@@ -279,14 +301,17 @@ function main() {
   });
 
   const mergedProviders = overrideRoot.config.providers || {};
-  if (mergedProviders.reward.adapter !== 'adsense_rewarded') {
+  if (mergedProviders.reward.adapter !== 'adsense_h5_rewarded') {
     fail('config-providers-runtime.js failed to override reward.adapter');
   }
   if (mergedProviders.reward.adsense.enabled !== true) {
     fail('config-providers-runtime.js failed to override reward.adsense.enabled');
   }
-  if (mergedProviders.reward.adsense.rewardedAdUnitPath !== '/1234567/test_rewarded') {
-    fail('config-providers-runtime.js failed to override reward.adsense.rewardedAdUnitPath');
+  if (mergedProviders.reward.adsense.h5.enabled !== true) {
+    fail('config-providers-runtime.js failed to override reward.adsense.h5.enabled');
+  }
+  if (mergedProviders.reward.adsense.h5.publisherId !== 'ca-pub-1234567890123456') {
+    fail('config-providers-runtime.js failed to override reward.adsense.h5.publisherId');
   }
   if (mergedProviders.analytics.adapter !== 'posthog') {
     fail('config-providers-runtime.js failed to override analytics.adapter');
@@ -300,7 +325,7 @@ function main() {
   if (mergedProviders.analytics.posthog.apiHost !== posthog.apiHost) {
     fail('config-providers-runtime.js should preserve analytics.posthog.apiHost when not overridden');
   }
-  if (baseRewardPath !== '' || baseAnalyticsAdapter !== 'local_buffer') {
+  if (baseRewardPath !== '' || baseAdsenseH5PublisherId !== '' || baseAnalyticsAdapter !== 'local_buffer') {
     fail('config-providers.js defaults changed unexpectedly during override test setup');
   }
 

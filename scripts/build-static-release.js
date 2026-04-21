@@ -54,6 +54,12 @@ function buildProviderOverrides() {
   setDeep(overrides, ['reward', 'adsense', 'scriptUrl'], parseStringEnv('SPIN_CLASH_REWARD_SCRIPT_URL'));
   setDeep(overrides, ['reward', 'adsense', 'rewardedAdUnitPath'], parseStringEnv('SPIN_CLASH_REWARDED_AD_UNIT_PATH'));
   setDeep(overrides, ['reward', 'adsense', 'gamInterstitialAdUnitPath'], parseStringEnv('SPIN_CLASH_GAM_INTERSTITIAL_AD_UNIT_PATH'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'enabled'], parseBooleanEnv('SPIN_CLASH_ADSENSE_H5_ENABLED'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'scriptUrl'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_SCRIPT_URL'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'publisherId'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'dataAdClient'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'preloadHints', 'preload'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_PRELOAD'));
+  setDeep(overrides, ['reward', 'adsense', 'h5', 'preloadHints', 'sound'], parseStringEnv('SPIN_CLASH_ADSENSE_H5_SOUND'));
 
   setDeep(overrides, ['analytics', 'adapter'], parseStringEnv('SPIN_CLASH_ANALYTICS_ADAPTER'));
   setDeep(overrides, ['analytics', 'enableForwarding'], parseBooleanEnv('SPIN_CLASH_ANALYTICS_ENABLE_FORWARDING'));
@@ -71,11 +77,22 @@ function buildProviderOverrides() {
 function validateProviderOverrides(overrides) {
   const reward = overrides.reward || {};
   const rewardAdsense = reward.adsense || {};
+  const rewardAdsenseH5 = rewardAdsense.h5 || {};
   const analytics = overrides.analytics || {};
   const posthog = analytics.posthog || {};
 
   if (reward.adapter === 'adsense_rewarded' && rewardAdsense.enabled === true && !rewardAdsense.rewardedAdUnitPath) {
     throw new Error('SPIN_CLASH_REWARDED_AD_UNIT_PATH is required when live rewarded ads are enabled for the release build.');
+  }
+
+  if (
+    reward.adapter === 'adsense_h5_rewarded'
+    && rewardAdsense.enabled === true
+    && rewardAdsenseH5.enabled === true
+    && !rewardAdsenseH5.publisherId
+    && !rewardAdsenseH5.dataAdClient
+  ) {
+    throw new Error('SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID or SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT is required when the H5 rewarded adapter is enabled for the release build.');
   }
 
   if (analytics.adapter === 'posthog' && analytics.enableForwarding === true && posthog.enabled === true && !posthog.projectApiKey) {

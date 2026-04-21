@@ -15,7 +15,17 @@
         enabled: false,
         scriptUrl: 'https://securepubads.g.doubleclick.net/tag/js/gpt.js',
         rewardedAdUnitPath: '',
-        gamInterstitialAdUnitPath: ''
+        gamInterstitialAdUnitPath: '',
+        h5: {
+          enabled: false,
+          scriptUrl: 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+          publisherId: '',
+          dataAdClient: '',
+          preloadHints: {
+            sound: 'off',
+            preload: 'auto'
+          }
+        }
       }
     },
     analytics: {
