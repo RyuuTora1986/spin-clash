@@ -467,6 +467,35 @@ Forwarding contract notes:
 ### Workshop
 - `research_purchase`
 
+## Operator Readout
+Use the current rewarded events as the first-line live health dashboard.
+
+Primary operator ratios:
+- request rate:
+  - `reward_request_start / reward_offer_show`
+- completion rate:
+  - `reward_complete / reward_request_start`
+- decline mix:
+  - group `reward_decline` by `reason`
+
+Placement views to keep separate:
+- `double_reward`
+- `continue_once`
+- `trial_unlock_arena`
+
+Recommended supporting denominators:
+- `double_reward`:
+  - compare against `match_end`
+- `continue_once`:
+  - compare against `challenge_fail`
+  - final successful use is also visible in `continue_used`
+- `trial_unlock_arena`:
+  - compare against `locked_arena_shortfall`
+  - final successful use is also visible in `trial_unlock_complete`
+
+Reference operator sheet:
+- `docs/monetization/2026-04-21-rewarded-ops-monitoring.md`
+
 ### Loadout / Path Entry
 - `road_rank_select`
 

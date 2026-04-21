@@ -135,9 +135,30 @@ If `adapter === 'adsense_rewarded'`:
   - unsupported adapter id -> rejects with `provider_misconfigured` instead of granting through `mock`
 
 ## What The Live Adapter Does Not Do Yet
-- has not been manually validated yet against a real production-capable ad unit on the target host/browser path
 - does not yet handle richer provider failure semantics such as explicit no-fill reporting
 - does not yet include production policy/eligibility validation for the actual AdSense account used by the project
+
+## Live Validation Status On 2026-04-21
+- current primary live path:
+  - `adsense_h5_rewarded`
+- current live preload mode:
+  - `SPIN_CLASH_ADSENSE_H5_PRELOAD=on`
+- validated live host:
+  - `https://play.hakurokudo.com/`
+- validated live runtime state before reward click:
+  - `ready: true`
+  - `rewardEnabled: true`
+  - `rewardedAdUnitConfigured: true`
+- validated live click-state after a real reward CTA click:
+  - `lastRequestReason: "slot_visible"`
+  - `activePlacement: "trial_unlock_arena"`
+- supporting validation sources:
+  - live browser runtime probe on `2026-04-21`
+  - real-device operator validation on `iPhone 15 Pro Max` + `Chrome`
+
+Practical meaning:
+- the current H5 path is no longer blocked at bootstrap or preload readiness
+- current live evidence is consistent with the rewarded flow entering the visible ad stage under a real user gesture
 
 Current request result:
 - if the configured reward adapter id is unsupported, request rejects with:
