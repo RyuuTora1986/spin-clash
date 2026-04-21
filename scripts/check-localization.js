@@ -3,6 +3,21 @@ const path = require('path');
 const vm = require('vm');
 
 const repoRoot = path.resolve(__dirname, '..');
+const requiredPublicInfoKeys = [
+  'infoAboutLabel',
+  'infoContactLabel',
+  'infoPrivacyLabel',
+  'infoTermsLabel',
+  'infoBackButton',
+  'infoAboutTitle',
+  'infoContactTitle',
+  'infoPrivacyTitle',
+  'infoTermsTitle',
+  'infoAboutBody',
+  'infoContactBody',
+  'infoPrivacyBody',
+  'infoTermsBody'
+];
 
 function loadScript(relPath, context) {
   const absPath = path.join(repoRoot, relPath);
@@ -186,6 +201,21 @@ function testLocaleTablesAndRuntime() {
     JSON.stringify(enKeys) === JSON.stringify(jaKeys),
     'Expected Japanese locale keys to match English locale keys exactly.'
   );
+
+  requiredPublicInfoKeys.forEach((key) => {
+    assert(
+      Object.prototype.hasOwnProperty.call(locales.en, key),
+      `Expected English locale to include public info key ${key}.`
+    );
+    assert(
+      Object.prototype.hasOwnProperty.call(locales.zh, key),
+      `Expected Chinese locale to include public info key ${key}.`
+    );
+    assert(
+      Object.prototype.hasOwnProperty.call(locales.ja, key),
+      `Expected Japanese locale to include public info key ${key}.`
+    );
+  });
 
   const jaTopNames = new Set(Object.values(locales.ja.tops || {}).map((entry) => entry && entry.name));
   (locales.ja.cards || []).forEach((card, index) => {

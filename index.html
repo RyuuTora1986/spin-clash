@@ -158,6 +158,12 @@
       <div class="title-build-meta" id="title-build-meta">
         <div class="title-build-line" id="title-build-version"></div>
         <div class="title-build-line" id="title-build-copyright"></div>
+        <div class="title-info-links" id="title-info-links">
+          <button class="info-link-btn" id="btn-open-about-home" type="button" onclick="return window.__spinClashInvoke('openInfo','about')"></button>
+          <button class="info-link-btn" id="btn-open-contact-home" type="button" onclick="return window.__spinClashInvoke('openInfo','contact')"></button>
+          <button class="info-link-btn" id="btn-open-privacy-home" type="button" onclick="return window.__spinClashInvoke('openInfo','privacy')"></button>
+          <button class="info-link-btn" id="btn-open-terms-home" type="button" onclick="return window.__spinClashInvoke('openInfo','terms')"></button>
+        </div>
       </div>
     </div>
   </div>
@@ -255,9 +261,24 @@
       <div class="settings-label" id="settings-music-label"></div>
       <button class="settings-toggle-btn" id="btn-settings-music" type="button" onclick="return window.__spinClashInvoke('toggleMusic')"></button>
     </div>
-  <div class="settings-row">
+    <div class="settings-row">
       <div class="settings-label" id="settings-sfx-label"></div>
       <button class="settings-toggle-btn" id="btn-settings-sfx" type="button" onclick="return window.__spinClashInvoke('toggleSfx')"></button>
+    </div>
+    <div class="settings-info-links" id="settings-info-links">
+      <button class="settings-link-btn" id="btn-open-about-settings" type="button" onclick="return window.__spinClashInvoke('openInfo','about')"></button>
+      <button class="settings-link-btn" id="btn-open-contact-settings" type="button" onclick="return window.__spinClashInvoke('openInfo','contact')"></button>
+      <button class="settings-link-btn" id="btn-open-privacy-settings" type="button" onclick="return window.__spinClashInvoke('openInfo','privacy')"></button>
+      <button class="settings-link-btn" id="btn-open-terms-settings" type="button" onclick="return window.__spinClashInvoke('openInfo','terms')"></button>
+    </div>
+  </div>
+  <div class="ov hide" id="ov-info">
+    <div class="info-shell">
+      <div class="info-shell-head">
+        <button class="route-back-btn" id="btn-info-back" type="button" onclick="return window.__spinClashInvoke('closeInfo')"></button>
+        <div class="info-shell-title" id="info-shell-title"></div>
+      </div>
+      <div class="info-shell-body" id="info-shell-body"></div>
     </div>
   </div>
   <div class="challenge-panel hide" id="challenge-panel">

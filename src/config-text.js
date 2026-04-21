@@ -167,6 +167,35 @@
     settingsMusicOff:'MUSIC: OFF',
     settingsSfxOn:'SFX: ON',
     settingsSfxOff:'SFX: OFF',
+    infoAboutLabel:'ABOUT',
+    infoContactLabel:'CONTACT',
+    infoPrivacyLabel:'PRIVACY',
+    infoTermsLabel:'TERMS',
+    infoBackButton:'BACK',
+    infoAboutTitle:'ABOUT SPIN CLASH',
+    infoContactTitle:'CONTACT',
+    infoPrivacyTitle:'PRIVACY',
+    infoTermsTitle:'TERMS',
+    infoAboutBody:[
+      'Spin Clash is a browser game.',
+      'HAKUROKUDO K.K. is the public-facing operator name.',
+      'Use the other pages for contact, privacy, and terms.'
+    ],
+    infoContactBody:[
+      'For support, feedback, or general inquiries, email contact@hakurokudo.com.'
+    ],
+    infoPrivacyBody:[
+      'Spin Clash stores gameplay progress and settings in your browser so local progress can persist on this device.',
+      'The game records gameplay and reward-related analytics events in local save state.',
+      'Depending on deployment settings, some analytics or ad-related event data may be handled by external services used to deliver and measure ads.',
+      'If you contact us by email, we receive the message you send.'
+    ],
+    infoTermsBody:[
+      'Spin Clash is provided as-is.',
+      'Gameplay, balance, progression, and availability may change over time.',
+      'Do not abuse, interfere with, or exploit the game or its services.',
+      'Access or progression may be limited or changed if misuse is detected.'
+    ],
     roadRankTitle:'ROAD RANK',
     roadRankLocked:'LOCKED',
     roadRankUnlocked:'UNLOCKED',
@@ -571,6 +600,35 @@
     settingsMusicOff:'音乐：关闭',
     settingsSfxOn:'音效：开启',
     settingsSfxOff:'音效：关闭',
+    infoAboutLabel:'关于',
+    infoContactLabel:'联系',
+    infoPrivacyLabel:'隐私',
+    infoTermsLabel:'条款',
+    infoBackButton:'返回',
+    infoAboutTitle:'关于 SPIN CLASH',
+    infoContactTitle:'联系',
+    infoPrivacyTitle:'隐私',
+    infoTermsTitle:'条款',
+    infoAboutBody:[
+      'Spin Clash 是一款浏览器游戏。',
+      'HAKUROKUDO K.K. 是当前对外使用的运营名称。',
+      '这里仅提供联系、隐私和条款的基本信息。'
+    ],
+    infoContactBody:[
+      '如需支持、反馈或一般咨询，请发送邮件至 contact@hakurokudo.com。'
+    ],
+    infoPrivacyBody:[
+      'Spin Clash 会把游戏进度和设置保存在你的浏览器中，因此本地进度可以留在这台设备上。',
+      '游戏会在当前存档流程里记录与游戏和奖励相关的分析事件。',
+      '在当前部署设置下，一些分析或广告相关事件数据可能会由用于投放和衡量广告的外部服务处理。',
+      '如果你通过邮件联系我们，我们会收到你发送的内容。'
+    ],
+    infoTermsBody:[
+      'Spin Clash 以当前现状提供。',
+      '游戏玩法、平衡、进度和可用性可能会随时间调整。',
+      '请勿滥用、干扰或利用游戏及其服务。',
+      '如发现滥用，访问或进度可能会被限制或调整。'
+    ],
     roadRankTitle:'道路段位',
     roadRankLocked:'未解锁',
     roadRankUnlocked:'已解锁',
@@ -975,6 +1033,35 @@
     settingsMusicOff:'音楽: OFF',
     settingsSfxOn:'効果音: ON',
     settingsSfxOff:'効果音: OFF',
+    infoAboutLabel:'概要',
+    infoContactLabel:'連絡',
+    infoPrivacyLabel:'プライバシー',
+    infoTermsLabel:'利用規約',
+    infoBackButton:'戻る',
+    infoAboutTitle:'SPIN CLASH について',
+    infoContactTitle:'連絡',
+    infoPrivacyTitle:'プライバシー',
+    infoTermsTitle:'利用規約',
+    infoAboutBody:[
+      'Spin Clash はブラウザゲームです。',
+      'HAKUROKUDO K.K. は公開上の運営名です。',
+      'この画面には連絡先、プライバシー、利用条件の基本情報があります。'
+    ],
+    infoContactBody:[
+      'サポート、フィードバック、一般的な問い合わせは contact@hakurokudo.com まで送ってください。'
+    ],
+    infoPrivacyBody:[
+      'Spin Clash はゲーム進行と設定をブラウザ内に保存するため、この端末ではローカル進行を保持できます。',
+      'このゲームは、現在の保存の流れの中で、ゲームプレイと報酬に関する分析イベントを記録します。',
+      '現在の配信設定によっては、広告の配信や計測に使われる外部サービスが分析や広告関連のイベントデータを扱う場合があります。',
+      'メールで連絡をいただいた場合は、送信された内容を受け取ります。'
+    ],
+    infoTermsBody:[
+      'Spin Clash は現状のままで提供されます。',
+      'ゲーム内容、バランス、進行、提供可否は時間とともに変わる場合があります。',
+      'ゲームやそのサービスを乱用、妨害、または不正利用しないでください。',
+      '乱用が確認された場合、アクセスや進行が制限または変更されることがあります。'
+    ],
     roadRankTitle:'ロードランク',
     roadRankLocked:'未解放',
     roadRankUnlocked:'解放済み',

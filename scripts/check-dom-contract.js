@@ -79,7 +79,19 @@ function main() {
     'locale-loadout-ja',
     'locale-settings-en',
     'locale-settings-zh',
-    'locale-settings-ja'
+    'locale-settings-ja',
+    'btn-open-about-home',
+    'btn-open-contact-home',
+    'btn-open-privacy-home',
+    'btn-open-terms-home',
+    'btn-open-about-settings',
+    'btn-open-contact-settings',
+    'btn-open-privacy-settings',
+    'btn-open-terms-settings',
+    'ov-info',
+    'info-shell-title',
+    'info-shell-body',
+    'btn-info-back'
   ];
 
   for (const id of referencedIds) {
