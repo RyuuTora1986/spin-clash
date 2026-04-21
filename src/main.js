@@ -140,6 +140,7 @@ let pendingContinue=false;
 let currentArena=0;
 let selectedArenaIndex=0;
 let currentLocale='en';
+let infoPage='about';
 
 function createBattlePerfBucket(){
   return {
@@ -653,14 +654,16 @@ loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   getPlayerTopId:()=>playerTopId,
   getHomePreviewTopId:()=>homePreviewTopId,
   getSessionTrialArenaIds:()=>sessionTrialArenaIds,
-    getUnlockedRoadRankIndex,
-    getSelectedRoadRankIndex,
-    setSelectedRoadRankIndex,
-    setCurrentArena:(index)=>{ currentArena = index; },
-    goPathRoute:()=>{ if(uiEntryTools) uiEntryTools.goPath(); },
-    rewardService,
-    showMsg,
-    refresh:refreshDebugState
+  getInfoPage:()=>infoPage,
+  setInfoPage:(next)=>{ infoPage = next; },
+  getUnlockedRoadRankIndex,
+  getSelectedRoadRankIndex,
+  setSelectedRoadRankIndex,
+  setCurrentArena:(index)=>{ currentArena = index; },
+  goPathRoute:()=>{ if(uiEntryTools) uiEntryTools.goPath(); },
+  rewardService,
+  showMsg,
+  refresh:refreshDebugState
   }) : null;
 let gameState='title',playerTopId=0,homePreviewTopId=0,score=[0,0],round=1,roundTimer=(ECONOMY.runtime && typeof ECONOMY.runtime.defaultRoundTimer === 'number' ? ECONOMY.runtime.defaultRoundTimer : 30);
 if(homeTopShowcaseTools) homeTopShowcaseTools.initialize();
@@ -745,6 +748,8 @@ uiEntryTools = createUiEntryTools ? createUiEntryTools({
   setPlayerTopId:(next)=>{ playerTopId = next; homePreviewTopId = next; },
   getHomePreviewTopId:()=>homePreviewTopId,
   setHomePreviewTopId:(next)=>{ homePreviewTopId = next; },
+  getInfoPage:()=>infoPage,
+  setInfoPage:(next)=>{ infoPage = next; },
   resetScoreRound:()=>{ score=[0,0]; round=1; },
   setChallengeContinueUsed:(next)=>{ challengeContinueUsed = next; },
   getSave,

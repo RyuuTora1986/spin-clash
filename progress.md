@@ -2079,3 +2079,23 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the strongest remaining working hypothesis is no longer “the H5 adapter is broken”
   - the H5 path now reaches the display stage when Google reports the placement ready and the request comes from a true user gesture
+
+2026-04-21 public-info readiness pass completed
+- Context:
+  - Task 4 threaded the new public-info shell state through runtime boot without changing any route behavior outside the approved scope
+- Main files changed:
+  - `src/main.js`
+  - `progress.md`
+- Main outcome:
+  - added minimal `infoPage` runtime state in `main.js`
+  - passed `getInfoPage` / `setInfoPage` into both `createLoadoutUiTools(...)` and `createUiEntryTools(...)`
+  - kept the change limited to runtime state wiring so existing shell behavior stayed intact
+- Verification:
+  - `node scripts/check-ui-actions.js`
+  - `node scripts/check-settings-flow.js`
+  - `node scripts/check-dom-contract.js`
+  - `node scripts/check-localization.js`
+  - `npm run check:dom`
+  - `npm run check:localization`
+  - `npm run check:ui`
+  - `npm run preflight`
