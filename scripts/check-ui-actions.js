@@ -48,7 +48,7 @@ function collectExposedActions() {
 function main() {
   const invoked = collectInvokedActions();
   const exposed = collectExposedActions();
-  const requiredActions = new Set(['setLocale', 'guard']);
+  const requiredActions = new Set(['setLocale', 'guard', 'openInfo', 'closeInfo']);
 
   for (const action of invoked) {
     if (!exposed.has(action) && action !== 'enterBattle') {

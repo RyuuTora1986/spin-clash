@@ -11,6 +11,8 @@
     const setUiRoute = typeof options.setUiRoute === 'function' ? options.setUiRoute : function(){};
     const getUiRouteFrom = typeof options.getUiRouteFrom === 'function' ? options.getUiRouteFrom : function(){ return 'home'; };
     const setUiRouteFrom = typeof options.setUiRouteFrom === 'function' ? options.setUiRouteFrom : function(){};
+    const getInfoPage = typeof options.getInfoPage === 'function' ? options.getInfoPage : function(){ return 'about'; };
+    const setInfoPage = typeof options.setInfoPage === 'function' ? options.setInfoPage : function(){};
     const getBattleReturnRoute = typeof options.getBattleReturnRoute === 'function' ? options.getBattleReturnRoute : function(){ return 'home'; };
     const setBattleReturnRoute = typeof options.setBattleReturnRoute === 'function' ? options.setBattleReturnRoute : function(){};
     const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
@@ -203,6 +205,24 @@
       applyRoute('settings', { origin });
     }
 
+    function openInfo(page){
+      const nextPage = page === 'about' || page === 'contact' || page === 'privacy' || page === 'terms'
+        ? page
+        : 'about';
+      const currentRoute = getUiRoute();
+      const origin = currentRoute && currentRoute !== 'info'
+        ? currentRoute
+        : (getUiRouteFrom() || 'home');
+      setInfoPage(nextPage);
+      applyRoute('info', { origin });
+      return true;
+    }
+
+    function closeInfo(){
+      applyRoute(getUiRouteFrom() || 'home', { origin:'home' });
+      return true;
+    }
+
     function goHome(){
       applyRoute('home', { origin:'home' });
     }
@@ -227,7 +247,7 @@
 
     function goBack(){
       const currentRoute = getUiRoute();
-      if(currentRoute === 'workshop' || currentRoute === 'settings'){
+      if(currentRoute === 'workshop' || currentRoute === 'settings' || currentRoute === 'info'){
         applyRoute(getUiRouteFrom() || 'home', { origin:'home' });
         return;
       }
@@ -423,6 +443,8 @@
         goWorkshop,
         goSettings,
         goBack,
+        openInfo,
+        closeInfo,
         prevHomeTop,
         nextHomeTop,
         prevQuickArena,
@@ -460,6 +482,8 @@
       enterQuickBattle,
       enterWorkshop,
       enterSettings,
+      openInfo,
+      closeInfo,
       goHome,
       goPath,
       goQuick,
