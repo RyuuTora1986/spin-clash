@@ -517,8 +517,6 @@ async function testAdsenseConfiguredRewardFallback() {
 
 async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
   const { context, head, save } = createBaseContext();
-  let settled = false;
-  let result = null;
 
   loadScript(path.join('src', 'config-providers.js'), context);
   loadScript(path.join('src', 'provider-runtime-tools.js'), context);
@@ -533,16 +531,18 @@ async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
   loadScript(path.join('src', 'reward-service.js'), context);
 
   const reward = context.SpinClash.services.reward;
-  const pending = reward.request('double_reward', { source: 'h5-grant-flow' }).then((value) => {
-    result = value;
-    settled = true;
-  });
+  let rejected = false;
+  try {
+    await reward.request('double_reward', { source: 'h5-grant-flow-bootstrap' });
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'provider_loading', 'Expected the first H5 request to reject with provider_loading while bootstrap is still pending.');
+  }
 
-  await new Promise((resolve) => setTimeout(resolve, 0));
   assert(head.appended.length === 1, 'Expected H5 reward adapter to inject the AdSense script on first request.');
   assert(head.appended[0].src.includes('client=ca-pub-1234567890123456'), 'Expected H5 reward adapter to append the publisher id to the AdSense script URL.');
   assert(head.appended[0].dataset && head.appended[0].dataset.adbreakTest === 'on', 'Expected H5 reward adapter to enable AdSense H5 test mode on the script tag when configured.');
-  assert(settled === false, 'Expected H5 reward request to wait for bootstrap before settling.');
+  assert(rejected === true, 'Expected the first H5 request to reject while bootstrap is pending.');
 
   context.adsbygoogle = [];
   context.adConfig = function(config) {
@@ -573,9 +573,8 @@ async function testAdsenseH5RequestWaitsForBootstrapAndGrantsReward() {
 
   assert(typeof head.appended[0].onload === 'function', 'Expected injected H5 AdSense script to expose onload.');
   head.appended[0].onload();
-  await pending;
-
-  assert(settled === true, 'Expected H5 reward request to settle after bootstrap and adBreak execution.');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const result = await reward.request('double_reward', { source: 'h5-grant-flow-ready' });
   assert(result && result.granted === true, 'Expected H5 reward flow to resolve with granted:true after adViewed.');
   assert(result.adapter === 'adsense_h5_rewarded', 'Expected H5 reward flow to report the H5 adapter id.');
 
@@ -599,7 +598,14 @@ async function testAdsenseH5DismissedRewardDoesNotGrant() {
   loadScript(path.join('src', 'reward-service.js'), context);
 
   const reward = context.SpinClash.services.reward;
-  const pending = reward.request('continue_once', { source: 'h5-dismiss-flow' });
+  let rejected = false;
+  try {
+    await reward.request('continue_once', { source: 'h5-dismiss-flow-bootstrap' });
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'provider_loading', 'Expected the first dismissed H5 request to reject with provider_loading while bootstrap is still pending.');
+  }
+  assert(rejected === true, 'Expected the first dismissed H5 request to reject while bootstrap is pending.');
 
   context.adsbygoogle = [];
   context.adConfig = function(config) {
@@ -619,17 +625,23 @@ async function testAdsenseH5DismissedRewardDoesNotGrant() {
   };
 
   head.appended[0].onload();
-  const result = await pending;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  const result = await reward.request('continue_once', { source: 'h5-dismiss-flow-ready' });
 
   assert(result && result.granted === false, 'Expected dismissed H5 reward flow to resolve with granted:false.');
   assert(result.reason === 'slot_closed', 'Expected dismissed H5 reward flow to normalize to slot_closed.');
 
-  const rewardDeclineEvent = save.analytics.find((event) => event.name === 'reward_decline');
+  const rewardDeclineEvent = save.analytics.filter((event) => {
+    return event.name === 'reward_decline'
+      && event.payload
+      && event.payload.context
+      && event.payload.context.source === 'h5-dismiss-flow-ready';
+  }).at(-1);
   assert(rewardDeclineEvent, 'Expected reward_decline analytics after a dismissed H5 reward.');
   assert(rewardDeclineEvent.payload && rewardDeclineEvent.payload.reason === 'slot_closed', 'Expected H5 reward decline analytics to preserve slot_closed.');
 }
 
-async function testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests() {
+async function testAdsenseH5BootstrapWithoutOnReadyStaysLoading() {
   const { context, head } = createBaseContext();
 
   loadScript(path.join('src', 'config-providers.js'), context);
@@ -645,16 +657,12 @@ async function testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests() {
 
   context.adsbygoogle = [];
   let configCalls = 0;
+  let adBreakCalls = 0;
   context.adConfig = function() {
     configCalls += 1;
   };
-  context.adBreak = function(config) {
-    config.adBreakDone({
-      breakType: 'reward',
-      breakName: 'double_reward',
-      breakFormat: 'reward',
-      breakStatus: 'notReady'
-    });
+  context.adBreak = function() {
+    adBreakCalls += 1;
   };
 
   const reward = context.SpinClash.services.reward;
@@ -668,14 +676,16 @@ async function testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests() {
     rejected = true;
     assert(error && error.message === 'provider_loading', 'Expected H5 request without onReady to fall back to provider_loading.');
   }
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert(rejected, 'Expected H5 request without onReady to reject.');
   assert(configCalls === 1, 'Expected H5 bootstrap without onReady to configure the API exactly once.');
+  assert(adBreakCalls === 0, 'Expected H5 request without onReady to avoid calling adBreak before the API is ready.');
 
   const info = reward.getAdapterInfo();
   assert(info.rewardEnabled === true, 'Expected H5 adapter info to stay enabled after bootstrap without onReady.');
   assert(info.loading === false, 'Expected H5 bootstrap without onReady to clear loading state.');
   assert(info.lastRequestReason === 'provider_loading', 'Expected H5 bootstrap without onReady to preserve provider_loading.');
-  assert(info.lastAvailabilityReason === null, 'Expected H5 bootstrap without onReady to stop reporting provider_unavailable once the tag is configured.');
+  assert(info.lastAvailabilityReason === 'provider_loading', 'Expected H5 bootstrap without onReady to keep reporting provider_loading until onReady fires.');
 }
 
 async function testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig() {
@@ -698,16 +708,12 @@ async function testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig() 
   };
   context.adsbygoogle = { push() {} };
   let configCalls = 0;
+  let adBreakCalls = 0;
   context.adConfig = function() {
     configCalls += 1;
   };
-  context.adBreak = function(config) {
-    config.adBreakDone({
-      breakType: 'reward',
-      breakName: 'double_reward',
-      breakFormat: 'reward',
-      breakStatus: 'notReady'
-    });
+  context.adBreak = function() {
+    adBreakCalls += 1;
   };
 
   const reward = context.SpinClash.services.reward;
@@ -719,9 +725,11 @@ async function testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig() 
     rejected = true;
     assert(error && error.message === 'provider_loading', 'Expected head-preloaded H5 request to fall back to provider_loading when no ad is ready yet.');
   }
+  await new Promise((resolve) => setTimeout(resolve, 0));
   assert(rejected, 'Expected head-preloaded H5 request to reject when no ad is ready yet.');
   assert(configCalls === 0, 'Expected head-preloaded H5 flow to skip a duplicate adConfig call during runtime init.');
   assert(head.appended.length === 0, 'Expected head-preloaded H5 flow to avoid injecting a duplicate script after head bootstrap already ran.');
+  assert(adBreakCalls === 0, 'Expected head-preloaded H5 flow to skip adBreak calls until the bootstrap reports ready.');
 
   const runtimeState = context.SpinClash.services.providerRuntime.getAdsenseH5State();
   assert(runtimeState.initialized === true, 'Expected head-preloaded H5 flow to mark the provider initialized.');
@@ -752,7 +760,10 @@ async function testAdsenseH5HeadBootstrapReadyStatePromotesRuntimeReady() {
   context.adConfig = function() {
     configCalls += 1;
   };
+  const reward = context.SpinClash.services.reward;
+  let syncAdBreakCalled = false;
   context.adBreak = function(config) {
+    syncAdBreakCalled = true;
     config.beforeReward(function() {});
     config.adViewed();
     config.adBreakDone({
@@ -762,9 +773,8 @@ async function testAdsenseH5HeadBootstrapReadyStatePromotesRuntimeReady() {
       breakStatus: 'viewed'
     });
   };
-
-  const reward = context.SpinClash.services.reward;
   const pending = reward.request('double_reward', { source: 'h5-head-ready' });
+  assert(syncAdBreakCalled === true, 'Expected ready H5 requests to invoke adBreak synchronously within the request call.');
   const result = await pending;
 
   assert(result && result.granted === true, 'Expected head-ready H5 flow to grant when the bootstrap already marked ready.');
@@ -1213,7 +1223,7 @@ async function main() {
   await testAdsenseConfiguredRewardFallback();
   await testAdsenseH5RequestWaitsForBootstrapAndGrantsReward();
   await testAdsenseH5DismissedRewardDoesNotGrant();
-  await testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests();
+  await testAdsenseH5BootstrapWithoutOnReadyStaysLoading();
   await testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig();
   await testAdsenseH5HeadBootstrapReadyStatePromotesRuntimeReady();
   await testAdsenseRequestWaitsForScriptLoad();

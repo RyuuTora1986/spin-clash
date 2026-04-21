@@ -186,7 +186,7 @@
         return { available:false, reason:'provider_misconfigured' };
       }
       const runtimeState = getRuntimeState();
-      if(hasRewardedApi() && runtimeState && (runtimeState.ready === true || runtimeState.initialized === true)){
+      if(hasRewardedApi() && runtimeState && runtimeState.ready === true){
         state.lastAvailabilityReason = null;
         return { available:true };
       }
@@ -375,17 +375,33 @@
         return getAvailability(placement);
       },
       request(placement, payloadContext, resultValue, rewardAttemptId){
-        state.lastRequestReason = null;
         if(state.activeRequestInFlight || state.providerWaitInFlight){
           state.lastRequestReason = 'request_in_flight';
           return Promise.reject(new Error('request_in_flight'));
         }
-        return waitForProvider(placement).then(function(){
-          return requestRewardedPlacement(placement, payloadContext, resultValue, rewardAttemptId);
-        }).catch(function(error){
-          state.lastRequestReason = error && error.message ? error.message : 'request_failed';
-          throw error;
-        });
+        state.lastRequestReason = null;
+        const availability = getAvailability(placement);
+        if(availability.available){
+          return requestRewardedPlacement(placement, payloadContext, resultValue, rewardAttemptId).catch(function(error){
+            state.lastRequestReason = error && error.message ? error.message : 'request_failed';
+            throw error;
+          });
+        }
+        if(
+          availability.reason === 'provider_disabled'
+          || availability.reason === 'placement_not_enabled'
+          || availability.reason === 'provider_misconfigured'
+        ){
+          state.lastRequestReason = availability.reason;
+          return Promise.reject(new Error(availability.reason));
+        }
+        if(!state.providerWaitInFlight){
+          waitForProvider(placement).catch(function(){
+            return null;
+          });
+        }
+        state.lastRequestReason = availability.reason || 'provider_loading';
+        return Promise.reject(new Error(availability.reason || 'provider_loading'));
       },
       getState(){
         const runtimeState = getRuntimeState();

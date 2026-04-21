@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.1.1 - 2026-04-21
+
+### Summary
+- Hardened the AdSense H5 rewarded runtime so it no longer requests ads before the API is truly ready or after the original click gesture has already been lost.
+
+### User-visible changes
+- Reward CTAs no longer spend a long hidden timeout trying to request an H5 ad before the Google runtime is ready.
+- Once the H5 API reports ready, rewarded requests now fire from the original click path instead of a later Promise callback.
+
+### Technical changes
+- Tightened H5 reward availability gating from `configured` to `ready`, matching the official `onReady()` sequencing contract.
+- Added a synchronous request fast-path for already-ready H5 ads so `adBreak()` stays inside the original user gesture.
+- Taught provider runtime init to reuse an existing head bootstrap without injecting duplicate H5 scripts.
+
+### Verification
+- `npm run check:providers`
+- `npm run check:matchflow`
+- `npm run check:loadout`
+- `npm run verify:release`
+- Live production probe against `https://play.hakurokudo.com/` confirming Google currently returns an empty preloaded ad response while runtime stays `ready=false`
+
 ## 1.1.0 - 2026-04-21
 
 ### Summary

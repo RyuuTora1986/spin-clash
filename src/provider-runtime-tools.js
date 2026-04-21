@@ -326,6 +326,14 @@
     if(adsenseH5State.ready && adsenseH5State.clientId === clientId){
       return Promise.resolve(getAdsenseH5State());
     }
+    if(hasAdsenseH5BootstrapReady(clientId) && hasAdsenseH5Api()){
+      markAdsenseH5Ready(clientId);
+      return Promise.resolve(getAdsenseH5State());
+    }
+    if(hasAdsenseH5BootstrapPreload(clientId) && hasAdsenseH5Api()){
+      markAdsenseH5Configured(clientId);
+      return Promise.resolve(getAdsenseH5State());
+    }
     if(
       adsenseH5State.initialized
       && adsenseH5State.configApplied
