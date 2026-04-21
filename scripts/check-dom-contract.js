@@ -103,6 +103,11 @@ function main() {
     failures.push(`Build version label mismatch: ${failure}`);
   }
 
+  const messageLayerPattern = /<\/div>\s*<div id="msg-txt"><\/div>\s*<div class="ov" id="ov-title">/m;
+  if (!messageLayerPattern.test(html)) {
+    failures.push('Message layer contract mismatch: #msg-txt must sit outside #hud and immediately before #ov-title.');
+  }
+
   if (failures.length) {
     console.error('DOM contract check failed:');
     failures.forEach((failure) => console.error(`- ${failure}`));

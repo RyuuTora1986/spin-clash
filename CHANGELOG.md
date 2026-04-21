@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.0.7 - 2026-04-21
+
+### Summary
+- Lift the runtime message layer out of the HUD stacking context so rewarded failure feedback stays visible above result overlays.
+
+### User-visible changes
+- `double_reward` failure feedback now renders over the match-result card instead of being trapped behind it.
+- Reward availability failures keep the same copy, but the layer now sits in the real viewport stack instead of the HUD stack.
+
+### Technical changes
+- Moved `#msg-txt` out of `#hud` in `index.html`.
+- Switched `#msg-txt` from `position:absolute` to `position:fixed` for overlay-safe placement.
+- Added a DOM contract check to ensure the message layer stays outside the HUD in future releases.
+
+### Verification
+- `npm run check:dom`
+- `npm run check:matchflow`
+- `npm run preflight`
+- Live browser validation against `https://play.hakurokudo.com/?debug=1`
+
 ## 1.0.6 - 2026-04-21
 
 ### Summary
