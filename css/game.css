@@ -330,7 +330,8 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   font-family:var(--font-display);font-size:18px;font-weight:700;
   color:#fff;text-shadow:0 0 24px rgba(0,200,255,.8);
   opacity:0;transition:opacity .22s;letter-spacing:2px;
-  pointer-events:none;text-align:center;white-space:nowrap;
+  pointer-events:none;text-align:center;white-space:normal;line-height:1.25;
+  max-width:min(82vw,420px);padding:0 14px;z-index:145;
 }
 #msg-txt.tone-round{font-size:20px;letter-spacing:4px}
 #msg-txt.tone-major{font-size:24px;letter-spacing:5px;text-shadow:0 0 26px rgba(255,220,120,.45)}

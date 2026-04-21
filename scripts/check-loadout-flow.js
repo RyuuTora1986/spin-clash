@@ -244,6 +244,67 @@ async function testArenaTrialAnalytics() {
   assert(trialComplete.payload.arenaId === 'hex_bowl', 'Expected trial_unlock_complete to preserve arenaId.');
 }
 
+async function testArenaTrialFailureShowsMajorFeedback() {
+  const { tops, arenas } = createContent();
+  const save = createSave(10);
+  const messages = [];
+
+  const tools = instantiateTools({
+    uiText: createUiText(),
+    tops,
+    arenas,
+    getSave() {
+      return save;
+    },
+    saveProgress(mutator) {
+      return mutator(save);
+    },
+    getCurrentMode() {
+      return 'quick';
+    },
+    getActiveChallengeIndex() {
+      return 0;
+    },
+    getSelectedArenaIndex() {
+      return 2;
+    },
+    getPlayerTopId() {
+      return 0;
+    },
+    getSessionTrialArenaIds() {
+      return new Set();
+    },
+    state: {},
+    analyticsService: {
+      track() {}
+    },
+    setCurrentArena() {},
+    rewardService: {
+      request() {
+        return Promise.reject(new Error('provider_unavailable'));
+      },
+      wasGranted(result) {
+        return !!(result && result.granted);
+      },
+      getFailureInfo(input) {
+        return { category: 'unavailable', reason: input && input.message ? input.message : 'provider_unavailable' };
+      }
+    },
+    showMsg(text, duration, tone) {
+      messages.push({ text, duration, tone });
+    },
+    refresh() {}
+  });
+
+  const granted = await tools.attemptArenaAccess(2);
+
+  assert(granted === false, 'Expected arena trial failure to resolve false.');
+  assert(messages.length === 1, 'Expected arena trial failure to surface one feedback message.');
+  assert(messages[0].text === 'REWARD NOT AVAILABLE RIGHT NOW.', 'Expected arena trial failure to use the unavailable reward copy.');
+  assert(messages[0].tone === 'major', 'Expected arena trial failure to elevate the message tone.');
+  assert(messages[0].duration === 2.8, 'Expected arena trial failure to keep the message visible longer.');
+}
+
 async function testTopPurchaseAnalytics() {
   const { tops, arenas } = createContent();
   const save = createSave(100);
@@ -375,6 +436,7 @@ async function testRoadRewardTopCannotBePurchased() {
 async function main() {
   await testArenaPurchaseAnalytics();
   await testArenaTrialAnalytics();
+  await testArenaTrialFailureShowsMajorFeedback();
   await testTopPurchaseAnalytics();
   await testRoadRewardTopCannotBePurchased();
   console.log('Loadout flow check passed.');

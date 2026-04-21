@@ -245,6 +245,138 @@ async function testChallengeResultSnapshotAndShareMoment() {
   assert(sharePayloads[0].enemyPresetLabel === 'ARMOR STANDARD', 'Expected share payload to preserve enemyPresetLabel.');
 }
 
+async function testDoubleRewardFailureFeedbackUsesMajorMessageBeat() {
+  const document = createDocument();
+  const context = vm.createContext({
+    console,
+    document,
+    window: {},
+    navigator: {},
+    setTimeout(fn) {
+      fn();
+      return 1;
+    },
+    clearTimeout() {}
+  });
+  context.window = context;
+  context.SpinClash = {};
+
+  loadScript(path.join('src', 'match-flow-tools.js'), context);
+
+  const messages = [];
+  const state = {
+    score: [0, 1],
+    round: 1,
+    activeChallengeIndex: 0,
+    currentMode: 'quick',
+    currentArena: 0,
+    playerTopId: 0,
+    enemyTopId: 1,
+    activeModifier: { id: 'standard' },
+    lastRoundEndReason: 'spinout',
+    matchStartedAt: Date.now() - 3000,
+    challengeContinueUsed: false,
+    roundRewardGranted: false,
+    doubleRewardUsed: false,
+    save: {
+      currency: 0,
+      challenge: { unlockedNodeIndex: 0, completedNodes: [] },
+      unlocks: { arenas: [], tops: [] }
+    }
+  };
+
+  const tools = context.SpinClash.createMatchFlowTools({
+    uiText: {
+      currencyLabel: 'SCRAP',
+      rewardClaimed: 'DOUBLE CLAIMED',
+      rewardDouble: 'DOUBLE REWARD',
+      rewardDoubleFail: 'DOUBLE REWARD NOT GRANTED.',
+      rewardContinueFail: 'CONTINUE NOT GRANTED.',
+      rewardDeclined: 'NO REWARD WAS GRANTED.',
+      rewardBusy: 'REWARD ALREADY IN PROGRESS.',
+      rewardLoading: 'AD IS LOADING. TRY AGAIN.',
+      rewardUnavailable: 'REWARD NOT AVAILABLE RIGHT NOW.',
+      rewardError: 'REWARD FLOW FAILED.',
+      replay: 'PLAY AGAIN',
+      nextNode: 'NEXT NODE',
+      retryNode: 'RETRY NODE',
+      roadClear: 'ROAD CLEAR',
+      shareResult: 'SHARE RESULT',
+      sharePrefix: 'Spin Clash result'
+    },
+    tops: [
+      { id: 'impact', name: 'Impact' },
+      { id: 'armor', name: 'Armor' }
+    ],
+    challengeRoad: [],
+    economy: {
+      rewards: { winBase: 16, lossBase: 6, challengeWinBase: 24, challengeLossBase: 11, doubleRewardMultiplier: 2 },
+      runtime: { defaultRoundTimer: 30, challengeContinueEnabled: true, challengeContinueLimit: 1 }
+    },
+    rewardService: {
+      request() {
+        return Promise.resolve({ granted: false, reason: 'slot_closed' });
+      },
+      wasGranted(result) {
+        return !!(result && result.granted);
+      },
+      getFailureInfo() {
+        return { category: 'declined', reason: 'slot_closed' };
+      }
+    },
+    shareService: null,
+    analyticsService: { track() {} },
+    getScore: () => state.score,
+    getRound: () => state.round,
+    setScore: (next) => { state.score = next; },
+    setRound: (next) => { state.round = next; },
+    getCurrentMode: () => state.currentMode,
+    getActiveChallengeIndex: () => state.activeChallengeIndex,
+    setActiveChallengeIndex: (next) => { state.activeChallengeIndex = next; },
+    getCurrentArena: () => state.currentArena,
+    getPlayerTopId: () => state.playerTopId,
+    getEnemyTopId: () => state.enemyTopId,
+    getCurrentEnemyPresetId: () => null,
+    getCurrentEnemyPresetLabel: () => null,
+    getActiveModifier: () => state.activeModifier,
+    getCurrentChallengeNode: () => null,
+    getArenaLabel: () => 'CIRCLE BOWL',
+    getArenaConfig: () => ({ id: 'circle_bowl', label: 'CIRCLE BOWL' }),
+    getSave: () => state.save,
+    saveProgress(mutator) {
+      state.save = mutator(state.save);
+      return state.save;
+    },
+    showMsg(text, duration, tone) {
+      messages.push({ text, duration, tone });
+    },
+    updateCurrencyUI() {},
+    updateModeUI() {},
+    syncDebugPanel() {},
+    initRound() {},
+    getChallengeContinueUsed: () => state.challengeContinueUsed,
+    setChallengeContinueUsed: (next) => { state.challengeContinueUsed = next; },
+    getRoundRewardGranted: () => state.roundRewardGranted,
+    setRoundRewardGranted: (next) => { state.roundRewardGranted = next; },
+    getDoubleRewardUsed: () => state.doubleRewardUsed,
+    setDoubleRewardUsed: (next) => { state.doubleRewardUsed = next; },
+    getLastRoundEndReason: () => state.lastRoundEndReason,
+    setLastRoundEndReason: (next) => { state.lastRoundEndReason = next; },
+    getMatchStartedAt: () => state.matchStartedAt,
+    setMatchStartedAt: (next) => { state.matchStartedAt = next; }
+  });
+
+  tools.showMatchResult();
+  tools.handleDoubleReward();
+  await flushMicrotasks();
+
+  const failureMessage = messages[messages.length - 1];
+  assert(messages.length >= 2, 'Expected failed double reward flow to append a visible feedback message after the base payout toast.');
+  assert(failureMessage.text === 'DOUBLE REWARD NOT GRANTED.', 'Expected failed double reward flow to preserve placement-specific reward failure copy.');
+  assert(failureMessage.tone === 'major', 'Expected failed double reward flow to use a major tone for visibility.');
+  assert(failureMessage.duration === 2.8, 'Expected failed double reward flow to keep the message visible longer.');
+}
+
 async function testChallengeClearUnlockGrantAnalytics() {
   const document = createDocument();
   const context = vm.createContext({
@@ -530,6 +662,7 @@ async function testQuickModeKeepsQuickRewardBase() {
 
 async function main() {
   await testChallengeResultSnapshotAndShareMoment();
+  await testDoubleRewardFailureFeedbackUsesMajorMessageBeat();
   await testChallengeClearUnlockGrantAnalytics();
   await testQuickModeKeepsQuickRewardBase();
   console.log('Match flow check passed.');

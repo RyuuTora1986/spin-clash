@@ -6,6 +6,7 @@
   const adsenseH5State = {
     initialized:false,
     initializing:false,
+    configApplied:false,
     ready:false,
     lastError:null,
     clientId:'',
@@ -256,7 +257,17 @@
     adsenseH5State.initializing = false;
     adsenseH5State.ready = false;
     adsenseH5State.initialized = false;
+    adsenseH5State.configApplied = false;
     adsenseH5State.lastError = reason || 'provider_unavailable';
+    adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
+    adsenseH5State.promise = null;
+  }
+
+  function markAdsenseH5Configured(clientId){
+    adsenseH5State.initializing = false;
+    adsenseH5State.initialized = true;
+    adsenseH5State.configApplied = true;
+    adsenseH5State.lastError = null;
     adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
     adsenseH5State.promise = null;
   }
@@ -265,6 +276,7 @@
     adsenseH5State.initializing = false;
     adsenseH5State.ready = true;
     adsenseH5State.initialized = true;
+    adsenseH5State.configApplied = true;
     adsenseH5State.lastError = null;
     adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
     adsenseH5State.promise = null;
@@ -283,6 +295,14 @@
       return Promise.reject(new Error('provider_misconfigured'));
     }
     if(adsenseH5State.ready && adsenseH5State.clientId === clientId){
+      return Promise.resolve(getAdsenseH5State());
+    }
+    if(
+      adsenseH5State.initialized
+      && adsenseH5State.configApplied
+      && adsenseH5State.clientId === clientId
+      && hasAdsenseH5Api()
+    ){
       return Promise.resolve(getAdsenseH5State());
     }
     if(adsenseH5State.initializing && adsenseH5State.promise){
@@ -304,39 +324,26 @@
       timeoutMs,
       buildAdsenseH5ScriptOptions(safeConfig)
     ).then(function(){
-      return new Promise(function(resolve, reject){
-        if(!hasAdsenseH5Api()){
-          reject(new Error('provider_unavailable'));
-          return;
-        }
-        let settled = false;
-        const readyTimeoutMs = timeoutMs && timeoutMs > 0 ? timeoutMs : 0;
-        const readyTimeoutId = readyTimeoutMs ? setTimeout(function(){
-          if(settled) return;
-          settled = true;
-          reject(new Error('provider_timeout'));
-        }, readyTimeoutMs) : null;
-
-        function finishReady(){
-          if(settled) return;
-          settled = true;
-          if(readyTimeoutId) clearTimeout(readyTimeoutId);
-          resolve(getAdsenseH5State());
-        }
-
-        try{
-          window.adConfig({
-            sound:safeConfig.preloadHints && safeConfig.preloadHints.sound ? safeConfig.preloadHints.sound : 'off',
-            preloadAdBreaks:safeConfig.preloadHints && safeConfig.preloadHints.preload ? safeConfig.preloadHints.preload : 'auto',
-            onReady:finishReady
-          });
-        }catch(error){
-          if(readyTimeoutId) clearTimeout(readyTimeoutId);
-          reject(new Error('provider_unavailable'));
-        }
-      });
+      if(!hasAdsenseH5Api()){
+        throw new Error('provider_unavailable');
+      }
+      if(adsenseH5State.configApplied && adsenseH5State.clientId === clientId){
+        return getAdsenseH5State();
+      }
+      try{
+        window.adConfig({
+          sound:safeConfig.preloadHints && safeConfig.preloadHints.sound ? safeConfig.preloadHints.sound : 'off',
+          preloadAdBreaks:safeConfig.preloadHints && safeConfig.preloadHints.preload ? safeConfig.preloadHints.preload : 'auto',
+          onReady:function(){
+            markAdsenseH5Ready(clientId);
+          }
+        });
+      }catch(error){
+        throw new Error('provider_unavailable');
+      }
+      markAdsenseH5Configured(clientId);
+      return getAdsenseH5State();
     }).then(function(){
-      markAdsenseH5Ready(clientId);
       return getAdsenseH5State();
     }).catch(function(error){
       const reason = error && error.message ? error.message : 'provider_unavailable';
@@ -351,6 +358,7 @@
     return {
       initialized:adsenseH5State.initialized,
       initializing:adsenseH5State.initializing,
+      configApplied:adsenseH5State.configApplied,
       ready:adsenseH5State.ready,
       lastError:adsenseH5State.lastError,
       clientConfigured:!!adsenseH5State.clientId

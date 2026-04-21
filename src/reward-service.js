@@ -54,6 +54,7 @@
       category = 'busy';
     }else if(
       reason === 'provider_unavailable'
+      || reason === 'provider_timeout'
       || reason === 'provider_disabled'
       || reason === 'placement_not_enabled'
       || reason === 'ad_unit_missing'
@@ -185,7 +186,7 @@
         return { available:false, reason:'provider_misconfigured' };
       }
       const runtimeState = getRuntimeState();
-      if(hasRewardedApi() && runtimeState && runtimeState.ready === true){
+      if(hasRewardedApi() && runtimeState && (runtimeState.ready === true || runtimeState.initialized === true)){
         state.lastAvailabilityReason = null;
         return { available:true };
       }

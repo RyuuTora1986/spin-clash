@@ -400,7 +400,7 @@
 
     function showRewardFailureFeedback(placement, input){
       if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
-        showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 1.2);
+        showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 2.8, 'major');
         return;
       }
       const info = rewardService.getFailureInfo(input);
@@ -414,7 +414,7 @@
       }else if(info.category === 'declined'){
         message = uiText.rewardTrialFail || 'TRIAL NOT GRANTED.';
       }
-      showMsg(message, 1.2);
+      showMsg(message, 2.8, 'major');
     }
 
     function getCurrentChallengeNode(){

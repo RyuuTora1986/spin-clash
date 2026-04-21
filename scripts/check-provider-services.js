@@ -138,7 +138,7 @@ function testRewardFailureClassification() {
   assert(declined.reason === 'mock_decline', 'Expected declined result to preserve original reason.');
   assert(loading.category === 'loading', 'Expected provider_loading to classify as loading.');
   assert(busy.category === 'busy', 'Expected request_in_flight to classify as busy.');
-  assert(timeout.category === 'error', 'Expected provider_timeout to classify as generic error.');
+  assert(timeout.category === 'unavailable', 'Expected provider_timeout to classify as unavailable.');
   assert(unavailable.category === 'unavailable', 'Expected provider_unavailable to classify as unavailable.');
   assert(misconfigured.category === 'unavailable', 'Expected provider_misconfigured to classify as unavailable.');
   assert(placementDisabled.category === 'unavailable', 'Expected placement_not_enabled to classify as unavailable.');
@@ -612,6 +612,55 @@ async function testAdsenseH5DismissedRewardDoesNotGrant() {
   assert(rewardDeclineEvent.payload && rewardDeclineEvent.payload.reason === 'slot_closed', 'Expected H5 reward decline analytics to preserve slot_closed.');
 }
 
+async function testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests() {
+  const { context, head } = createBaseContext();
+
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.scriptUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+  context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.h5.publisherId = 'ca-pub-1234567890123456';
+  context.SpinClash.config.providers.reward.adsense.h5.dataAdClient = 'ca-pub-1234567890123456';
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  context.adsbygoogle = [];
+  let configCalls = 0;
+  context.adConfig = function() {
+    configCalls += 1;
+  };
+  context.adBreak = function(config) {
+    config.adBreakDone({
+      breakType: 'reward',
+      breakName: 'double_reward',
+      breakFormat: 'reward',
+      breakStatus: 'notReady'
+    });
+  };
+
+  const reward = context.SpinClash.services.reward;
+  const pending = reward.request('double_reward', { source: 'h5-no-onready' });
+
+  head.appended[0].onload();
+  let rejected = false;
+  try {
+    await pending;
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'provider_loading', 'Expected H5 request without onReady to fall back to provider_loading.');
+  }
+  assert(rejected, 'Expected H5 request without onReady to reject.');
+  assert(configCalls === 1, 'Expected H5 bootstrap without onReady to configure the API exactly once.');
+
+  const info = reward.getAdapterInfo();
+  assert(info.rewardEnabled === true, 'Expected H5 adapter info to stay enabled after bootstrap without onReady.');
+  assert(info.loading === false, 'Expected H5 bootstrap without onReady to clear loading state.');
+  assert(info.lastRequestReason === 'provider_loading', 'Expected H5 bootstrap without onReady to preserve provider_loading.');
+  assert(info.lastAvailabilityReason === null, 'Expected H5 bootstrap without onReady to stop reporting provider_unavailable once the tag is configured.');
+}
+
 async function testAdsenseRequestWaitsForScriptLoad() {
   const { context, head } = createBaseContext();
   let settled = false;
@@ -1049,6 +1098,7 @@ async function main() {
   await testAdsenseConfiguredRewardFallback();
   await testAdsenseH5RequestWaitsForBootstrapAndGrantsReward();
   await testAdsenseH5DismissedRewardDoesNotGrant();
+  await testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests();
   await testAdsenseRequestWaitsForScriptLoad();
   await testAdsenseRewardGrantFlow();
   await testAdsenseRewardDeclineOnCloseWithoutGrant();
