@@ -177,7 +177,7 @@ function buildAdsenseH5HeadBootstrap(overrides) {
     'window.adBreak = window.adBreak || function(o) { window.adsbygoogle.push(o); };',
     'window.adConfig = window.adConfig || function(o) { window.adsbygoogle.push(o); };',
     `window.__spinClashAdsenseH5Bootstrap = { clientId: ${JSON.stringify(clientId)}, preloadConfigured: true };`,
-    `window.adConfig({ sound: ${JSON.stringify((h5.preloadHints && h5.preloadHints.sound) || 'off')}, preloadAdBreaks: ${JSON.stringify((h5.preloadHints && h5.preloadHints.preload) || 'auto')} });`,
+    `window.adConfig({ sound: ${JSON.stringify((h5.preloadHints && h5.preloadHints.sound) || 'off')}, preloadAdBreaks: ${JSON.stringify((h5.preloadHints && h5.preloadHints.preload) || 'auto')}, onReady: function() { if (window.__spinClashAdsenseH5Bootstrap) { window.__spinClashAdsenseH5Bootstrap.ready = true; window.__spinClashAdsenseH5Bootstrap.readyAt = Date.now(); } } });`,
     '</script>'
   ].join('\n');
 }

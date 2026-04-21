@@ -302,6 +302,15 @@
     );
   }
 
+  function hasAdsenseH5BootstrapReady(clientId){
+    const bootstrap = window.__spinClashAdsenseH5Bootstrap;
+    return !!(
+      bootstrap
+      && bootstrap.ready === true
+      && (!clientId || !bootstrap.clientId || bootstrap.clientId === clientId)
+    );
+  }
+
   function initAdsenseH5(config, timeoutMs){
     const safeConfig = config && typeof config === 'object' ? config : {};
     const clientId = getAdsenseH5ClientId(safeConfig);
@@ -350,6 +359,10 @@
       if(adsenseH5State.configApplied && adsenseH5State.clientId === clientId){
         return getAdsenseH5State();
       }
+      if(hasAdsenseH5BootstrapReady(clientId)){
+        markAdsenseH5Ready(clientId);
+        return getAdsenseH5State();
+      }
       if(hasAdsenseH5BootstrapPreload(clientId)){
         markAdsenseH5Configured(clientId);
         return getAdsenseH5State();
@@ -379,13 +392,14 @@
   }
 
   function getAdsenseH5State(){
+    const bootstrap = window.__spinClashAdsenseH5Bootstrap;
     return {
-      initialized:adsenseH5State.initialized,
+      initialized:adsenseH5State.initialized || hasAdsenseH5BootstrapPreload(adsenseH5State.clientId),
       initializing:adsenseH5State.initializing,
-      configApplied:adsenseH5State.configApplied,
-      ready:adsenseH5State.ready,
+      configApplied:adsenseH5State.configApplied || hasAdsenseH5BootstrapPreload(adsenseH5State.clientId),
+      ready:adsenseH5State.ready || hasAdsenseH5BootstrapReady(adsenseH5State.clientId),
       lastError:adsenseH5State.lastError,
-      clientConfigured:!!adsenseH5State.clientId
+      clientConfigured:!!(adsenseH5State.clientId || (bootstrap && bootstrap.clientId))
     };
   }
 

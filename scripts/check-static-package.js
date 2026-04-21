@@ -63,6 +63,9 @@ function main() {
       if (!/window\.adConfig\(\{[\s\S]*preloadAdBreaks/.test(packagedIndexHtml)) {
         failures.push('Packaged H5 release is missing the initial AdSense H5 adConfig preload call in <head>.');
       }
+      if (!/__spinClashAdsenseH5Bootstrap[\s\S]*ready\s*=\s*true/.test(packagedIndexHtml)) {
+        failures.push('Packaged H5 release is missing the AdSense H5 onReady bootstrap marker in <head>.');
+      }
     }
   }
 

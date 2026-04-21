@@ -2052,3 +2052,30 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the repo is no longer blocked by its own broken H5 bootstrap detection
   - any remaining no-show behavior after deploy should now be interpreted as true Google-side readiness / preload / eligibility behavior, not the previous self-inflicted runtime false negative
+
+2026-04-21 adsense h5 ready-state and preload escalation completed
+- Context:
+  - after the bootstrap self-failure was removed, live clicks no longer ended at `provider_unavailable`, but still stalled at `provider_loading`
+  - controlled browser probes were then used to separate `auto` preload behavior from `on` preload behavior under the real Ad Placement API
+- Main findings:
+  - with `preloadAdBreaks=auto`, the Google H5 bootstrap never exposed a durable ready signal in browser probes, and rewarded clicks stayed stuck on `provider_loading`
+  - with `preloadAdBreaks=on`, the Google H5 bootstrap did surface a ready state, and real button clicks advanced into `slot_visible` instead of failing before display
+  - direct programmatic reward requests without a real user gesture still timed out even when `ready=true`, which is consistent with the Ad Placement API expectation that `adBreak()` be tied to an actual user action
+- Main files changed:
+  - `src/provider-runtime-tools.js`
+  - `scripts/build-static-release.js`
+  - `scripts/check-provider-services.js`
+  - `scripts/check-static-package.js`
+- Main fixes:
+  - the packaged H5 bootstrap now registers an `onReady` callback in `<head>` and records readiness into `window.__spinClashAdsenseH5Bootstrap`
+  - runtime H5 state now reads that bootstrap marker and promotes the provider to `ready` without duplicate `adConfig()` calls
+  - release validation now guards the presence of the H5 ready marker in packaged output
+- Verification:
+  - `npm run verify:release`
+  - H5 release build with `SPIN_CLASH_ADSENSE_H5_PRELOAD=on`
+  - local browser probe with real button click in `dist-static`:
+    - before click: `ready=true`
+    - after click: `lastRequestReason='slot_visible'`
+- Practical meaning:
+  - the strongest remaining working hypothesis is no longer “the H5 adapter is broken”
+  - the H5 path now reaches the display stage when Google reports the placement ready and the request comes from a true user gesture
