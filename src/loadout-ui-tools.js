@@ -74,6 +74,10 @@
       if(el) el.innerHTML = value;
     }
 
+    function isJapaneseLocale(){
+      return getCurrentLocale() === 'ja';
+    }
+
     function setVisible(id, visible){
       const el = document.getElementById(id);
       if(!el) return;
@@ -303,6 +307,39 @@
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
+    }
+
+    function getEntityDisplayLabel(entity, fallback){
+      if(entity && typeof entity.name === 'string' && entity.name){
+        return entity.name;
+      }
+      if(entity && typeof entity.label === 'string' && entity.label){
+        return entity.label;
+      }
+      return fallback || '';
+    }
+
+    function getEntityReading(entity){
+      return entity && typeof entity.reading === 'string' ? entity.reading.trim() : '';
+    }
+
+    function getRubyTextHtml(text, reading){
+      const baseText = String(text == null ? '' : text);
+      const safeText = escapeHtml(baseText);
+      const safeReading = escapeHtml(reading || '');
+      if(!safeText) return '';
+      if(!isJapaneseLocale() || !safeReading){
+        return safeText;
+      }
+      return '<ruby class="jp-ruby"><span class="jp-ruby-base">'+safeText+'</span><rt>'+safeReading+'</rt></ruby>';
+    }
+
+    function getEntityLabelHtml(entity, fallback){
+      return getRubyTextHtml(getEntityDisplayLabel(entity, fallback), getEntityReading(entity));
+    }
+
+    function setEntityLabelHtml(id, entity, fallback){
+      setHtml(id, getEntityLabelHtml(entity, fallback));
     }
 
     function hexColor(value, fallback){
@@ -645,7 +682,7 @@
         const baseType = cardText && cardText.type ? cardText.type : (top.family ? String(top.family).toUpperCase() : 'TOP');
         el.classList.toggle('sel', topIndex===getPlayerTopId());
         el.classList.toggle('locked', locked);
-        setText('card-name-'+topIndex, top.name || 'TOP');
+        setEntityLabelHtml('card-name-'+topIndex, top, 'TOP');
         if(cardText){
           setText('card-type-'+topIndex, getTopTypeLine(top, baseType));
           setHtml('card-stats-'+topIndex, cardText.stats);
@@ -672,7 +709,7 @@
           ? (uiText.challengeCurrentTopTitle || uiText.featuredTopTitle || 'CURRENT LOADOUT')
           : (uiText.featuredTopTitle || 'SELECTED TOP')
       );
-      setText('featured-top-name', top.name || 'TOP');
+      setEntityLabelHtml('featured-top-name', top, 'TOP');
       setText('featured-top-type', getTopTypeLine(top, cardText.type || (top.family ? String(top.family).toUpperCase() : 'TOP')));
       setText(
         'featured-top-skill',
@@ -855,14 +892,14 @@
       }
 
       setText('quick-arena-kicker', uiText.quickArenaTitle || 'SELECTED ARENA');
-      setText('quick-arena-name', state.arena.label || 'ARENA');
+      setEntityLabelHtml('quick-arena-name', state.arena, 'ARENA');
       setText('quick-arena-status', getQuickArenaStatus(state.arenaIndex));
       setText('quick-arena-desc', getArenaDescription(state.arenaIndex));
       setText('btn-quick-arena-prev', uiText.homeTopPrev || '<');
       setText('btn-quick-arena-next', uiText.homeTopNext || '>');
 
       setText('quick-selected-top-kicker', uiText.quickTopTitle || 'DEPLOYED TOP');
-      setText('quick-selected-top-name', state.top.name || 'TOP');
+      setEntityLabelHtml('quick-selected-top-name', state.top, 'TOP');
       setText('quick-selected-top-status', topSourceLabel || (topLocked ? (uiText.lockedTop || 'LOCKED') : (uiText.quickTopReady || 'READY')));
       setText('quick-selected-top-source', topMetaLine);
       setText('quick-selected-top-requirement', topLocked ? state.hint : topRequirement);
@@ -911,7 +948,7 @@
       const hideDuplicateType = !locked && normalizeCompareText(typeText) === normalizeCompareText(top.name || 'TOP');
 
       setText('home-top-kicker', getTopSourceLabel(top) || uiText.homeTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
-      setText('home-top-name', top.name || 'TOP');
+      setEntityLabelHtml('home-top-name', top, 'TOP');
       setText('home-top-count', locked ? (uiText.homeTopLocked || uiText.lockedTop || 'LOCKED') : (uiText.homeTopUnlocked || uiText.homeTopCountLabel || 'UNLOCKED'));
       setText('home-top-type', hideDuplicateType ? '' : typeText);
       setText(
@@ -990,17 +1027,17 @@
         : rank.label;
     }
 
-    function getRoadRankNote(rank){
-      if(!rank) return uiText.roadRankHint || '';
-      const parts = [rank.label];
+    function getRoadRankNoteHtml(rank){
+      if(!rank) return escapeHtml(uiText.roadRankHint || '');
+      const parts = [escapeHtml(rank.label)];
       if(rank.description){
-        parts.push(rank.description);
+        parts.push(escapeHtml(rank.description));
       }
-      parts.push((uiText.roadRankRewardLabel || 'Reward')+' x'+formatMultiplier(rank.rewardMul));
+      parts.push(escapeHtml((uiText.roadRankRewardLabel || 'Reward')+' x'+formatMultiplier(rank.rewardMul)));
       if(rank.rewardTopId){
         const rewardTop = getTopById(rank.rewardTopId);
         if(rewardTop){
-          parts.push((uiText.roadRankRewardTopLabel || 'Top')+' '+rewardTop.name);
+          parts.push(escapeHtml(uiText.roadRankRewardTopLabel || 'Top')+' '+getEntityLabelHtml(rewardTop, 'TOP'));
         }
       }
       return parts.join(' · ');
@@ -1061,7 +1098,7 @@
       const selectedRank = getSelectedRoadRank();
       const unlockedRankIndex = getUnlockedRoadRankIndex();
       setText('challenge-rank-title', uiText.roadRankTitle || 'ROAD RANK');
-      setText('challenge-rank-note', getRoadRankNote(selectedRank));
+      setHtml('challenge-rank-note', getRoadRankNoteHtml(selectedRank));
       for(let index = 0; index < 3; index += 1){
         const button = document.getElementById('challenge-rank-'+index);
         const rank = getRoadRank(index);
@@ -1208,7 +1245,7 @@
           formatNodeLabel(activeChallengeIndex + 1)
         ].filter(Boolean).join(' - '));
         setText('challenge-current-top-kicker', uiText.challengeCurrentTopTitle || uiText.featuredTopTitle || 'CURRENT TOP');
-        setText('challenge-current-top-name', currentTop.name || 'TOP');
+        setEntityLabelHtml('challenge-current-top-name', currentTop, 'TOP');
         setText('challenge-current-top-note', [
           currentTopCard.type || (currentTop.family ? String(currentTop.family).toUpperCase() : null),
           getTopSourceLabel(currentTop) || (uiText.homeTopUnlocked || 'UNLOCKED'),
@@ -1268,7 +1305,7 @@
 
       (uiText.cards || []).forEach((card,index)=>{
         setText('card-icon-'+index, card.icon);
-        setText('card-name-'+index, tops[index] ? tops[index].name : 'TOP');
+        setEntityLabelHtml('card-name-'+index, tops[index] || null, 'TOP');
         setText('card-type-'+index, card.type);
         setHtml('card-stats-'+index, card.stats);
         setText('card-skill-'+index, card.skill);

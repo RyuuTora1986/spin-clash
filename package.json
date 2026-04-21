@@ -23,6 +23,9 @@
     "check:signatures": "node scripts/check-signature-skills.js",
     "check:combatintent": "node scripts/check-combat-intent-telegraph.js",
     "check:localization": "node scripts/check-localization.js",
+    "check:naming": "node scripts/check-content-naming.js",
+    "check:ja-ruby": "node scripts/check-ja-ruby-rendering.js",
+    "check:battleperf": "node scripts/check-battle-performance.js",
     "check:roster": "node scripts/check-roster-shell.js",
     "check:encounter": "node scripts/check-encounter-pack.js",
     "check:workshop": "node scripts/check-workshop-flow.js",
@@ -42,7 +45,7 @@
     "check:share": "node scripts/check-share-service.js",
     "check:ui": "node scripts/check-ui-actions.js",
     "check:proxyvisualflow": "node scripts/check-proxy-visual-flow-capture.js",
-    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:arenas && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui && npm run check:proxyvisualflow",
+    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:arenas && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:naming && npm run check:ja-ruby && npm run check:battleperf && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui && npm run check:proxyvisualflow",
     "verify:release": "npm run preflight && npm run build:static && npm run check:static"
   },
   "repository": {

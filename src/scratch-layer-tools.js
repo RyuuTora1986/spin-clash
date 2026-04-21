@@ -12,6 +12,7 @@
     const isCircleArena = deps.isCircleArena;
     const isHeartArena = deps.isHeartArena;
     const getGameState = deps.getGameState;
+    const getBattlePerformanceMode = typeof deps.getBattlePerformanceMode === 'function' ? deps.getBattlePerformanceMode : function(){ return null; };
     const arenaMathTools = root.createArenaMathTools ? root.createArenaMathTools() : null;
     const textureSize = 1024;
     const canvas = document.createElement('canvas');
@@ -31,6 +32,19 @@
     let uvScaleX = 1 / (arenaRadius * 2);
     let uvScaleZ = 1 / (arenaRadius * 2);
     let phase = 0;
+    let uploadCooldown = 0;
+    let textureDirty = false;
+
+    function getScratchUploadInterval(){
+      const perfMode = getBattlePerformanceMode() || {};
+      return perfMode.lowEndMobile ? (1 / 18) : (1 / 28);
+    }
+
+    function getScratchMinDistanceSq(){
+      const perfMode = getBattlePerformanceMode() || {};
+      const minDistance = perfMode.lowEndMobile ? 0.12 : 0.08;
+      return minDistance * minDistance;
+    }
 
     function getBounds(points){
       return points.reduce(function(bounds, point){
@@ -90,6 +104,8 @@
     function clear(){
       ctx.clearRect(0, 0, textureSize, textureSize);
       texture.needsUpdate = true;
+      textureDirty = false;
+      uploadCooldown = 0;
       playerPrevX = NaN;
       playerPrevZ = NaN;
       enemyPrevX = NaN;
@@ -121,27 +137,54 @@
 
     function tick(playerTop, enemyTop, dt){
       if(getGameState() !== 'active') return;
+      uploadCooldown = Math.max(0, uploadCooldown - dt);
       phase += dt * 2.8;
       let drew = false;
+      const minDistanceSq = getScratchMinDistanceSq();
       ctx.globalCompositeOperation = 'source-over';
-      if(playerTop.alive && !isNaN(playerPrevX)){
-        strokeTop(playerPrevX, playerPrevZ, playerTop.x, playerTop.z, playerTop.vx, playerTop.vz, 0);
-        drew = true;
-      }
-      if(enemyTop.alive && !isNaN(enemyPrevX)){
-        strokeTop(enemyPrevX, enemyPrevZ, enemyTop.x, enemyTop.z, enemyTop.vx, enemyTop.vz, Math.PI);
-        drew = true;
-      }
-      if(drew){
-        texture.needsUpdate = true;
-      }
       if(playerTop.alive){
-        playerPrevX = playerTop.x;
-        playerPrevZ = playerTop.z;
+        if(isNaN(playerPrevX)){
+          playerPrevX = playerTop.x;
+          playerPrevZ = playerTop.z;
+        }else{
+          const playerDx = playerTop.x - playerPrevX;
+          const playerDz = playerTop.z - playerPrevZ;
+          if(playerDx * playerDx + playerDz * playerDz >= minDistanceSq){
+            strokeTop(playerPrevX, playerPrevZ, playerTop.x, playerTop.z, playerTop.vx, playerTop.vz, 0);
+            playerPrevX = playerTop.x;
+            playerPrevZ = playerTop.z;
+            drew = true;
+          }
+        }
+      }else{
+        playerPrevX = NaN;
+        playerPrevZ = NaN;
       }
       if(enemyTop.alive){
-        enemyPrevX = enemyTop.x;
-        enemyPrevZ = enemyTop.z;
+        if(isNaN(enemyPrevX)){
+          enemyPrevX = enemyTop.x;
+          enemyPrevZ = enemyTop.z;
+        }else{
+          const enemyDx = enemyTop.x - enemyPrevX;
+          const enemyDz = enemyTop.z - enemyPrevZ;
+          if(enemyDx * enemyDx + enemyDz * enemyDz >= minDistanceSq){
+            strokeTop(enemyPrevX, enemyPrevZ, enemyTop.x, enemyTop.z, enemyTop.vx, enemyTop.vz, Math.PI);
+            enemyPrevX = enemyTop.x;
+            enemyPrevZ = enemyTop.z;
+            drew = true;
+          }
+        }
+      }else{
+        enemyPrevX = NaN;
+        enemyPrevZ = NaN;
+      }
+      if(drew){
+        textureDirty = true;
+      }
+      if(textureDirty && uploadCooldown<=0){
+        texture.needsUpdate = true;
+        textureDirty = false;
+        uploadCooldown = getScratchUploadInterval();
       }
     }
 

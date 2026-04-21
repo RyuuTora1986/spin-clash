@@ -94,6 +94,9 @@ npm run check:nextphase
 npm run check:analytics
 npm run check:storage
 npm run check:localization
+npm run check:naming
+npm run check:ja-ruby
+npm run check:battleperf
 npm run check:roster
 npm run check:encounter
 npm run check:workshop
@@ -124,7 +127,10 @@ npm run preflight
 `check:analytics` validates that tracked analytics event names are documented in `docs/analytics-events.md`.
 `check:storage` validates legacy save migration, unlock normalization, and analytics log sanitization in `StorageService`.
 `check:localization` validates locale table parity, locale persistence, and in-place runtime text switching for English/Chinese/Japanese.
-`check:roster` validates the 5-top roster shell and derived-top metadata wiring.
+`check:naming` validates the live top and arena names plus the shared family-level type labels across all locales.
+`check:ja-ruby` validates Japanese furigana metadata plus ruby rendering on the approved preview/loadout surfaces only.
+`check:battleperf` validates that battle perf hooks, HUD throttling, scratch batching, trail sampling, and particle reuse stay wired in.
+`check:roster` validates the 15-top roster shell and derived-top metadata wiring.
 `check:encounter` validates the current encounter preset/modifier pack.
 `check:workshop` validates Workshop Research config, progression purchase flow, and loadout integration.
 `check:roadrank` validates Road Rank unlock logic, selection wiring, and challenge-entry UI exposure.
@@ -151,10 +157,22 @@ npm run preflight
 - `中文`
 - `日本語`
 
+Japanese presentation note:
+- `日本語` uses small hiragana ruby on top/arena proper names in preview-style UI such as Home, Loadout, Quick Battle selection, and Road Rank / Path loadout panels.
+- Battle HUD, result overlays, toast copy, and share text stay plain-text for faster reading.
+
 ### Arenas
-- `Neo Dome`
-- `Heart Circuit`
-- `Hex Bowl`
+- `Azure Ring Court`
+- `Scarlet Heart Verge`
+- `Shard Hex Array`
+- `Tempest Maw Depth`
+- `Thornbloom Snare`
+- `Prism Arcade`
+
+### Top Type Families
+- `Assault`
+- `Bulwark`
+- `Skirmish`
 
 ### Core Services
 - local save with versioning
@@ -180,16 +198,17 @@ npm run preflight
 - battle intro banner plus stronger HUD danger states
 - result reward breakdown and next-step guidance
 - debug tuning import/export now covers economy, unlock tables, research, ranks, and Championship Path nodes
+- debug runtime now includes battle perf buckets plus the current battle performance mode flags for quick perf smoke checks
 
 ## Debug Mode
 `?debug=1` exposes a small developer panel in the top-left corner.
 
 Current debug actions:
 - `+200 SCRAP`
-- `UNLOCK HEX`
-- `UNLOCK TRICK`
-- `UNLOCK BREAKER`
-- `UNLOCK RAIDER`
+- `UNLOCK HEX` (`Shard Hex Array`)
+- `UNLOCK TRICK` (`Night Gale`)
+- `UNLOCK BREAKER` (`Warbreak Pike`)
+- `UNLOCK RAIDER` (`Shadowraid`)
 - `RANK II`
 - `RANK III`
 - `NODE 4`

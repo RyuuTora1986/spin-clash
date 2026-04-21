@@ -75,6 +75,10 @@ Current implementation note:
 ```
 
 Notes:
+- `nameKey` is the player-facing machine name, while the shared gameplay bucket should continue to come from the family/class mapping.
+- Loadout type copy should render the shared family tier (`Assault / Bulwark / Skirmish`, localized per locale) instead of repeating a top's individual variant title.
+- Locale content may also attach a `reading` field for Japanese-only furigana on proper names. This is presentation metadata, not gameplay identity.
+- Japanese `reading` should only render on name-learning surfaces such as Home, Loadout cards, featured top, Quick Battle selection, and Path preview panels. HUD/result/share text should remain plain text.
 - `variant` is the hook for balance/render differentiation inside the same top family.
 - `meshFamily` can point at family-scoped variants such as `impact_nova` or `armor_mammoth` when the same skill family needs a distinct silhouette.
 - Loadout top cards should be generated from the config roster length rather than hardcoded DOM slots.

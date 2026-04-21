@@ -11,3 +11,4 @@ dist-static/
 output/
 tmp/
 .tmp/
+.superpowers/

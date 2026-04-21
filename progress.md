@@ -118,6 +118,34 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 
 - Continued modular split again:
   - extracted arena visual construction into `src/arena-render-tools.js`
+
+2026-04-21
+- Battle performance hardening pass for low/mid-end mobile priority:
+  - added `check:battleperf` and folded it into `preflight`
+  - added runtime battle perf metrics (`frameMs`, `physTick`, `battleView`, `renderer`) plus exposed `battlePerformanceMode`
+  - fixed battle HUD hot path by caching DOM refs and correcting enemy spin percent to use `te.maxSpin`
+  - removed `Date.now()` from battle view / sim active paths and replaced it with a battle visual clock
+  - throttled HUD refresh cadence in battle view
+  - batched scratch texture uploads behind movement thresholds and upload intervals
+  - reduced trail churn by sampling on movement thresholds instead of pushing a new point every frame
+  - reused collision particle instances instead of allocating fresh meshes/materials every burst
+  - fixed `battlePerformanceMode.activeBattle` drift so debug/runtime perf state reflects the actual battle loop
+- Verification performed:
+  - `npm run check:battleperf`
+  - `npm run check:syntax`
+  - `npm run check:shellpresentation`
+  - full `npm run preflight`
+  - local browser smoke on `http://127.0.0.1:4173/index.html?debug=1`:
+    - entered Quick Battle
+    - started a round
+    - launched into active combat via mouse drag simulation
+    - advanced multiple seconds with `window.advanceTime(...)`
+    - inspected runtime perf buckets and confirmed no battle long-frame counters were triggered in this environment
+    - checked console errors; only repeated `favicon.ico` 404s were present
+- Browser automation note:
+  - attempted the required Playwright client from the local `develop-web-game` skill
+  - current environment still lacks the Playwright Chromium binary, so that client path failed before screenshot capture
+  - fallback validation used the working local server plus Chrome DevTools automation and screenshot inspection
   - moved circle/heart/hex arena mesh building and arena rebuild orchestration behind the new factory
   - fixed a latent runtime hazard where `HEART_PTS` was being read before `arenaMathTools` initialization by switching to lazy access
   - next likely safe extraction targets are trail rendering or scratch-layer mesh generation, while core battle simulation stays local

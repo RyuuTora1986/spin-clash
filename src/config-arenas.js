@@ -5,7 +5,7 @@
   root.config.arenas = [
     {
       id:'circle_bowl',
-      label:'CIRCLE BOWL',
+      label:'Azure Ring Court',
       type:'circle',
       hazardSpinThreshold:6.5,
       unlockCost:0,
@@ -33,7 +33,7 @@
     },
     {
       id:'heart_bowl',
-      label:'HEART BOWL',
+      label:'Scarlet Heart Verge',
       type:'heart',
       hazardSpinThreshold:null,
       unlockCost:0,
@@ -66,7 +66,7 @@
     },
     {
       id:'hex_bowl',
-      label:'HEX BOWL',
+      label:'Shard Hex Array',
       type:'hex',
       hazardSpinThreshold:null,
       unlockCost:120,
@@ -98,7 +98,7 @@
     },
     {
       id:'cyclone_bowl',
-      label:'CYCLONE BOWL',
+      label:'Tempest Maw Depth',
       type:'circle',
       hazardSpinThreshold:5.9,
       unlockCost:180,
@@ -126,7 +126,7 @@
     },
     {
       id:'rose_bowl',
-      label:'ROSE BOWL',
+      label:'Thornbloom Snare',
       type:'heart',
       hazardSpinThreshold:null,
       unlockCost:210,
@@ -159,7 +159,7 @@
     },
     {
       id:'octa_bowl',
-      label:'OCTA BOWL',
+      label:'Prism Arcade',
       type:'hex',
       hazardSpinThreshold:null,
       unlockCost:240,

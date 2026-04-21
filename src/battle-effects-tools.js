@@ -8,16 +8,44 @@
     const sfxOrb = typeof options.sfxOrb === 'function' ? options.sfxOrb : function(){};
     const partGeo = options.partGeo || null;
     const orbGeo = options.orbGeo || null;
+    const getBattlePerformanceMode = typeof options.getBattlePerformanceMode === 'function' ? options.getBattlePerformanceMode : function(){ return null; };
+    const inactiveParticles = [];
+
+    function acquireParticle(color){
+      const next = inactiveParticles.pop();
+      if(next){
+        next.mesh.material.color.setHex(color);
+        next.mesh.material.opacity = 1;
+        next.mesh.visible = true;
+        if(next.mesh.parent !== scene){
+          scene.add(next.mesh);
+        }
+        return next;
+      }
+      return {
+        mesh:new THREE.Mesh(partGeo,new THREE.MeshBasicMaterial({ color, transparent:true, opacity:1 })),
+        vx:0,
+        vy:0,
+        vz:0,
+        life:0
+      };
+    }
 
     function spawnParts(partPool,x,z,color,n){
-      const count = n || 8;
+      const perfMode = getBattlePerformanceMode() || {};
+      const requestedCount = n || 8;
+      const count = perfMode.lowEndMobile ? Math.max(4, Math.round(requestedCount * 0.75)) : requestedCount;
       for(let i=0;i<count;i++){
-        const m=new THREE.Mesh(partGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:1}));
+        const particle = acquireParticle(color);
+        const m = particle.mesh;
         const a=Math.PI*2*i/count+Math.random()*.6;
         const s=2+Math.random()*6;
         m.position.set(x,.6,z);
-        scene.add(m);
-        partPool.push({mesh:m,vx:Math.cos(a)*s,vy:1.5+Math.random()*3,vz:Math.sin(a)*s,life:1});
+        particle.vx = Math.cos(a)*s;
+        particle.vy = 1.5+Math.random()*3;
+        particle.vz = Math.sin(a)*s;
+        particle.life = 1;
+        partPool.push(particle);
       }
     }
 
@@ -27,6 +55,8 @@
         p.life-=dt*2.2;
         if(p.life<=0){
           scene.remove(p.mesh);
+          p.mesh.visible = false;
+          inactiveParticles.push(p);
           partPool.splice(i,1);
           continue;
         }

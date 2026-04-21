@@ -13,6 +13,42 @@
     const signatureSkills = options.signatureSkills || {};
     const skillIcons = options.skillIcons || {};
     let introTimer = null;
+    let battleHudRefs = null;
+
+    function getBattleHudRefs(){
+      if(battleHudRefs) return battleHudRefs;
+      battleHudRefs = {
+        hintBar:document.getElementById('hint-bar'),
+        playerRole:document.getElementById('p-role'),
+        enemyRole:document.getElementById('e-role'),
+        pHp:document.getElementById('p-hp'),
+        pHpVal:document.getElementById('p-hp-val'),
+        eHp:document.getElementById('e-hp'),
+        eHpVal:document.getElementById('e-hp-val'),
+        pSp:document.getElementById('p-sp'),
+        pBu:document.getElementById('p-bu'),
+        eSp:document.getElementById('e-sp'),
+        eBu:document.getElementById('e-bu'),
+        dashBtn:document.getElementById('act-dash'),
+        dashCd:document.getElementById('dash-cd'),
+        dashCdTxt:document.getElementById('dash-cd-txt'),
+        dashState:document.getElementById('dash-state'),
+        guardBtn:document.getElementById('act-guard'),
+        guardCd:document.getElementById('guard-cd'),
+        guardCdTxt:document.getElementById('guard-cd-txt'),
+        guardState:document.getElementById('guard-state'),
+        skillBtn:document.getElementById('act-skill'),
+        skillCd:document.getElementById('skill-cd'),
+        skillCdTxt:document.getElementById('skill-cd-txt'),
+        skillState:document.getElementById('skill-state'),
+        burstCircle:document.querySelector("#burst-ring circle"),
+        playerPanel:document.getElementById('p-panel'),
+        enemyPanel:document.getElementById('e-panel'),
+        hud:document.getElementById('hud'),
+        actSwap:document.getElementById('act-swap')
+      };
+      return battleHudRefs;
+    }
 
     function getLoadoutOverlay(){
       return document.getElementById('ov-loadout');
@@ -116,8 +152,8 @@
       if(sn) sn.textContent = (uiText.skillLabels && uiText.skillLabels[sk]) ? uiText.skillLabels[sk] : sk;
     }
 
-    function updateBattleHint(tp){
-      const hintBar = document.getElementById('hint-bar');
+    function updateBattleHint(tp, refs){
+      const hintBar = refs.hintBar;
       if(!hintBar) return;
       if(getGameState()!=='active'){
         hintBar.textContent = uiText.hintAim || 'Drag to aim, then release to launch.';
@@ -136,9 +172,9 @@
       hintBar.style.color = '';
     }
 
-    function updateRoleLabels(tp,te){
-      const playerRoleEl = document.getElementById('p-role');
-      const enemyRoleEl = document.getElementById('e-role');
+    function updateRoleLabels(tp,te,refs){
+      const playerRoleEl = refs.playerRole;
+      const enemyRoleEl = refs.enemyRole;
       const playerMeta = getSignatureSkillMeta(tp && tp.template ? tp.template : null);
       const enemyMeta = getSignatureSkillMeta(te && te.template ? te.template : null);
       const guardColor = '#9fd8ff';
@@ -194,31 +230,33 @@
       const tp = getTp();
       const te = getTe();
       if(!tp || !te) return;
+      const refs = getBattleHudRefs();
+      if(!refs.pHp || !refs.eHp || !refs.pSp || !refs.pBu || !refs.eSp || !refs.eBu) return;
       const pHpPct=tp.hp/tp.maxHp;
       const eHpPct=te.hp/te.maxHp;
       const pSpinPct=tp.spin/tp.maxSpin;
-      const eSpinPct=te.spin/tp.maxSpin;
+      const eSpinPct=te.spin/te.maxSpin;
       const hpColor=(p,isP)=>p>0.5
         ?(isP?'linear-gradient(90deg,#00cc55,#00ee77)':'linear-gradient(90deg,#cc2200,#ee4400)')
         :p>0.25?'linear-gradient(90deg,#cc7700,#ffaa00)':'linear-gradient(90deg,#cc1100,#ff3300)';
-      const phEl=document.getElementById('p-hp');
+      const phEl=refs.pHp;
       phEl.style.width=(pHpPct*100)+'%';
       phEl.style.background=hpColor(pHpPct,true);
       phEl.style.animation=pHpPct<0.25?'hpBeat .5s ease-in-out infinite':'none';
-      document.getElementById('p-hp-val').textContent=Math.ceil(tp.hp);
-      const ehEl=document.getElementById('e-hp');
+      if(refs.pHpVal) refs.pHpVal.textContent=Math.ceil(tp.hp);
+      const ehEl=refs.eHp;
       ehEl.style.width=(eHpPct*100)+'%';
       ehEl.style.background=hpColor(eHpPct,false);
       ehEl.style.animation=eHpPct<0.25?'hpBeat .5s ease-in-out infinite':'none';
-      document.getElementById('e-hp-val').textContent=Math.ceil(te.hp);
-      document.getElementById('p-sp').style.width=(tp.spin/tp.maxSpin*100)+'%';
-      document.getElementById('p-bu').style.width=tp.burst+'%';
-      document.getElementById('e-sp').style.width=(te.spin/te.maxSpin*100)+'%';
-      document.getElementById('e-bu').style.width=te.burst+'%';
-      const dashBtn=document.getElementById('act-dash');
-      const dashCdEl=document.getElementById('dash-cd');
-      const dashCdTxt=document.getElementById('dash-cd-txt');
-      const dashState=document.getElementById('dash-state');
+      if(refs.eHpVal) refs.eHpVal.textContent=Math.ceil(te.hp);
+      refs.pSp.style.width=(pSpinPct*100)+'%';
+      refs.pBu.style.width=tp.burst+'%';
+      refs.eSp.style.width=(eSpinPct*100)+'%';
+      refs.eBu.style.width=te.burst+'%';
+      const dashBtn=refs.dashBtn;
+      const dashCdEl=refs.dashCd;
+      const dashCdTxt=refs.dashCdTxt;
+      const dashState=refs.dashState;
       if(tp.dashCD>0){
         dashBtn.className='sk-btn dash-cooldown';
         dashCdEl.style.height=(tp.dashCD/tp.DASH_CD*100)+'%';
@@ -230,10 +268,10 @@
         dashCdTxt.textContent='';
         if(dashState) dashState.textContent=uiText.statusReady || 'READY';
       }
-      const guardBtn=document.getElementById('act-guard');
-      const guardCdEl=document.getElementById('guard-cd');
-      const guardCdTxt=document.getElementById('guard-cd-txt');
-      const guardState=document.getElementById('guard-state');
+      const guardBtn=refs.guardBtn;
+      const guardCdEl=refs.guardCd;
+      const guardCdTxt=refs.guardCdTxt;
+      const guardState=refs.guardState;
       const guardEnabled = getGuardEnabled(tp.template);
       const guardConfig = getGuardActionConfig(tp.template);
       if(guardBtn){
@@ -259,17 +297,17 @@
           guardState.textContent='';
         }
       }
-      const skillBtn=document.getElementById('act-skill');
-      const skillCdEl=document.getElementById('skill-cd');
-      const skillCdTxt=document.getElementById('skill-cd-txt');
-      const skillState=document.getElementById('skill-state');
-      const burstCircle=document.querySelector('#burst-ring circle');
+      const skillBtn=refs.skillBtn;
+      const skillCdEl=refs.skillCd;
+      const skillCdTxt=refs.skillCdTxt;
+      const skillState=refs.skillState;
+      const burstCircle=refs.burstCircle;
       const CIRC=157;
       const skillMeta = getSignatureSkillMeta(tp.template);
       const accent = skillMeta && skillMeta.hudAccent ? skillMeta.hudAccent : null;
-      const playerPanel = document.getElementById('p-panel');
-      const enemyPanel = document.getElementById('e-panel');
-      updateRoleLabels(tp,te);
+      const playerPanel = refs.playerPanel;
+      const enemyPanel = refs.enemyPanel;
+      updateRoleLabels(tp,te,refs);
       if(playerPanel){
         playerPanel.classList.toggle('danger-hp', pHpPct <= 0.25);
         playerPanel.classList.toggle('danger-spin', pSpinPct <= 0.2);
@@ -278,7 +316,7 @@
         enemyPanel.classList.toggle('danger-hp', eHpPct <= 0.25);
         enemyPanel.classList.toggle('danger-spin', eSpinPct <= 0.2);
       }
-      updateBattleHint(tp);
+      updateBattleHint(tp,refs);
       if(tp.skillCD>0){
         skillBtn.className='sk-btn state-cooldown';
         skillCdEl.style.height=(tp.skillCD/tp.SKILL_CD*100)+'%';
@@ -324,13 +362,15 @@
     }
 
     function showBattleHud(){
-      document.getElementById('hud').style.display='';
-      document.getElementById('act-swap').classList.add('visible');
+      const refs = getBattleHudRefs();
+      if(refs.hud) refs.hud.style.display='';
+      if(refs.actSwap) refs.actSwap.classList.add('visible');
     }
 
     function hideBattleHud(){
-      document.getElementById('hud').style.display='none';
-      document.getElementById('act-swap').classList.remove('visible');
+      const refs = getBattleHudRefs();
+      if(refs.hud) refs.hud.style.display='none';
+      if(refs.actSwap) refs.actSwap.classList.remove('visible');
     }
 
     return {

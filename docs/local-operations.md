@@ -58,6 +58,9 @@ npm run check:nextphase
 npm run check:analytics
 npm run check:storage
 npm run check:localization
+npm run check:naming
+npm run check:ja-ruby
+npm run check:battleperf
 npm run check:roster
 npm run check:encounter
 npm run check:workshop
@@ -89,6 +92,8 @@ What it checks:
 - tracked analytics event names staying aligned with docs
 - legacy save migration and save-shape normalization
 - English/Chinese/Japanese locale table parity, saved locale behavior, and live runtime text application
+- localized content naming parity and Japanese ruby-only display surfaces
+- battle performance contracts for metrics hooks, HUD refresh throttling, scratch texture batching, trail sampling, and particle reuse
 - Workshop Research config shape, purchase persistence, and loadout integration
 - Road Rank unlock flow, selection wiring, and challenge-entry UI exposure
 - provider adapter selection and fallback behavior staying valid
@@ -116,10 +121,10 @@ What it does not check:
 
 Current actions:
 - `+200 SCRAP`
-- `UNLOCK HEX`
-- `UNLOCK TRICK`
-- `UNLOCK BREAKER`
-- `UNLOCK RAIDER`
+- `UNLOCK HEX` (`Shard Hex Array`)
+- `UNLOCK TRICK` (`Night Gale`)
+- `UNLOCK BREAKER` (`Warbreak Pike`)
+- `UNLOCK RAIDER` (`Shadowraid`)
 - `RANK II`
 - `RANK III`
 - `NODE 4`
@@ -158,6 +163,8 @@ Current debug visibility:
 - live enemy AI config for the current preset
 - current enemy preset label
 - whether runtime tuning overrides are active
+- battle perf buckets (`frameMs`, `physTick`, `battleView`, `renderer`)
+- battle performance mode flags, including whether low-end mobile downgrade hooks are active
 - reward mock mode
 - reward adapter state
 - reward availability reason

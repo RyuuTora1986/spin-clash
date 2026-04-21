@@ -59,8 +59,8 @@ Reason:
 - Challenge Road loss can show continue flow
 - result reward increases SCRAP
 - locked top can be purchased and stays unlocked after reload
-- Hex Bowl can be trialed when locked
-- Hex Bowl can be permanently unlocked
+- Shard Hex Array can be trialed when locked
+- Shard Hex Array can be permanently unlocked
 - unlocked arena persists after reload
 
 ## Service Gate

@@ -93,7 +93,7 @@
     quickStartArenaTrialButton:'WATCH AD TRIAL',
     quickStartArenaTrialHint:'SCRAP is short. Watch an ad to activate a session trial for this arena.',
     challengeSubtitle:'CHAMPIONSHIP PATH',
-    arenaOptions:['CIRCLE BOWL','HEART BOWL','HEX BOWL','CYCLONE BOWL','ROSE BOWL','OCTA BOWL'],
+    arenaOptions:['Azure Ring Court','Scarlet Heart Verge','Shard Hex Array','Tempest Maw Depth','Thornbloom Snare','Prism Arcade'],
     fightButton:'START MATCH',
     challengeButton:'ENTER PATH',
     roundNext:'Next round starts shortly',
@@ -284,7 +284,7 @@
     cards:[
       {
         icon:'⚔',
-        type:'IMPACT',
+        type:'ASSAULT',
         stats:'HP 85<br>SPIN 95<br>SPEED 14<br>MASS 1.2',
         skill:'⚔ Fly Charge · Surge straight at the target.',
         pitch:'Hard entry top that turns the first clean angle into momentum.',
@@ -292,7 +292,7 @@
       },
       {
         icon:'🛡',
-        type:'ARMOR',
+        type:'BULWARK',
         stats:'HP 120<br>SPIN 75<br>SPEED 10<br>MASS 1.5',
         skill:'🛡 Fortress Pulse · Anchor the lane and blast the rival outward.',
         pitch:'Heavy control pick that stabilizes itself and wins space with a shock pulse.',
@@ -300,7 +300,7 @@
       },
       {
         icon:'👾',
-        type:'TRICK',
+        type:'SKIRMISH',
         stats:'HP 70<br>SPIN 100<br>SPEED 16<br>MASS 0.9',
         skill:'👾 Phantom · Speed burst and pressure.',
         pitch:'Angle-hunting top that lives off drift lines and edge pressure.',
@@ -308,7 +308,7 @@
       },
       {
         icon:'✦',
-        type:'BREAKER',
+        type:'ASSAULT',
         stats:'HP 78<br>SPIN 98<br>SPEED 15<br>MASS 1.1',
         skill:'✦ Fly Charge · Faster line break with lower stability.',
         pitch:'Aggressive variant that cashes in on direct launch lines immediately.',
@@ -316,7 +316,7 @@
       },
       {
         icon:'☄',
-        type:'RAIDER',
+        type:'SKIRMISH',
         stats:'HP 66<br>SPIN 104<br>SPEED 17<br>MASS 0.8',
         skill:'☄ Phantom · Sharper edge hunting and burst tempo.',
         pitch:'Predatory drift variant built for arena abuse and clutch scrambles.',
@@ -324,7 +324,7 @@
       },
       {
         icon:'🜂',
-        type:'VANGUARD',
+        type:'ASSAULT',
         stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
         skill:'🜂 Fly Charge · Lower angle speed, stronger lane hold.',
         pitch:'Stable impact frame that keeps its nose buried in center contact.',
@@ -332,7 +332,7 @@
       },
       {
         icon:'✺',
-        type:'NOVA',
+        type:'ASSAULT',
         stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
         skill:'✺ Fly Charge · Hyper-fast strike with a short burnout window.',
         pitch:'Glass-cannon charger that explodes through one clean line and fades if stalled.',
@@ -340,7 +340,7 @@
       },
       {
         icon:'⛏',
-        type:'TREMOR',
+        type:'ASSAULT',
         stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
         skill:'⛏ Fly Charge · Heavy slam that keeps collision pressure active longer.',
         pitch:'Dense impact shell that trades some tempo for brutal sustained contact.',
@@ -348,7 +348,7 @@
       },
       {
         icon:'⛨',
-        type:'BASTION',
+        type:'BULWARK',
         stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
         skill:'⛨ Fortress Pulse · Deep anchor pulse with extra outward force.',
         pitch:'Full-wall defender built to survive rushes and reset the center every time.',
@@ -356,7 +356,7 @@
       },
       {
         icon:'⬡',
-        type:'AEGIS',
+        type:'BULWARK',
         stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
         skill:'⬡ Fortress Pulse · Cleaner counter-pulse with faster re-entry.',
         pitch:'Mobile armor hybrid that converts defense into an immediate retake line.',
@@ -364,7 +364,7 @@
       },
       {
         icon:'🗿',
-        type:'MAMMOTH',
+        type:'BULWARK',
         stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
         skill:'🗿 Fortress Pulse · Massive shock pulse with extreme self-anchor.',
         pitch:'Maximum-weight control body that dares the rival to collide first.',
@@ -372,7 +372,7 @@
       },
       {
         icon:'✧',
-        type:'MIRROR',
+        type:'BULWARK',
         stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
         skill:'✧ Fortress Pulse · Flexible pulse timing with smoother carry-through.',
         pitch:'Reflective armor shell that slides out of bad contact and answers back.',
@@ -380,7 +380,7 @@
       },
       {
         icon:'☣',
-        type:'VENOM',
+        type:'SKIRMISH',
         stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
         skill:'☣ Phantom · Toxic drift burst that keeps clipping the flank.',
         pitch:'Needle-like trick variant that wins by repeated edge bites and poison tempo.',
@@ -388,7 +388,7 @@
       },
       {
         icon:'◎',
-        type:'ORBIT',
+        type:'SKIRMISH',
         stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
         skill:'◎ Phantom · Longer orbit phase with cleaner wall resets.',
         pitch:'Control-minded trick shell that circles wider and chooses safer return lines.',
@@ -396,7 +396,7 @@
       },
       {
         icon:'⌁',
-        type:'GLITCH',
+        type:'SKIRMISH',
         stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
         skill:'⌁ Phantom · Chaotic side-cut with the sharpest lateral break.',
         pitch:'Unstable duel thief that wins by making its own impossible angle.',
@@ -485,7 +485,7 @@
     quickStartArenaTrialButton:'广告试玩',
     quickStartArenaTrialHint:'当前 SCRAP 不足，可看广告开启该场地的本次会话试用。',
     challengeSubtitle:'冠军之路',
-    arenaOptions:['圆形碗场','心形碗场','六角碗场','旋风碗场','玫心碗场','八棱碗场'],
+    arenaOptions:['苍轮斗庭','绯心曲域','断棱角阵','岚涡深渊','棘华幽阱','八镜回廊'],
     fightButton:'开始对战',
     challengeButton:'进入征途',
     roundNext:'下一回合即将开始',
@@ -676,7 +676,7 @@
     cards:[
       {
         icon:'⚔',
-        type:'冲击型',
+        type:'强攻型',
         stats:'HP 85<br>SPIN 95<br>SPEED 14<br>MASS 1.2',
         skill:'⚔ 飞冲 · 沿直线猛扑目标。',
         pitch:'强势先手型陀螺，只要抓到第一道干净角度，就能顺势滚起节奏。',
@@ -684,7 +684,7 @@
       },
       {
         icon:'🛡',
-        type:'装甲型',
+        type:'守御型',
         stats:'HP 120<br>SPIN 75<br>SPEED 10<br>MASS 1.5',
         skill:'🛡 堡垒脉冲 · 定住身位并把对手向外震开。',
         pitch:'重型控场选择，靠脉冲震退夺回空间并稳住中圈。',
@@ -692,7 +692,7 @@
       },
       {
         icon:'👾',
-        type:'诡步型',
+        type:'奇袭型',
         stats:'HP 70<br>SPIN 100<br>SPEED 16<br>MASS 0.9',
         skill:'👾 幻袭 · 提速切入并持续施压。',
         pitch:'依赖角度和漂移线生存的猎手型陀螺，最擅长边缘撕扯。',
@@ -700,7 +700,7 @@
       },
       {
         icon:'✦',
-        type:'破阵型',
+        type:'强攻型',
         stats:'HP 78<br>SPIN 98<br>SPEED 15<br>MASS 1.1',
         skill:'✦ 飞冲 · 更快破线，但稳定性更低。',
         pitch:'更激进的冲击变体，一旦走到正面发射线就会立刻兑现伤害。',
@@ -708,7 +708,7 @@
       },
       {
         icon:'☄',
-        type:'掠袭型',
+        type:'奇袭型',
         stats:'HP 66<br>SPIN 104<br>SPEED 17<br>MASS 0.8',
         skill:'☄ 幻袭 · 更锐利的边线猎杀与爆发节奏。',
         pitch:'为风险边墙而生的漂移掠食者，残局反扑尤其凶狠。',
@@ -716,7 +716,7 @@
       },
       {
         icon:'🜂',
-        type:'先锋型',
+        type:'强攻型',
         stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
         skill:'🜂 飞冲 · 角度速度更稳，贴线咬合更强。',
         pitch:'稳控型冲击机体，擅长把正面对撞留在自己熟悉的中圈里。',
@@ -724,7 +724,7 @@
       },
       {
         icon:'✺',
-        type:'新星型',
+        type:'强攻型',
         stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
         skill:'✺ 飞冲 · 极高速突击，但燃尽窗口很短。',
         pitch:'玻璃大炮式冲击壳，只要线路够干净，就会在一瞬间完成兑现。',
@@ -732,7 +732,7 @@
       },
       {
         icon:'⛏',
-        type:'震岳型',
+        type:'强攻型',
         stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
         skill:'⛏ 飞冲 · 重压式撞击，碰撞压迫维持更久。',
         pitch:'高密度冲击壳，用持续贴身压制换取更残暴的正面收益。',
@@ -740,7 +740,7 @@
       },
       {
         icon:'⛨',
-        type:'堡垒型',
+        type:'守御型',
         stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
         skill:'⛨ 堡垒脉冲 · 更深站桩，外震力更强。',
         pitch:'全壁垒防御机体，专门用来吃掉冲脸并一次次夺回中心。',
@@ -748,7 +748,7 @@
       },
       {
         icon:'⬡',
-        type:'圣盾型',
+        type:'守御型',
         stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
         skill:'⬡ 堡垒脉冲 · 更利落的反震节奏，回收更快。',
         pitch:'机动化装甲分支，能把防守顺势接成下一次抢中。',
@@ -756,7 +756,7 @@
       },
       {
         icon:'🗿',
-        type:'巨象型',
+        type:'守御型',
         stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
         skill:'🗿 堡垒脉冲 · 极重震波，自身锚定也最强。',
         pitch:'最大重量的控场机体，逼对手先撞上来再把节奏全部拿走。',
@@ -764,7 +764,7 @@
       },
       {
         icon:'✧',
-        type:'镜盾型',
+        type:'守御型',
         stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
         skill:'✧ 堡垒脉冲 · 释放更灵活，滑出碰撞后能继续接线。',
         pitch:'镜面装甲壳能从坏接触里滑开，再立刻回身反震。',
@@ -772,7 +772,7 @@
       },
       {
         icon:'☣',
-        type:'毒牙型',
+        type:'奇袭型',
         stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
         skill:'☣ 幻袭 · 带毒性的切侧漂移，会不断啃咬外线。',
         pitch:'像针一样的诡步分支，靠连续外线小咬口把局面拖进自己的节奏。',
@@ -780,7 +780,7 @@
       },
       {
         icon:'◎',
-        type:'环轨型',
+        type:'奇袭型',
         stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
         skill:'◎ 幻袭 · 轨道阶段更长，贴墙回收更稳。',
         pitch:'偏控场的诡步机体，会绕更大的圈再选择更安全的回切线。',
@@ -788,7 +788,7 @@
       },
       {
         icon:'⌁',
-        type:'乱频型',
+        type:'奇袭型',
         stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
         skill:'⌁ 幻袭 · 最激进的横切漂移，切线几乎无法预读。',
         pitch:'不稳定的偷局怪物，专门靠自己制造离谱角度来赢。',
@@ -877,7 +877,7 @@
     quickStartArenaTrialButton:'広告でトライアル',
     quickStartArenaTrialHint:'SCRAP が不足しているため、広告視聴でこのアリーナのセッショントライアルを開始する。',
     challengeSubtitle:'チャンピオンロード',
-    arenaOptions:['サークルボウル','ハートボウル','ヘックスボウル','サイクロンボウル','ローズボウル','オクタボウル'],
+    arenaOptions:['蒼輪闘庭','緋心曲域','断稜角陣','嵐渦深淵','棘華幽阱','八鏡回廊'],
     fightButton:'対戦開始',
     challengeButton:'ロード開始',
     roundNext:'次のラウンドがまもなく始まる',
@@ -1068,7 +1068,7 @@
     cards:[
       {
         icon:'⚔',
-        type:'衝撃型',
+        type:'強攻型',
         stats:'HP 85<br>SPIN 95<br>SPEED 14<br>MASS 1.2',
         skill:'⚔ フライチャージ · 標的へ一直線に突っ込む。',
         pitch:'最初のきれいな角度をそのまま主導権に変える、強烈な先手型トップ。',
@@ -1076,7 +1076,7 @@
       },
       {
         icon:'🛡',
-        type:'装甲型',
+        type:'守御型',
         stats:'HP 120<br>SPIN 75<br>SPEED 10<br>MASS 1.5',
         skill:'🛡 フォートレスパルス · 位置を固めて相手を外へ弾く。',
         pitch:'重厚な制圧型で、衝撃波によって中央を取り返し続ける。',
@@ -1084,7 +1084,7 @@
       },
       {
         icon:'👾',
-        type:'奇策型',
+        type:'奇襲型',
         stats:'HP 70<br>SPIN 100<br>SPEED 16<br>MASS 0.9',
         skill:'👾 ファントム · 加速しながら圧をかけ続ける。',
         pitch:'角度とドリフトラインを頼りに生きる、外周圧が鋭いハンター型。',
@@ -1092,7 +1092,7 @@
       },
       {
         icon:'✦',
-        type:'破陣型',
+        type:'強攻型',
         stats:'HP 78<br>SPIN 98<br>SPEED 15<br>MASS 1.1',
         skill:'✦ フライチャージ · 破線速度は高いが安定性は低い。',
         pitch:'正面の発射線を掴んだ瞬間に成果へ変える、さらに攻撃的な派生型。',
@@ -1100,7 +1100,7 @@
       },
       {
         icon:'☄',
-        type:'襲撃型',
+        type:'奇襲型',
         stats:'HP 66<br>SPIN 104<br>SPEED 17<br>MASS 0.8',
         skill:'☄ ファントム · さらに鋭い外周狩りとバースト展開。',
         pitch:'危険な壁際を獲物に変える、終盤の切り返しが凶悪なドリフト捕食者。',
@@ -1108,7 +1108,7 @@
       },
       {
         icon:'🜂',
-        type:'先鋒型',
+        type:'強攻型',
         stats:'HP 92<br>SPIN 88<br>SPEED 13<br>MASS 1.3',
         skill:'🜂 フライチャージ · 角度速度を抑え、ライン保持を強める。',
         pitch:'安定した衝撃フレームで、正面接触を自分の中央戦へ固定しやすい。',
@@ -1116,7 +1116,7 @@
       },
       {
         icon:'✺',
-        type:'ノヴァ型',
+        type:'強攻型',
         stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
         skill:'✺ フライチャージ · 超高速の一撃だが、燃え尽きまでが短い。',
         pitch:'一度のきれいな侵入で成果を奪う、ガラス砲寄りの衝撃シェル。',
@@ -1124,7 +1124,7 @@
       },
       {
         icon:'⛏',
-        type:'震動型',
+        type:'強攻型',
         stats:'HP 98<br>SPIN 84<br>SPEED 12<br>MASS 1.4',
         skill:'⛏ フライチャージ · 重い叩き付けで接触圧を長く残す。',
         pitch:'高密度な衝撃シェルで、テンポを落としてでも正面の継続圧を取る。',
@@ -1132,7 +1132,7 @@
       },
       {
         icon:'⛨',
-        type:'堡塁型',
+        type:'守御型',
         stats:'HP 128<br>SPIN 72<br>SPEED 9<br>MASS 1.6',
         skill:'⛨ フォートレスパルス · 深く踏ん張り、外への押し出しを強める。',
         pitch:'全面防壁の守備機で、突進を受け止めて中央を取り返し続ける。',
@@ -1140,7 +1140,7 @@
       },
       {
         icon:'⬡',
-        type:'イージス型',
+        type:'守御型',
         stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
         skill:'⬡ フォートレスパルス · 切り返しが軽く、再進入も速い。',
         pitch:'機動寄りの装甲派生で、防御からそのまま中央奪還へつなげやすい。',
@@ -1148,7 +1148,7 @@
       },
       {
         icon:'🗿',
-        type:'マンモス型',
+        type:'守御型',
         stats:'HP 136<br>SPIN 70<br>SPEED 8<br>MASS 1.7',
         skill:'🗿 フォートレスパルス · 最大級の衝撃波と自己固定力。',
         pitch:'重量最大の制圧機体で、相手に先にぶつからせてから全部を奪い返す。',
@@ -1156,7 +1156,7 @@
       },
       {
         icon:'✧',
-        type:'鏡盾型',
+        type:'守御型',
         stats:'HP 98<br>SPIN 90<br>SPEED 13<br>MASS 1.1',
         skill:'✧ フォートレスパルス · 柔らかく受け流し、返しの滑りも残す。',
         pitch:'鏡面装甲で悪い接触から滑り抜け、すぐに反撃へ転じる。',
@@ -1164,7 +1164,7 @@
       },
       {
         icon:'☣',
-        type:'毒牙型',
+        type:'奇襲型',
         stats:'HP 64<br>SPIN 106<br>SPEED 18<br>MASS 0.8',
         skill:'☣ ファントム · 側面を噛み続ける毒のようなドリフト。',
         pitch:'針のような奇策派生で、何度も外周を削って相手のテンポを壊す。',
@@ -1172,7 +1172,7 @@
       },
       {
         icon:'◎',
-        type:'軌道型',
+        type:'奇襲型',
         stats:'HP 76<br>SPIN 101<br>SPEED 15<br>MASS 0.9',
         skill:'◎ ファントム · 周回時間が長く、壁際リセットが安定する。',
         pitch:'やや制圧寄りの奇策シェルで、大きく回ってから安全な戻り線を選ぶ。',
@@ -1180,7 +1180,7 @@
       },
       {
         icon:'⌁',
-        type:'乱調型',
+        type:'奇襲型',
         stats:'HP 60<br>SPIN 108<br>SPEED 19<br>MASS 0.8',
         skill:'⌁ ファントム · 横切りが最も鋭く、軌道が読まれにくい。',
         pitch:'自分で不条理な角度を作って勝つ、不安定な盗み勝ち特化機。',
@@ -1200,29 +1200,29 @@
   root.config.contentLocales = {
     zh:{
       arenas:{
-        circle_bowl:{ label:'圆形碗场' },
-        heart_bowl:{ label:'心形碗场' },
-        hex_bowl:{ label:'六角碗场' },
-        cyclone_bowl:{ label:'旋风碗场' },
-        rose_bowl:{ label:'玫心碗场' },
-        octa_bowl:{ label:'八棱碗场' }
+        circle_bowl:{ label:'苍轮斗庭' },
+        heart_bowl:{ label:'绯心曲域' },
+        hex_bowl:{ label:'断棱角阵' },
+        cyclone_bowl:{ label:'岚涡深渊' },
+        rose_bowl:{ label:'棘华幽阱' },
+        octa_bowl:{ label:'八镜回廊' }
       },
       tops:{
-        impact:{ name:'冲击' },
-        armor:{ name:'装甲' },
-        trick:{ name:'诡步' },
-        impact_breaker:{ name:'破阵' },
-        trick_raider:{ name:'掠袭' },
-        impact_vanguard:{ name:'先锋' },
-        impact_nova:{ name:'新星' },
-        impact_tremor:{ name:'震岳' },
-        armor_bastion:{ name:'堡垒' },
-        armor_aegis:{ name:'圣盾' },
-        armor_mammoth:{ name:'巨象' },
-        armor_mirror:{ name:'镜盾' },
-        trick_venom:{ name:'毒牙' },
-        trick_orbit:{ name:'环轨' },
-        trick_glitch:{ name:'乱频' }
+        impact:{ name:'赤霄锋' },
+        armor:{ name:'苍甲垣' },
+        trick:{ name:'夜岚游锋' },
+        impact_breaker:{ name:'破军断戟' },
+        trick_raider:{ name:'逐影袭星' },
+        impact_vanguard:{ name:'镇岳冲角' },
+        impact_nova:{ name:'星陨流焰' },
+        impact_tremor:{ name:'撼岳重锋' },
+        armor_bastion:{ name:'不动天城' },
+        armor_aegis:{ name:'光轮御壁' },
+        armor_mammoth:{ name:'磐象镇阙' },
+        armor_mirror:{ name:'镜轮返界' },
+        trick_venom:{ name:'碧牙蚀月' },
+        trick_orbit:{ name:'回天环轨' },
+        trick_glitch:{ name:'狐火断界' }
       },
       research:{
         spin_core:{
@@ -1301,29 +1301,29 @@
     },
     ja:{
       arenas:{
-        circle_bowl:{ label:'サークルボウル' },
-        heart_bowl:{ label:'ハートボウル' },
-        hex_bowl:{ label:'ヘックスボウル' },
-        cyclone_bowl:{ label:'サイクロンボウル' },
-        rose_bowl:{ label:'ローズボウル' },
-        octa_bowl:{ label:'オクタボウル' }
+        circle_bowl:{ label:'蒼輪闘庭', reading:'そうりんとうてい' },
+        heart_bowl:{ label:'緋心曲域', reading:'ひしんきょくいき' },
+        hex_bowl:{ label:'断稜角陣', reading:'だんりょうかくじん' },
+        cyclone_bowl:{ label:'嵐渦深淵', reading:'らんかしんえん' },
+        rose_bowl:{ label:'棘華幽檻', reading:'きょくかゆうかん' },
+        octa_bowl:{ label:'八鏡回廊', reading:'はっきょうかいろう' }
       },
       tops:{
-        impact:{ name:'インパクト' },
-        armor:{ name:'アーマー' },
-        trick:{ name:'トリック' },
-        impact_breaker:{ name:'ブレイカー' },
-        trick_raider:{ name:'レイダー' },
-        impact_vanguard:{ name:'ヴァンガード' },
-        impact_nova:{ name:'ノヴァ' },
-        impact_tremor:{ name:'トレマー' },
-        armor_bastion:{ name:'バスティオン' },
-        armor_aegis:{ name:'イージス' },
-        armor_mammoth:{ name:'マンモス' },
-        armor_mirror:{ name:'ミラー' },
-        trick_venom:{ name:'ヴェノム' },
-        trick_orbit:{ name:'オービット' },
-        trick_glitch:{ name:'グリッチ' }
+        impact:{ name:'赤霄鋒', reading:'せきしょうほう' },
+        armor:{ name:'蒼甲垣', reading:'そうこうえん' },
+        trick:{ name:'夜嵐遊鋒', reading:'やらんゆうほう' },
+        impact_breaker:{ name:'破軍断戟', reading:'はぐんだんげき' },
+        trick_raider:{ name:'逐影襲星', reading:'ちくえいしゅうせい' },
+        impact_vanguard:{ name:'鎮岳衝角', reading:'ちんがくしょうかく' },
+        impact_nova:{ name:'星隕流焔', reading:'せいいんりゅうえん' },
+        impact_tremor:{ name:'撼岳重鋒', reading:'かんがくじゅうほう' },
+        armor_bastion:{ name:'不動天城', reading:'ふどうあまぎ' },
+        armor_aegis:{ name:'光輪御壁', reading:'こうりんごへき' },
+        armor_mammoth:{ name:'磐象鎮塁', reading:'ばんしょうちんるい' },
+        armor_mirror:{ name:'鏡輪返界', reading:'きょうりんへんかい' },
+        trick_venom:{ name:'碧牙蝕月', reading:'へきがしょくげつ' },
+        trick_orbit:{ name:'回天環軌', reading:'かいてんかんき' },
+        trick_glitch:{ name:'狐火断界', reading:'きつねびだんかい' }
       },
       research:{
         spin_core:{

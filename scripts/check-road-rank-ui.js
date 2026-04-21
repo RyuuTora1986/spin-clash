@@ -18,9 +18,7 @@ function loadScript(relPath, context) {
 
 function createElement() {
   const classes = new Set();
-  return {
-    textContent: '',
-    innerHTML: '',
+  const element = {
     disabled: false,
     style: {},
     dataset: {},
@@ -52,6 +50,27 @@ function createElement() {
       }
     }
   };
+  let textContent = '';
+  let innerHTML = '';
+  Object.defineProperty(element, 'textContent', {
+    get() {
+      return textContent;
+    },
+    set(value) {
+      textContent = String(value == null ? '' : value);
+      innerHTML = textContent;
+    }
+  });
+  Object.defineProperty(element, 'innerHTML', {
+    get() {
+      return innerHTML;
+    },
+    set(value) {
+      innerHTML = String(value == null ? '' : value);
+      textContent = innerHTML.replace(/<[^>]*>/g, '');
+    }
+  });
+  return element;
 }
 
 function createDocument() {

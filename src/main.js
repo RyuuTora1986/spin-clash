@@ -140,6 +140,90 @@ let pendingContinue=false;
 let currentArena=0;
 let selectedArenaIndex=0;
 let currentLocale='en';
+
+function createBattlePerfBucket(){
+  return {
+    samples:0,
+    lastMs:0,
+    avgMs:0,
+    maxMs:0
+  };
+}
+
+function resetBattlePerfBucket(bucket){
+  bucket.samples = 0;
+  bucket.lastMs = 0;
+  bucket.avgMs = 0;
+  bucket.maxMs = 0;
+}
+
+function recordBattlePerfSample(bucket,durationMs){
+  const safeDuration = Math.max(0, durationMs || 0);
+  bucket.samples += 1;
+  bucket.lastMs = safeDuration;
+  bucket.avgMs += (safeDuration - bucket.avgMs) / bucket.samples;
+  if(safeDuration > bucket.maxMs){
+    bucket.maxMs = safeDuration;
+  }
+}
+
+function getPerfNow(){
+  return (window.performance && typeof window.performance.now === 'function') ? window.performance.now() : Date.now();
+}
+
+const isTouchDevice = typeof navigator !== 'undefined' && typeof navigator.maxTouchPoints === 'number' && navigator.maxTouchPoints > 0;
+const isMobileUserAgent = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+const lowCoreCount = typeof navigator !== 'undefined' && typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 6;
+const lowDeviceMemory = typeof navigator !== 'undefined' && typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0 && navigator.deviceMemory <= 4;
+const battlePerformanceMode = {
+  enabled:true,
+  battleOnly:true,
+  lowEndMobile:!!(isTouchDevice && isMobileUserAgent && (lowCoreCount || lowDeviceMemory)),
+  activeBattle:false,
+  qualityTier:'full',
+  rendererPixelRatioCap:2
+};
+const battlePerfMetrics = {
+  frameMs:Object.assign(createBattlePerfBucket(), {
+    over22Ms:0,
+    over28Ms:0,
+    over33Ms:0
+  }),
+  phases:{
+    physTick:createBattlePerfBucket(),
+    battleView:createBattlePerfBucket(),
+    renderer:createBattlePerfBucket()
+  }
+};
+
+function resetBattlePerfMetrics(){
+  resetBattlePerfBucket(battlePerfMetrics.frameMs);
+  battlePerfMetrics.frameMs.over22Ms = 0;
+  battlePerfMetrics.frameMs.over28Ms = 0;
+  battlePerfMetrics.frameMs.over33Ms = 0;
+  Object.keys(battlePerfMetrics.phases).forEach(function(key){
+    resetBattlePerfBucket(battlePerfMetrics.phases[key]);
+  });
+}
+
+function recordBattlePerfPhase(phaseName,durationMs){
+  if(!battlePerfMetrics.phases[phaseName]){
+    battlePerfMetrics.phases[phaseName] = createBattlePerfBucket();
+  }
+  recordBattlePerfSample(battlePerfMetrics.phases[phaseName],durationMs);
+}
+
+function recordBattleFrame(durationMs){
+  recordBattlePerfSample(battlePerfMetrics.frameMs,durationMs);
+  if(durationMs > 22) battlePerfMetrics.frameMs.over22Ms += 1;
+  if(durationMs > 28) battlePerfMetrics.frameMs.over28Ms += 1;
+  if(durationMs > 33) battlePerfMetrics.frameMs.over33Ms += 1;
+}
+
+root.battlePerformanceMode = battlePerformanceMode;
+root.battlePerfMetrics = battlePerfMetrics;
+root.recordBattlePerfPhase = recordBattlePerfPhase;
+
 const sessionTrialArenaIds = new Set();
 let activeModifier=MODIFIERS.standard || { id:'standard', label:'STANDARD', description:'No special rules.', player:{}, enemy:{}, rules:{} };
 let loadoutUiTools=null;
@@ -259,7 +343,7 @@ function updateModeUI(){
 
 
 const renderer=new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setPixelRatio(Math.min(devicePixelRatio,battlePerformanceMode.rendererPixelRatioCap));
 renderer.shadowMap.enabled=true;
 document.getElementById('gc').appendChild(renderer.domElement);
 
@@ -308,7 +392,8 @@ trailRenderTools = createTrailRenderTools ? createTrailRenderTools({
   trailLength:TRAIL_N,
   tops:TOPS,
   getPlayerTopId:()=>playerTopId,
-  getEnemyTopId:()=>enemyTopId
+  getEnemyTopId:()=>enemyTopId,
+  getBattlePerformanceMode:()=>battlePerformanceMode
 }) : null;
 scratchLayerTools = createScratchLayerTools ? createScratchLayerTools({
   THREE,
@@ -320,7 +405,8 @@ scratchLayerTools = createScratchLayerTools ? createScratchLayerTools({
   getHeartPoints,
   isCircleArena:()=>isCircleArena(),
   isHeartArena:()=>isHeartArena(),
-  getGameState:()=>gameState
+  getGameState:()=>gameState,
+  getBattlePerformanceMode:()=>battlePerformanceMode
 }) : null;
 
 function setupArena(){
@@ -780,12 +866,15 @@ battleEffectsTools = createBattleEffectsTools ? createBattleEffectsTools({
   showMsg,
   sfxOrb,
   partGeo:pGeo,
-  orbGeo
+  orbGeo,
+  getBattlePerformanceMode:()=>battlePerformanceMode
 }) : null;
 battleViewTools = createBattleViewTools ? createBattleViewTools({
   camera:cam,
   getBaseCameraY:()=>sceneShellTools ? sceneShellTools.getBaseCameraY() : 17,
   getBaseCameraZ:()=>sceneShellTools ? sceneShellTools.getBaseCameraZ() : 12,
+  getBattleVisualTime:()=>battleVisualClock,
+  getBattlePerformanceMode:()=>battlePerformanceMode,
   updateHUD
 }) : null;
 battleSimTools = createBattleSimTools ? createBattleSimTools({
@@ -813,6 +902,7 @@ battleSimTools = createBattleSimTools ? createBattleSimTools({
   polygonContains,
   nearestPolygonEdgeData,
   scalePolygon,
+  getBattleVisualTime:()=>battleVisualClock,
   getEnemyAiConfig:getCurrentEnemyAiConfig,
   spawnParts,
   showMsg,
@@ -842,6 +932,7 @@ else {
 }
 
 let tp,te,camShake=0,lastT=0,endLock=false;
+let battleVisualClock=0;
 
 function xyToArena(cx,cy){
   return aimLineTools ? aimLineTools.xyToArena(cx,cy) : null;
@@ -889,6 +980,9 @@ function fireSkill(user,target){
 }
 
 function initRound(){
+  battleVisualClock = 0;
+  battlePerformanceMode.activeBattle = true;
+  resetBattlePerfMetrics();
   if(roundFlowTools) roundFlowTools.initRound();
 }
 
@@ -898,6 +992,9 @@ function launch(){
 
 function physTick(dt){
   if(gameState!=='active')return;
+  battlePerformanceMode.activeBattle = true;
+  const physTickStartedAt = getPerfNow();
+  battleVisualClock += dt;
   roundTimer-=dt;
   if(roundTimer<=0){roundTimer=0;endRound('time');return;}
   const ts=Math.ceil(roundTimer);
@@ -917,7 +1014,12 @@ function physTick(dt){
   if(allOrbDead&&roundTimer>5&&!physTick._orbTimer){
     physTick._orbTimer=setTimeout(()=>{spawnOrbs();physTick._orbTimer=null;},9500);
   }
-  if(battleViewTools) camShake = battleViewTools.updateFrame(tp,te,dt,camShake);
+  if(battleViewTools){
+    const battleViewStartedAt = getPerfNow();
+    camShake = battleViewTools.updateFrame(tp,te,dt,camShake);
+    recordBattlePerfPhase('battleView', getPerfNow() - battleViewStartedAt);
+  }
+  recordBattlePerfPhase('physTick', getPerfNow() - physTickStartedAt);
 }
 
 function movTop(t,dt){
@@ -934,11 +1036,13 @@ function aiTick(ai,pl,dt){
 
 function endRound(reason){
   if(endLock||gameState!=='active')return;
+  battlePerformanceMode.activeBattle = false;
   if(roundFlowTools) roundFlowTools.endRound(reason);
 }
 
 function showMatchResult(){
   gameState='matchResult';
+  battlePerformanceMode.activeBattle = false;
   if(matchFlowTools) matchFlowTools.showMatchResult();
 }
 
@@ -1031,6 +1135,7 @@ function doSwap(){
   if(tp&&tp.mesh){scene.remove(tp.mesh);tp.mesh=null;}
   if(te&&te.mesh){scene.remove(te.mesh);te.mesh=null;}
   pTrailPos.length=0;eTrailPos.length=0;
+  battlePerformanceMode.activeBattle = false;
   if(uiShellTools) uiShellTools.hideBattleHud();
   showLoadoutOverlay();
   updateModeUI();
@@ -1048,10 +1153,16 @@ function loop(t){
   requestAnimationFrame(loop);
   const rawDt=Math.min((t-prevT)/1000,.05);prevT=t;
   const dt=rawDt*timeScale;
+  const battleFrameStartedAt = gameState==='active' ? getPerfNow() : 0;
   physTick(dt);
   if(homeTopShowcaseTools) homeTopShowcaseTools.tick(rawDt);
   if(quickBattlePreviewTools) quickBattlePreviewTools.tick(rawDt);
+  const renderStartedAt = gameState==='active' ? getPerfNow() : 0;
   renderer.render(scene,cam);
+  if(gameState==='active'){
+    recordBattlePerfPhase('renderer', getPerfNow() - renderStartedAt);
+    recordBattleFrame(getPerfNow() - battleFrameStartedAt);
+  }
 }
 
 function renderGameToText(){
@@ -1105,6 +1216,8 @@ debugRuntimeTools = createDebugRuntimeTools ? createDebugRuntimeTools({
   getSessionTrialArenaIds:()=>sessionTrialArenaIds,
   getHintText:()=>document.getElementById('hint-bar').textContent,
   getMessageText:()=>document.getElementById('msg-txt').textContent,
+  getBattlePerfMetrics:()=>battlePerfMetrics,
+  getBattlePerformanceMode:()=>battlePerformanceMode,
   physTick,
   renderer,
   scene,

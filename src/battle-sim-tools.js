@@ -26,6 +26,7 @@
     const polygonContains = deps.polygonContains;
     const nearestPolygonEdgeData = deps.nearestPolygonEdgeData;
     const scalePolygon = deps.scalePolygon;
+    const getBattleVisualTime = typeof deps.getBattleVisualTime === 'function' ? deps.getBattleVisualTime : function(){ return 0; };
     const getEnemyAiConfig = deps.getEnemyAiConfig || function(){ return null; };
     const spawnParts = deps.spawnParts;
     const showMsg = deps.showMsg;
@@ -245,6 +246,47 @@
       return { hpMul, spinMul };
     }
 
+    function buildTopVisualCache(top){
+      if(!top || !top.mesh) return { emissiveMaterials:[], opacityMaterials:[] };
+      if(top._visualCache && top._visualCache.mesh === top.mesh){
+        return top._visualCache;
+      }
+      const emissiveMaterials = [];
+      const opacityMaterials = [];
+      top.mesh.traverse(function(child){
+        if(!child.isMesh || !child.material) return;
+        const childMaterials = Array.isArray(child.material) ? child.material : [child.material];
+        childMaterials.forEach(function(material){
+          if(!material) return;
+          if(typeof material.emissiveIntensity === 'number' && emissiveMaterials.indexOf(material)===-1){
+            emissiveMaterials.push(material);
+          }
+          if(typeof material.opacity === 'number' && opacityMaterials.indexOf(material)===-1){
+            opacityMaterials.push(material);
+          }
+        });
+      });
+      top._visualCache = {
+        mesh:top.mesh,
+        emissiveMaterials:emissiveMaterials,
+        opacityMaterials:opacityMaterials
+      };
+      return top._visualCache;
+    }
+
+    function setTopEmissiveIntensity(top,intensity){
+      buildTopVisualCache(top).emissiveMaterials.forEach(function(material){
+        material.emissiveIntensity = intensity;
+      });
+    }
+
+    function setTopPhantomState(top,isPhantom){
+      buildTopVisualCache(top).opacityMaterials.forEach(function(material){
+        material.transparent = isPhantom;
+        material.opacity = isPhantom ? 0.40 : 1;
+      });
+    }
+
     function buildCollisionOutcome(topA,topB,impactProfile,collisionRoles){
       const outcome = buildLegacyCollisionOutcome(topA,topB,impactProfile);
       if(!collisionRoles || !collisionRoles.clearAdvantage || !collisionRoles.aggressor){
@@ -285,6 +327,7 @@
     function movTop(top,dt){
       if(!top.alive) return;
       const arenaProfile = getActiveArenaProfile();
+      const battleVisualTime = getBattleVisualTime();
       const frictionScale = Math.pow(friction,dt*60);
       top.vx *= frictionScale;
       top.vz *= frictionScale;
@@ -312,27 +355,27 @@
       }
       if(top.shielded){
         top.shieldT -= dt;
-        if(top.mesh) top.mesh.traverse((child)=>{ if(child.material) child.material.emissiveIntensity=.4+Math.sin(Date.now()*.007)*.45; });
+        if(top.mesh) setTopEmissiveIntensity(top,.4+Math.sin(battleVisualTime*7)*.45);
         if(top.shieldT<=0){
           top.shielded = false;
-          if(top.mesh) top.mesh.traverse((child)=>{ if(child.material) child.material.emissiveIntensity=.35; });
+          if(top.mesh) setTopEmissiveIntensity(top,.35);
         }
       }
       if(top.guarding){
         top.guardT -= dt;
-        if(top.mesh) top.mesh.traverse((child)=>{ if(child.material) child.material.emissiveIntensity=.48+Math.sin(Date.now()*.009)*.22; });
+        if(top.mesh) setTopEmissiveIntensity(top,.48+Math.sin(battleVisualTime*9)*.22);
         if(top.guardT<=0){
           top.guarding = false;
           top.guardT = 0;
-          if(top.mesh) top.mesh.traverse((child)=>{ if(child.material) child.material.emissiveIntensity=.35; });
+          if(top.mesh) setTopEmissiveIntensity(top,.35);
         }
       }
       if(top.phantom){
         top.phantomT -= dt;
-        if(top.mesh) top.mesh.traverse((child)=>{ if(child.isMesh&&child.material){ child.material.transparent=true; child.material.opacity=.40; } });
+        if(top.mesh) setTopPhantomState(top,true);
         if(top.phantomT<=0){
           top.phantom = false;
-          if(top.mesh) top.mesh.traverse((child)=>{ if(child.isMesh&&child.material){ child.material.transparent=false; child.material.opacity=1; } });
+          if(top.mesh) setTopPhantomState(top,false);
         }
       }
       if(top.roleBiasBoostT>0){

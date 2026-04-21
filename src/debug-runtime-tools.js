@@ -56,6 +56,8 @@
     const getSessionTrialArenaIds = typeof options.getSessionTrialArenaIds === 'function' ? options.getSessionTrialArenaIds : function(){ return new Set(); };
     const getHintText = typeof options.getHintText === 'function' ? options.getHintText : function(){ return ''; };
     const getMessageText = typeof options.getMessageText === 'function' ? options.getMessageText : function(){ return ''; };
+    const getBattlePerfMetrics = typeof options.getBattlePerfMetrics === 'function' ? options.getBattlePerfMetrics : function(){ return null; };
+    const getBattlePerformanceMode = typeof options.getBattlePerformanceMode === 'function' ? options.getBattlePerformanceMode : function(){ return null; };
     const physTick = typeof options.physTick === 'function' ? options.physTick : function(){};
     const renderer = options.renderer || null;
     const scene = options.scene || null;
@@ -276,7 +278,9 @@
         timeScale:getTimeScale(),
         hint:getHintText(),
         message:getMessageText(),
-        enemyAi:getCurrentEnemyAiConfig()
+        enemyAi:getCurrentEnemyAiConfig(),
+        battlePerf:getBattlePerfMetrics(),
+        battlePerformanceMode:getBattlePerformanceMode()
       };
     }
 
@@ -472,6 +476,8 @@
           challengeContinueLimit:economy.runtime ? economy.runtime.challengeContinueLimit : null
         },
         enemyAi:runtimeSnapshot.enemyAi,
+        battlePerf:runtimeSnapshot.battlePerf,
+        battlePerformanceMode:runtimeSnapshot.battlePerformanceMode,
         hint:runtimeSnapshot.hint,
         message:runtimeSnapshot.message,
         coordinateSystem:'arena plane uses x right, z down-screen from the default camera view'
@@ -587,6 +593,8 @@
           enemyPreset:getCurrentEnemyPresetId(),
           enemyPresetLabel:getCurrentEnemyPresetLabel(),
           challengeNode:getCurrentMode()==='challenge' && getCurrentChallengeNode() ? getCurrentChallengeNode().id : null,
+          battlePerf:getBattlePerfMetrics(),
+          battlePerformanceMode:getBattlePerformanceMode(),
           challengeUnlockedNodeIndex:getSave().challenge ? getSave().challenge.unlockedNodeIndex : 0,
           challengeCheckpointNodeIndex:getSave().challenge ? (getSave().challenge.checkpointNodeIndex || 0) : 0,
           challengeUnlockedRankIndex:getUnlockedRoadRankIndex(),

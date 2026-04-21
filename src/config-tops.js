@@ -37,7 +37,7 @@
   root.config.tops = [
     createTop({
       id:'impact',
-      name:'Impact',
+      name:'Crimson Edge',
       family:'impact',
       variant:'core',
       unlockSource:'starter',
@@ -56,7 +56,7 @@
     }),
     createTop({
       id:'armor',
-      name:'Armor',
+      name:'Azure Bastion',
       family:'armor',
       variant:'core',
       unlockSource:'starter',
@@ -75,7 +75,7 @@
     }),
     createTop({
       id:'trick',
-      name:'Trick',
+      name:'Night Gale',
       family:'trick',
       variant:'core',
       unlockSource:'road',
@@ -94,7 +94,7 @@
     }),
     createTop({
       id:'impact_breaker',
-      name:'Breaker',
+      name:'Warbreak Pike',
       family:'impact',
       variant:'breaker',
       unlockSource:'shop',
@@ -113,7 +113,7 @@
     }),
     createTop({
       id:'trick_raider',
-      name:'Raider',
+      name:'Shadowraid',
       family:'trick',
       variant:'raider',
       unlockSource:'shop',
@@ -132,7 +132,7 @@
     }),
     createTop({
       id:'impact_vanguard',
-      name:'Vanguard',
+      name:'Peak Ram',
       family:'impact',
       variant:'vanguard',
       unlockSource:'shop',
@@ -151,7 +151,7 @@
     }),
     createTop({
       id:'impact_nova',
-      name:'Nova',
+      name:'Starflare Descend',
       family:'impact',
       variant:'nova',
       unlockSource:'road',
@@ -170,7 +170,7 @@
     }),
     createTop({
       id:'impact_tremor',
-      name:'Tremor',
+      name:'Quakeguard Edge',
       family:'impact',
       variant:'tremor',
       unlockSource:'shop',
@@ -189,7 +189,7 @@
     }),
     createTop({
       id:'armor_bastion',
-      name:'Bastion',
+      name:'Stillkeep Crown',
       family:'armor',
       variant:'bastion',
       unlockSource:'road',
@@ -208,7 +208,7 @@
     }),
     createTop({
       id:'armor_aegis',
-      name:'Aegis',
+      name:'Halo Ward',
       family:'armor',
       variant:'aegis',
       unlockSource:'shop',
@@ -227,7 +227,7 @@
     }),
     createTop({
       id:'armor_mammoth',
-      name:'Mammoth',
+      name:'Stone Tusk Gate',
       family:'armor',
       variant:'mammoth',
       unlockSource:'shop',
@@ -246,7 +246,7 @@
     }),
     createTop({
       id:'armor_mirror',
-      name:'Mirror',
+      name:'Mirror Array',
       family:'armor',
       variant:'mirror',
       unlockSource:'shop',
@@ -265,7 +265,7 @@
     }),
     createTop({
       id:'trick_venom',
-      name:'Venom',
+      name:'Moonvenom',
       family:'trick',
       variant:'venom',
       unlockSource:'shop',
@@ -284,7 +284,7 @@
     }),
     createTop({
       id:'trick_orbit',
-      name:'Orbit',
+      name:'Orbit Rite',
       family:'trick',
       variant:'orbit',
       unlockSource:'shop',
@@ -303,7 +303,7 @@
     }),
     createTop({
       id:'trick_glitch',
-      name:'Glitch',
+      name:'Foxfire Breach',
       family:'trick',
       variant:'glitch',
       unlockSource:'shop',
