@@ -355,6 +355,23 @@ function testAdsenseH5DisabledRewardFallback() {
   assert(availability.reason === 'provider_disabled', 'Expected disabled H5 reward adapter to normalize to provider_disabled.');
 }
 
+function testAdsenseH5ApiStaysAvailableAfterAdsbygoogleBootstrapsIntoObject() {
+  const { context } = createBaseContext();
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+
+  context.adsbygoogle = {
+    loaded: true,
+    push() {}
+  };
+  context.adBreak = function() {};
+  context.adConfig = function() {};
+
+  assert(
+    context.SpinClash.services.providerRuntime.hasAdsenseH5Api() === true,
+    'Expected H5 API detection to stay available after adsbygoogle bootstraps into a non-array object.'
+  );
+}
+
 async function testAdsenseH5MissingPublisherIdIsMisconfigured() {
   const { context, save } = createBaseContext();
   loadScript(path.join('src', 'config-providers.js'), context);
@@ -659,6 +676,57 @@ async function testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests() {
   assert(info.loading === false, 'Expected H5 bootstrap without onReady to clear loading state.');
   assert(info.lastRequestReason === 'provider_loading', 'Expected H5 bootstrap without onReady to preserve provider_loading.');
   assert(info.lastAvailabilityReason === null, 'Expected H5 bootstrap without onReady to stop reporting provider_unavailable once the tag is configured.');
+}
+
+async function testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig() {
+  const { context, head } = createBaseContext();
+
+  loadScript(path.join('src', 'config-providers.js'), context);
+  loadScript(path.join('src', 'provider-runtime-tools.js'), context);
+  loadScript(path.join('src', 'analytics-service.js'), context);
+  context.SpinClash.config.providers.reward.adapter = 'adsense_h5_rewarded';
+  context.SpinClash.config.providers.reward.adsense.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.scriptUrl = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js';
+  context.SpinClash.config.providers.reward.adsense.h5.enabled = true;
+  context.SpinClash.config.providers.reward.adsense.h5.publisherId = 'ca-pub-1234567890123456';
+  context.SpinClash.config.providers.reward.adsense.h5.dataAdClient = 'ca-pub-1234567890123456';
+  loadScript(path.join('src', 'reward-service.js'), context);
+
+  context.__spinClashAdsenseH5Bootstrap = {
+    clientId: 'ca-pub-1234567890123456',
+    preloadConfigured: true
+  };
+  context.adsbygoogle = { push() {} };
+  let configCalls = 0;
+  context.adConfig = function() {
+    configCalls += 1;
+  };
+  context.adBreak = function(config) {
+    config.adBreakDone({
+      breakType: 'reward',
+      breakName: 'double_reward',
+      breakFormat: 'reward',
+      breakStatus: 'notReady'
+    });
+  };
+
+  const reward = context.SpinClash.services.reward;
+  const pending = reward.request('double_reward', { source: 'h5-head-preload' });
+
+  head.appended[0].onload();
+  let rejected = false;
+  try {
+    await pending;
+  } catch (error) {
+    rejected = true;
+    assert(error && error.message === 'provider_loading', 'Expected head-preloaded H5 request to fall back to provider_loading when no ad is ready yet.');
+  }
+  assert(rejected, 'Expected head-preloaded H5 request to reject when no ad is ready yet.');
+  assert(configCalls === 0, 'Expected head-preloaded H5 flow to skip a duplicate adConfig call during runtime init.');
+
+  const runtimeState = context.SpinClash.services.providerRuntime.getAdsenseH5State();
+  assert(runtimeState.initialized === true, 'Expected head-preloaded H5 flow to mark the provider initialized.');
+  assert(runtimeState.configApplied === true, 'Expected head-preloaded H5 flow to mark the provider configured.');
 }
 
 async function testAdsenseRequestWaitsForScriptLoad() {
@@ -1092,6 +1160,7 @@ async function main() {
   testPosthogSdkPresentButConfigMissingStaysMisconfigured();
   testAdsenseDisabledRewardFallback();
   testAdsenseH5DisabledRewardFallback();
+  testAdsenseH5ApiStaysAvailableAfterAdsbygoogleBootstrapsIntoObject();
   await testAdsenseH5MissingPublisherIdIsMisconfigured();
   await testAdsensePlacementAllowlistRejectsUnknownPlacement();
   await testUnknownRewardAdapterDoesNotFallbackToMock();
@@ -1099,6 +1168,7 @@ async function main() {
   await testAdsenseH5RequestWaitsForBootstrapAndGrantsReward();
   await testAdsenseH5DismissedRewardDoesNotGrant();
   await testAdsenseH5BootstrapDoesNotRequireOnReadyToAllowRequests();
+  await testAdsenseH5BootstrappedHeadPreloadDoesNotReconfigureAdConfig();
   await testAdsenseRequestWaitsForScriptLoad();
   await testAdsenseRewardGrantFlow();
   await testAdsenseRewardDeclineOnCloseWithoutGrant();

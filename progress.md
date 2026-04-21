@@ -2026,3 +2026,29 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the repo now has a clearer operator contract for switching between H5 test, H5 production, and GPT fallback without touching committed gameplay code
   - the current planning model still suggests rewarded-ad revenue is structurally too narrow to justify serious paid acquisition scaling under the baseline assumptions; CPI, retention, or ARPDAU would need to improve materially before that changes
+
+2026-04-21 adsense h5 rewarded no-show root-cause pass completed
+- Context:
+  - live reward clicks had already left `mock`, but the Google path still failed before any real rewarded placement could settle
+  - root-cause investigation on the real host and a local dist-static repro showed two integration defects rather than a pure inventory problem
+- Root causes locked:
+  - after `adsbygoogle.js` boots, `window.adsbygoogle` becomes a non-array object, but `provider-runtime-tools.js` was still treating `Array.isArray(window.adsbygoogle)` as the H5 API readiness test, so the provider self-classified as `provider_unavailable` even after the Google tag loaded successfully
+  - the static release package was not emitting the AdSense H5 tag and queue bootstrap into `<head>`, which left the H5 path on a lazy first-click injection flow instead of the official head-first integration shape
+- Main files changed:
+  - `src/provider-runtime-tools.js`
+  - `scripts/build-static-release.js`
+  - `scripts/check-provider-services.js`
+  - `scripts/check-static-package.js`
+- Main fixes:
+  - H5 API detection now accepts the real post-bootstrap `adsbygoogle` object shape instead of requiring an array forever
+  - the H5 release build now injects the AdSense tag, queue bootstrap, and initial `adConfig({ preloadAdBreaks, sound })` call into packaged `index.html` head output when the H5 adapter is selected for release
+  - the H5 release path now records a bootstrap marker so runtime init does not re-send duplicate `adConfig()` preload settings
+  - the runtime no longer writes custom `data-spin-clash-provider-key` attributes onto the AdSense H5 script tag, avoiding the unsupported-attribute warning on the Google tag
+- Verification:
+  - `node scripts/check-provider-services.js`
+  - `npm run build:static` with H5 release env
+  - `node scripts/check-static-package.js` with H5 release env
+  - local `dist-static` browser probe with Playwright confirmed the failure mode moved from `provider_unavailable` to `provider_loading`, meaning the provider no longer self-breaks during bootstrap and is now at the real Google availability/preload stage
+- Practical meaning:
+  - the repo is no longer blocked by its own broken H5 bootstrap detection
+  - any remaining no-show behavior after deploy should now be interpreted as true Google-side readiness / preload / eligibility behavior, not the previous self-inflicted runtime false negative

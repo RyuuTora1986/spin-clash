@@ -51,7 +51,10 @@
     state.loaded = true;
     state.error = false;
     state.lastError = null;
-    if(state.node && state.node.dataset){
+    if(state.node){
+      state.node.__spinClashLoaded = true;
+    }
+    if(state.node && state.node.dataset && state.key !== 'reward-adsense-h5'){
       state.node.dataset.spinClashLoaded = '1';
     }
     if(typeof state.resolve === 'function'){
@@ -77,7 +80,10 @@
     if(!document || !document.head || typeof document.querySelector !== 'function'){
       return null;
     }
-    return document.querySelector('script[data-spin-clash-provider-key="'+key+'"]')
+    return Array.prototype.find.call(document.scripts || [], function(script){
+      return !!script && script.__spinClashProviderKey === key;
+    })
+      || document.querySelector('script[data-spin-clash-provider-key="'+key+'"]')
       || (url ? document.querySelector('script[src="'+url+'"]') : null);
   }
 
@@ -145,12 +151,14 @@
     if(existing){
       state.node = existing;
       applyScriptOptions(existing, options);
-      const alreadyLoaded = (existing.dataset && existing.dataset.spinClashLoaded === '1')
+      const alreadyLoaded = existing.__spinClashLoaded === true
+        || (existing.dataset && existing.dataset.spinClashLoaded === '1')
         || existing.readyState === 'complete'
         || existing.readyState === 'loaded';
+      const h5AlreadyBootstrapped = key === 'reward-adsense-h5' && hasAdsenseH5Api();
       state.loading = !alreadyLoaded;
-      state.loaded = alreadyLoaded;
-      if(alreadyLoaded){
+      state.loaded = alreadyLoaded || h5AlreadyBootstrapped;
+      if(state.loaded){
         settleLoaded(state);
       }else{
         ensureDeferred(state);
@@ -167,14 +175,17 @@
     const script = document.createElement('script');
     script.async = true;
     script.src = url;
-    script.dataset = script.dataset || {};
-    script.dataset.spinClashProviderKey = key;
+    script.__spinClashProviderKey = key;
+    if(key !== 'reward-adsense-h5'){
+      script.dataset = script.dataset || {};
+      script.dataset.spinClashProviderKey = key;
+    }
     applyScriptOptions(script, options);
     state.node = script;
     attachScriptLifecycle(script, state);
-    if(typeof script.setAttribute === 'function'){
+    if(key !== 'reward-adsense-h5' && typeof script.setAttribute === 'function'){
       script.setAttribute('data-spin-clash-provider-key', key);
-    };
+    }
     document.head.appendChild(script);
     return state;
   }
@@ -233,7 +244,7 @@
   }
 
   function ensureAdsenseH5Globals(){
-    window.adsbygoogle = Array.isArray(window.adsbygoogle) ? window.adsbygoogle : [];
+    window.adsbygoogle = window.adsbygoogle || [];
     if(typeof window.adBreak === 'function' && typeof window.adConfig === 'function'){
       return;
     }
@@ -247,7 +258,7 @@
 
   function hasAdsenseH5Api(){
     return !!(
-      Array.isArray(window.adsbygoogle)
+      window.adsbygoogle
       && typeof window.adBreak === 'function'
       && typeof window.adConfig === 'function'
     );
@@ -280,6 +291,15 @@
     adsenseH5State.lastError = null;
     adsenseH5State.clientId = clientId || adsenseH5State.clientId || '';
     adsenseH5State.promise = null;
+  }
+
+  function hasAdsenseH5BootstrapPreload(clientId){
+    const bootstrap = window.__spinClashAdsenseH5Bootstrap;
+    return !!(
+      bootstrap
+      && bootstrap.preloadConfigured === true
+      && (!clientId || !bootstrap.clientId || bootstrap.clientId === clientId)
+    );
   }
 
   function initAdsenseH5(config, timeoutMs){
@@ -328,6 +348,10 @@
         throw new Error('provider_unavailable');
       }
       if(adsenseH5State.configApplied && adsenseH5State.clientId === clientId){
+        return getAdsenseH5State();
+      }
+      if(hasAdsenseH5BootstrapPreload(clientId)){
+        markAdsenseH5Configured(clientId);
         return getAdsenseH5State();
       }
       try{

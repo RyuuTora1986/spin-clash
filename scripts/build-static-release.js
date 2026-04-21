@@ -122,10 +122,7 @@ function validateProviderOverrides(overrides) {
   }
 }
 
-function writeProviderOverrideFile(destRoot) {
-  const overrides = buildProviderOverrides();
-  validateProviderOverrides(overrides);
-
+function writeProviderOverrideFile(destRoot, overrides) {
   const overrideFilePath = path.join(destRoot, 'src', 'config-providers-override.js');
   const hasOverrides = JSON.stringify(overrides) !== '{}';
   const body = hasOverrides
@@ -139,6 +136,65 @@ function writeProviderOverrideFile(destRoot) {
   ].join('\n');
 
   fs.writeFileSync(overrideFilePath, content, 'utf8');
+}
+
+function shouldInjectAdsenseH5HeadBootstrap(overrides) {
+  const reward = overrides.reward || {};
+  const adsense = reward.adsense || {};
+  const h5 = adsense.h5 || {};
+  return reward.adapter === 'adsense_h5_rewarded'
+    && adsense.enabled === true
+    && h5.enabled === true
+    && !!(h5.dataAdClient || h5.publisherId);
+}
+
+function buildAdsenseH5HeadBootstrap(overrides) {
+  const reward = overrides.reward || {};
+  const adsense = reward.adsense || {};
+  const h5 = adsense.h5 || {};
+  const clientId = String(h5.dataAdClient || h5.publisherId || '').trim();
+  const baseScriptUrl = String(
+    h5.scriptUrl
+    || adsense.scriptUrl
+    || 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'
+  ).trim();
+  const scriptUrl = /[?&]client=/.test(baseScriptUrl)
+    ? baseScriptUrl
+    : `${baseScriptUrl}${baseScriptUrl.includes('?') ? '&' : '?'}client=${encodeURIComponent(clientId)}`;
+  const tagAttributes = [
+    'async',
+    `src="${scriptUrl}"`,
+    'crossorigin="anonymous"',
+    `data-ad-client="${clientId}"`
+  ];
+  if (h5.testMode === true) {
+    tagAttributes.push('data-adbreak-test="on"');
+  }
+  return [
+    '<script ' + tagAttributes.join(' ') + '></script>',
+    '<script>',
+    'window.adsbygoogle = window.adsbygoogle || [];',
+    'window.adBreak = window.adBreak || function(o) { window.adsbygoogle.push(o); };',
+    'window.adConfig = window.adConfig || function(o) { window.adsbygoogle.push(o); };',
+    `window.__spinClashAdsenseH5Bootstrap = { clientId: ${JSON.stringify(clientId)}, preloadConfigured: true };`,
+    `window.adConfig({ sound: ${JSON.stringify((h5.preloadHints && h5.preloadHints.sound) || 'off')}, preloadAdBreaks: ${JSON.stringify((h5.preloadHints && h5.preloadHints.preload) || 'auto')} });`,
+    '</script>'
+  ].join('\n');
+}
+
+function injectAdsenseH5HeadBootstrap(indexHtml, overrides) {
+  if (!shouldInjectAdsenseH5HeadBootstrap(overrides)) {
+    return indexHtml;
+  }
+  if (/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=/.test(indexHtml)) {
+    return indexHtml;
+  }
+  const closingHead = '</head>';
+  if (!indexHtml.includes(closingHead)) {
+    throw new Error('Unable to inject AdSense H5 bootstrap because </head> is missing.');
+  }
+  const injection = `${buildAdsenseH5HeadBootstrap(overrides)}\n`;
+  return indexHtml.replace(closingHead, `${injection}${closingHead}`);
 }
 
 function removeDir(targetPath) {
@@ -164,6 +220,8 @@ function copyPath(srcPath, destPath) {
 
 function main() {
   const version = readPackageVersion(repoRoot);
+  const providerOverrides = buildProviderOverrides();
+  validateProviderOverrides(providerOverrides);
 
   removeDir(outputDir);
   ensureDir(outputDir);
@@ -179,12 +237,13 @@ function main() {
 
   const outputIndexHtmlPath = path.join(outputDir, 'index.html');
   const outputIndexHtml = fs.readFileSync(outputIndexHtmlPath, 'utf8');
-  fs.writeFileSync(outputIndexHtmlPath, applyVersionToIndexHtml(outputIndexHtml, version), 'utf8');
+  const versionedIndexHtml = applyVersionToIndexHtml(outputIndexHtml, version);
+  fs.writeFileSync(outputIndexHtmlPath, injectAdsenseH5HeadBootstrap(versionedIndexHtml, providerOverrides), 'utf8');
   const outputConfigTextPath = path.join(outputDir, 'src', 'config-text.js');
   const outputConfigText = fs.readFileSync(outputConfigTextPath, 'utf8');
   fs.writeFileSync(outputConfigTextPath, applyVersionToConfigText(outputConfigText, version), 'utf8');
 
-  writeProviderOverrideFile(outputDir);
+  writeProviderOverrideFile(outputDir, providerOverrides);
 
   console.log(`Static release package created at ${outputDir}`);
 }

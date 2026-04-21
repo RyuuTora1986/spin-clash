@@ -42,11 +42,27 @@ function main() {
 
     const packagedIndexHtml = fs.readFileSync(path.join(distRoot, 'index.html'), 'utf8');
     const packagedConfigText = fs.readFileSync(path.join(distRoot, 'src', 'config-text.js'), 'utf8');
+    const packagedProviderOverrides = fs.readFileSync(path.join(distRoot, 'src', 'config-providers-override.js'), 'utf8');
     for (const failure of collectVersioningFailures(packagedIndexHtml, packageVersion)) {
       failures.push(`Packaged static runtime asset version mismatch: ${failure}`);
     }
     for (const failure of collectBuildVersionFailures(packagedConfigText, packageVersion)) {
       failures.push(`Packaged build version label mismatch: ${failure}`);
+    }
+
+    const h5AdapterEnabled = /"adapter"\s*:\s*"adsense_h5_rewarded"/.test(packagedProviderOverrides)
+      && /"enabled"\s*:\s*true/.test(packagedProviderOverrides)
+      && /"h5"\s*:\s*\{[\s\S]*?"enabled"\s*:\s*true/.test(packagedProviderOverrides);
+    if (h5AdapterEnabled) {
+      if (!/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=/.test(packagedIndexHtml)) {
+        failures.push('Packaged H5 release is missing the static AdSense H5 script tag in <head>.');
+      }
+      if (!/window\.adsbygoogle\s*=\s*window\.adsbygoogle\s*\|\|\s*\[\]/.test(packagedIndexHtml)) {
+        failures.push('Packaged H5 release is missing the AdSense H5 bootstrap queue snippet in <head>.');
+      }
+      if (!/window\.adConfig\(\{[\s\S]*preloadAdBreaks/.test(packagedIndexHtml)) {
+        failures.push('Packaged H5 release is missing the initial AdSense H5 adConfig preload call in <head>.');
+      }
     }
   }
 
