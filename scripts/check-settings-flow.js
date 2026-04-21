@@ -143,6 +143,16 @@ function testSettingsPanelPresentation() {
       settingsSfxLabel: 'SFX',
       settingsToggleOn: 'ON',
       settingsToggleOff: 'OFF',
+      infoAboutLabel: 'ABOUT',
+      infoContactLabel: 'CONTACT',
+      infoPrivacyLabel: 'PRIVACY',
+      infoTermsLabel: 'TERMS',
+      infoBackButton: 'BACK',
+      infoAboutTitle: 'ABOUT SPIN CLASH',
+      infoContactTitle: 'CONTACT',
+      infoPrivacyTitle: 'PRIVACY',
+      infoTermsTitle: 'TERMS',
+      infoAboutBody: ['Line A', 'Line B'],
       fightButton: 'START MATCH',
       challengeButton: 'ENTER PATH',
       loadoutHintChallenge: 'Path hint',
@@ -174,10 +184,13 @@ function testSettingsPanelPresentation() {
       return 'quick';
     },
     getUiRoute() {
-      return 'settings';
+      return 'info';
     },
     getUiRouteFrom() {
       return 'quick';
+    },
+    getInfoPage() {
+      return 'about';
     },
     getCurrentLocale() {
       return 'en';
@@ -220,6 +233,17 @@ function testSettingsPanelPresentation() {
   assert(document.getElementById('settings-language-label').textContent === 'LANGUAGE', 'Expected settings panel to surface a formal language label.');
   assert(document.getElementById('settings-music-label').textContent === 'MUSIC', 'Expected settings panel to surface a formal music label.');
   assert(document.getElementById('settings-sfx-label').textContent === 'SFX', 'Expected settings panel to surface a formal SFX label.');
+  assert(document.getElementById('btn-open-about-home').textContent === 'ABOUT', 'Expected home info entry to render the ABOUT label.');
+  assert(document.getElementById('btn-open-contact-home').textContent === 'CONTACT', 'Expected home info entry to render the CONTACT label.');
+  assert(document.getElementById('btn-open-privacy-home').textContent === 'PRIVACY', 'Expected home info entry to render the PRIVACY label.');
+  assert(document.getElementById('btn-open-terms-home').textContent === 'TERMS', 'Expected home info entry to render the TERMS label.');
+  assert(document.getElementById('btn-open-about-settings').textContent === 'ABOUT', 'Expected settings info entry to render the ABOUT label.');
+  assert(document.getElementById('btn-open-contact-settings').textContent === 'CONTACT', 'Expected settings info entry to render the CONTACT label.');
+  assert(document.getElementById('btn-open-privacy-settings').textContent === 'PRIVACY', 'Expected settings info entry to render the PRIVACY label.');
+  assert(document.getElementById('btn-open-terms-settings').textContent === 'TERMS', 'Expected settings info entry to render the TERMS label.');
+  assert(document.getElementById('info-shell-title').textContent === 'ABOUT SPIN CLASH', 'Expected info shell title to reflect the active info page.');
+  assert(document.getElementById('info-shell-body').innerHTML.includes('Line A'), 'Expected info shell body to render localized public info copy.');
+  assert(document.getElementById('btn-info-back').textContent === 'BACK', 'Expected info shell back button label to render.');
   assert(document.getElementById('btn-settings-music').textContent === 'OFF', 'Expected music toggle button to render OFF label.');
   assert(document.getElementById('btn-settings-sfx').textContent === 'ON', 'Expected SFX toggle button to render ON label.');
   assert(document.getElementById('btn-settings-music').classList.contains('off'), 'Expected disabled music toggle to carry .off state.');

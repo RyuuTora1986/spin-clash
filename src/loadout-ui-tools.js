@@ -48,6 +48,9 @@
     const setSelectedRoadRankIndex = typeof options.setSelectedRoadRankIndex === 'function'
       ? options.setSelectedRoadRankIndex
       : function(index){ return index; };
+    const getInfoPage = typeof options.getInfoPage === 'function'
+      ? options.getInfoPage
+      : function(){ return 'about'; };
     const analyticsService = options.analyticsService || null;
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
     const goPathRoute = typeof options.goPathRoute === 'function' ? options.goPathRoute : function(){};
@@ -170,11 +173,61 @@
       const metaWrap = document.getElementById('title-build-meta');
       const versionText = uiText.titleBuildVersion || '';
       const copyrightText = uiText.titleCopyright || '';
+      updateInfoEntryLabels();
       setText('title-build-version', versionText);
       setText('title-build-copyright', copyrightText);
       if(metaWrap){
-        metaWrap.style.display = versionText || copyrightText ? '' : 'none';
+        metaWrap.style.display = '';
       }
+    }
+
+    function getInfoPageContent(page){
+      const keyMap = {
+        about: { title: 'infoAboutTitle', body: 'infoAboutBody' },
+        contact: { title: 'infoContactTitle', body: 'infoContactBody' },
+        privacy: { title: 'infoPrivacyTitle', body: 'infoPrivacyBody' },
+        terms: { title: 'infoTermsTitle', body: 'infoTermsBody' }
+      };
+      return keyMap[page] || keyMap.about;
+    }
+
+    function updateInfoEntryLabels(){
+      const entries = [
+        ['btn-open-about-home', 'infoAboutLabel', 'ABOUT'],
+        ['btn-open-contact-home', 'infoContactLabel', 'CONTACT'],
+        ['btn-open-privacy-home', 'infoPrivacyLabel', 'PRIVACY'],
+        ['btn-open-terms-home', 'infoTermsLabel', 'TERMS'],
+        ['btn-open-about-settings', 'infoAboutLabel', 'ABOUT'],
+        ['btn-open-contact-settings', 'infoContactLabel', 'CONTACT'],
+        ['btn-open-privacy-settings', 'infoPrivacyLabel', 'PRIVACY'],
+        ['btn-open-terms-settings', 'infoTermsLabel', 'TERMS']
+      ];
+      entries.forEach(function(entry){
+        const id = entry[0];
+        const key = entry[1];
+        const fallback = entry[2];
+        setText(id, uiText[key] || fallback);
+      });
+    }
+
+    function updateInfoShellUI(){
+      const infoOverlay = document.getElementById('ov-info');
+      const infoTitle = document.getElementById('info-shell-title');
+      const infoBody = document.getElementById('info-shell-body');
+      const infoBack = document.getElementById('btn-info-back');
+      if(!infoOverlay || !infoTitle || !infoBody || !infoBack){
+        return;
+      }
+      const infoRoute = getUiRoute() === 'info';
+      const contentKeys = getInfoPageContent(getInfoPage());
+      const bodyLines = Array.isArray(uiText[contentKeys.body]) ? uiText[contentKeys.body] : [];
+      infoOverlay.classList.toggle('hide', !infoRoute);
+      infoOverlay.style.display = infoRoute ? 'flex' : 'none';
+      infoTitle.textContent = uiText[contentKeys.title] || '';
+      infoBack.textContent = uiText.infoBackButton || uiText.backButton || 'BACK';
+      infoBody.innerHTML = bodyLines.map(function(line){
+        return '<p>' + escapeHtml(line) + '</p>';
+      }).join('');
     }
 
     function closeTopPurchaseDialog(granted){
@@ -1176,7 +1229,7 @@
       const loadoutOverlay = document.getElementById('ov-loadout');
 
       if(loadoutOverlay){
-        loadoutOverlay.classList.remove('route-home','route-path','route-quick','route-workshop','route-settings');
+        loadoutOverlay.classList.remove('route-home','route-path','route-quick','route-workshop','route-settings','route-info');
         loadoutOverlay.classList.add('route-'+uiRoute);
       }
       if(routeActions) routeActions.style.display = isPathRoute || isQuickRoute ? '' : 'none';
@@ -1220,6 +1273,7 @@
       updateChallengeRouteUI();
       updateTitleSummary();
       updateBuildMetaUI();
+      updateInfoShellUI();
 
       if(isPathRoute && currentNode){
         const modifier = getModifierById(currentNode.modifierId);
@@ -1348,6 +1402,7 @@
       updateChallengeRouteUI();
       updateTitleSummary();
       updateBuildMetaUI();
+      updateInfoShellUI();
       updateLocaleButtons();
     }
 
