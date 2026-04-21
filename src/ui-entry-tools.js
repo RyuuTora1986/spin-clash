@@ -57,6 +57,8 @@
     const handleShare = typeof options.handleShare === 'function' ? options.handleShare : function(){};
     const toggleMusicPreference = typeof options.toggleMusicPreference === 'function' ? options.toggleMusicPreference : function(){ return true; };
     const toggleSfxPreference = typeof options.toggleSfxPreference === 'function' ? options.toggleSfxPreference : function(){ return true; };
+    let infoReturnRoute = 'home';
+    let infoReturnOrigin = 'home';
 
     function showTitleOverlay(){
       const titleOverlay = document.getElementById('ov-title');
@@ -210,16 +212,24 @@
         ? page
         : 'about';
       const currentRoute = getUiRoute();
+      if(currentRoute !== 'info'){
+        infoReturnRoute = currentRoute || getUiRouteFrom() || 'home';
+        infoReturnOrigin = currentRoute && currentRoute !== 'home'
+          ? (getUiRouteFrom() || 'home')
+          : 'home';
+      }
       const origin = currentRoute && currentRoute !== 'info'
         ? currentRoute
-        : (getUiRouteFrom() || 'home');
+        : (infoReturnRoute || getUiRouteFrom() || 'home');
       setInfoPage(nextPage);
       applyRoute('info', { origin });
       return true;
     }
 
     function closeInfo(){
-      applyRoute(getUiRouteFrom() || 'home', { origin:'home' });
+      applyRoute(infoReturnRoute || getUiRouteFrom() || 'home', {
+        origin: infoReturnOrigin || 'home'
+      });
       return true;
     }
 
@@ -247,7 +257,11 @@
 
     function goBack(){
       const currentRoute = getUiRoute();
-      if(currentRoute === 'workshop' || currentRoute === 'settings' || currentRoute === 'info'){
+      if(currentRoute === 'info'){
+        closeInfo();
+        return;
+      }
+      if(currentRoute === 'workshop' || currentRoute === 'settings'){
         applyRoute(getUiRouteFrom() || 'home', { origin:'home' });
         return;
       }
