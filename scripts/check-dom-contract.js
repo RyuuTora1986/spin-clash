@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {
+  collectBuildVersionFailures,
   collectVersioningFailures,
   readPackageVersion
 } = require('./static-asset-versioning');
@@ -8,6 +9,7 @@ const {
 const repoRoot = path.resolve(__dirname, '..');
 const srcDir = path.join(repoRoot, 'src');
 const indexHtmlPath = path.join(repoRoot, 'index.html');
+const configTextPath = path.join(srcDir, 'config-text.js');
 const failures = [];
 
 const dynamicIds = new Set([
@@ -64,6 +66,7 @@ function main() {
   const referencedIds = collectReferencedIds();
   const htmlIds = collectHtmlIds();
   const html = fs.readFileSync(indexHtmlPath, 'utf8');
+  const configText = fs.readFileSync(configTextPath, 'utf8');
   const requiredIds = [
     'locale-title-switcher',
     'locale-loadout-switcher',
@@ -94,6 +97,10 @@ function main() {
 
   for (const failure of collectVersioningFailures(html, packageVersion)) {
     failures.push(`Static runtime asset version mismatch: ${failure}`);
+  }
+
+  for (const failure of collectBuildVersionFailures(configText, packageVersion)) {
+    failures.push(`Build version label mismatch: ${failure}`);
   }
 
   if (failures.length) {

@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {
+  collectBuildVersionFailures,
   collectVersioningFailures,
   readPackageVersion
 } = require('./static-asset-versioning');
@@ -40,8 +41,12 @@ function main() {
     ['docs', 'originals', 'scripts', 'package.json', 'README.md', 'progress.md'].forEach(expectMissing);
 
     const packagedIndexHtml = fs.readFileSync(path.join(distRoot, 'index.html'), 'utf8');
+    const packagedConfigText = fs.readFileSync(path.join(distRoot, 'src', 'config-text.js'), 'utf8');
     for (const failure of collectVersioningFailures(packagedIndexHtml, packageVersion)) {
       failures.push(`Packaged static runtime asset version mismatch: ${failure}`);
+    }
+    for (const failure of collectBuildVersionFailures(packagedConfigText, packageVersion)) {
+      failures.push(`Packaged build version label mismatch: ${failure}`);
     }
   }
 

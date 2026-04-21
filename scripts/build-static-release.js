@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const {
+  applyVersionToConfigText,
   applyVersionToIndexHtml,
   readPackageVersion
 } = require('./static-asset-versioning');
@@ -179,6 +180,9 @@ function main() {
   const outputIndexHtmlPath = path.join(outputDir, 'index.html');
   const outputIndexHtml = fs.readFileSync(outputIndexHtmlPath, 'utf8');
   fs.writeFileSync(outputIndexHtmlPath, applyVersionToIndexHtml(outputIndexHtml, version), 'utf8');
+  const outputConfigTextPath = path.join(outputDir, 'src', 'config-text.js');
+  const outputConfigText = fs.readFileSync(outputConfigTextPath, 'utf8');
+  fs.writeFileSync(outputConfigTextPath, applyVersionToConfigText(outputConfigText, version), 'utf8');
 
   writeProviderOverrideFile(outputDir);
 
