@@ -135,6 +135,7 @@ function testSettingsPanelPresentation() {
 
   let musicEnabled = false;
   let sfxEnabled = true;
+  let currentRoute = 'settings';
 
   const tools = context.SpinClash.createLoadoutUiTools({
     uiText: {
@@ -184,7 +185,7 @@ function testSettingsPanelPresentation() {
       return 'quick';
     },
     getUiRoute() {
-      return 'info';
+      return currentRoute;
     },
     getUiRouteFrom() {
       return 'quick';
@@ -230,6 +231,13 @@ function testSettingsPanelPresentation() {
 
   tools.updateModeUI();
 
+  const loadoutOverlay = document.getElementById('ov-loadout');
+  const settingsPanel = document.getElementById('settings-panel');
+  const infoOverlay = document.getElementById('ov-info');
+
+  assert(loadoutOverlay.classList.contains('route-settings'), 'Expected loadout overlay to carry route-settings state in settings flow.');
+  assert(settingsPanel.classList.contains('hide') === false, 'Expected settings panel to stay visible in settings route.');
+  assert(infoOverlay.classList.contains('hide') === true, 'Expected info overlay to stay hidden in settings route.');
   assert(document.getElementById('settings-language-label').textContent === 'LANGUAGE', 'Expected settings panel to surface a formal language label.');
   assert(document.getElementById('settings-music-label').textContent === 'MUSIC', 'Expected settings panel to surface a formal music label.');
   assert(document.getElementById('settings-sfx-label').textContent === 'SFX', 'Expected settings panel to surface a formal SFX label.');
@@ -241,16 +249,24 @@ function testSettingsPanelPresentation() {
   assert(document.getElementById('btn-open-contact-settings').textContent === 'CONTACT', 'Expected settings info entry to render the CONTACT label.');
   assert(document.getElementById('btn-open-privacy-settings').textContent === 'PRIVACY', 'Expected settings info entry to render the PRIVACY label.');
   assert(document.getElementById('btn-open-terms-settings').textContent === 'TERMS', 'Expected settings info entry to render the TERMS label.');
-  assert(document.getElementById('info-shell-title').textContent === 'ABOUT SPIN CLASH', 'Expected info shell title to reflect the active info page.');
-  assert(document.getElementById('info-shell-body').innerHTML.includes('Line A'), 'Expected info shell body to render localized public info copy.');
-  assert(document.getElementById('btn-info-back').textContent === 'BACK', 'Expected info shell back button label to render.');
   assert(document.getElementById('btn-settings-music').textContent === 'OFF', 'Expected music toggle button to render OFF label.');
   assert(document.getElementById('btn-settings-sfx').textContent === 'ON', 'Expected SFX toggle button to render ON label.');
   assert(document.getElementById('btn-settings-music').classList.contains('off'), 'Expected disabled music toggle to carry .off state.');
   assert(document.getElementById('btn-settings-sfx').classList.contains('off') === false, 'Expected enabled SFX toggle to avoid .off state.');
 
+  currentRoute = 'info';
+  tools.updateModeUI();
+
+  assert(loadoutOverlay.classList.contains('route-info'), 'Expected loadout overlay to carry route-info state in info flow.');
+  assert(settingsPanel.classList.contains('hide') === true, 'Expected settings panel to hide while info route is active.');
+  assert(infoOverlay.classList.contains('hide') === false, 'Expected info overlay to become visible in info route.');
+  assert(document.getElementById('info-shell-title').textContent === 'ABOUT SPIN CLASH', 'Expected info shell title to reflect the active info page.');
+  assert(document.getElementById('info-shell-body').innerHTML.includes('Line A'), 'Expected info shell body to render localized public info copy.');
+  assert(document.getElementById('btn-info-back').textContent === 'BACK', 'Expected info shell back button label to render.');
+
   musicEnabled = true;
   sfxEnabled = false;
+  currentRoute = 'settings';
   tools.updateModeUI();
 
   assert(document.getElementById('btn-settings-music').textContent === 'ON', 'Expected music toggle button to update to ON.');
