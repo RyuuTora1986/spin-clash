@@ -261,30 +261,62 @@
       });
     }
 
-    function showRewardFailureFeedback(placement, input){
-      if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
-        showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 2.8, 'major');
-        return;
-      }
-      const info = rewardService.getFailureInfo(input);
-      let message = uiText.rewardError || 'REWARD FLOW FAILED.';
-      if(info.category === 'busy'){
-        message = uiText.rewardBusy || 'REWARD ALREADY IN PROGRESS.';
-      }else if(info.category === 'loading'){
-        message = uiText.rewardLoading || 'AD IS LOADING. TRY AGAIN.';
-      }else if(info.category === 'unavailable'){
-        message = uiText.rewardUnavailable || 'REWARD NOT AVAILABLE RIGHT NOW.';
-      }else if(info.category === 'declined'){
+      function getPlacementFailureMessage(placement, info){
+        const category = info && info.category ? info.category : 'error';
         if(placement === 'double_reward'){
-          message = uiText.rewardDoubleFail || 'DOUBLE REWARD NOT GRANTED.';
-        }else if(placement === 'continue_once'){
-          message = uiText.rewardContinueFail || 'CONTINUE NOT GRANTED.';
-        }else{
-          message = uiText.rewardDeclined || 'NO REWARD WAS GRANTED.';
+          if(category === 'busy'){
+            return uiText.rewardDoubleBusy || 'DOUBLE REWARD REQUEST SENT. PLEASE WAIT A MOMENT.';
+          }
+          if(category === 'loading'){
+            return uiText.rewardDoubleLoading || 'DOUBLE REWARD IS STILL LOADING. TRY AGAIN IN A SECOND.';
+          }
+          if(category === 'unavailable'){
+            return uiText.rewardDoubleUnavailable || 'DOUBLE REWARD DID NOT COME THROUGH. YOU STILL KEEP THE BASE PAYOUT AND CAN TRY AGAIN NEXT MATCH.';
+          }
+          if(category === 'declined'){
+            return uiText.rewardDoubleDeclined || 'DOUBLE REWARD DID NOT ACTIVATE. TAP AGAIN IF YOU WANT TO TRY ONCE MORE.';
+          }
+          return uiText.rewardDoubleError || uiText.rewardDoubleUnavailable || 'DOUBLE REWARD DID NOT COME THROUGH. YOU STILL KEEP THE BASE PAYOUT AND CAN TRY AGAIN NEXT MATCH.';
         }
+        if(placement === 'continue_once'){
+          if(category === 'busy'){
+            return uiText.rewardContinueBusy || 'THE REQUEST TO CONTINUE THIS CHALLENGE IS ALREADY IN PROGRESS. PLEASE WAIT A MOMENT.';
+          }
+          if(category === 'loading'){
+            return uiText.rewardContinueLoading || 'THE OPTION TO CONTINUE THIS CHALLENGE IS STILL LOADING. TRY AGAIN IN A SECOND.';
+          }
+          if(category === 'unavailable'){
+            return uiText.rewardContinueUnavailable || 'YOU COULD NOT CONTINUE THIS CHALLENGE THIS TIME. THIS RUN ENDS HERE, YOUR PAYOUT STILL COUNTS, AND YOU CAN TRY AGAIN ON YOUR NEXT CHALLENGE.';
+          }
+          if(category === 'declined'){
+            return uiText.rewardContinueDeclined || 'THIS CHALLENGE WAS NOT RESUMED. TAP AGAIN IF YOU WANT TO TRY ONCE MORE.';
+          }
+          return uiText.rewardContinueError || uiText.rewardContinueUnavailable || 'YOU COULD NOT CONTINUE THIS CHALLENGE THIS TIME. THIS RUN ENDS HERE, YOUR PAYOUT STILL COUNTS, AND YOU CAN TRY AGAIN ON YOUR NEXT CHALLENGE.';
+        }
+        if(category === 'busy'){
+          return uiText.rewardBusy || 'REWARD REQUEST SENT. PLEASE WAIT A MOMENT.';
+        }
+        if(category === 'loading'){
+          return uiText.rewardLoading || 'REWARD IS STILL LOADING. TRY AGAIN IN A SECOND.';
+        }
+        if(category === 'unavailable'){
+          return uiText.rewardUnavailable || 'REWARD NOT AVAILABLE RIGHT NOW.';
+        }
+        if(category === 'declined'){
+          return uiText.rewardDeclined || 'NO REWARD WAS GRANTED.';
+        }
+        return uiText.rewardError || 'REWARD FLOW FAILED.';
       }
-      showMsg(message, 2.8, 'major');
-    }
+
+      function showRewardFailureFeedback(placement, input){
+        if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
+          showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 2.8, 'major');
+          return;
+        }
+        const info = rewardService.getFailureInfo(input);
+        const message = getPlacementFailureMessage(placement, info);
+        showMsg(message, 2.8, 'major');
+      }
 
     function getEndReasonLabel(reason){
       if(reason === 'ringout') return uiText.roundReasonRingOut || 'RING OUT';

@@ -398,24 +398,47 @@
       return (signature && signature.skillId) || (template ? template.skill : null) || 'Fly Charge';
     }
 
-    function showRewardFailureFeedback(placement, input){
-      if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
-        showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 2.8, 'major');
-        return;
+      function getPlacementFailureMessage(placement, info){
+        const category = info && info.category ? info.category : 'error';
+        if(placement === 'trial_unlock_arena'){
+          if(category === 'busy'){
+            return uiText.rewardTrialBusy || 'ARENA TRIAL REQUEST SENT. PLEASE WAIT A MOMENT.';
+          }
+          if(category === 'loading'){
+            return uiText.rewardTrialLoading || 'ARENA TRIAL IS STILL LOADING. TRY AGAIN IN A SECOND.';
+          }
+          if(category === 'unavailable'){
+            return uiText.rewardTrialUnavailable || 'ARENA TRIAL COULD NOT START THIS TIME. TRY AGAIN LATER, OR PICK A DIFFERENT ARENA FOR NOW.';
+          }
+          if(category === 'declined'){
+            return uiText.rewardTrialDeclined || 'ARENA TRIAL DID NOT START. TAP AGAIN IF YOU WANT TO TRY THIS ARENA ONCE MORE.';
+          }
+          return uiText.rewardTrialError || uiText.rewardTrialUnavailable || 'ARENA TRIAL COULD NOT START THIS TIME. TRY AGAIN LATER, OR PICK A DIFFERENT ARENA FOR NOW.';
+        }
+        if(category === 'busy'){
+          return uiText.rewardBusy || 'REWARD REQUEST SENT. PLEASE WAIT A MOMENT.';
+        }
+        if(category === 'loading'){
+          return uiText.rewardLoading || 'REWARD IS STILL LOADING. TRY AGAIN IN A SECOND.';
+        }
+        if(category === 'unavailable'){
+          return uiText.rewardUnavailable || 'REWARD NOT AVAILABLE RIGHT NOW.';
+        }
+        if(category === 'declined'){
+          return uiText.rewardDeclined || 'NO REWARD WAS GRANTED.';
+        }
+        return uiText.rewardError || 'REWARD FLOW FAILED.';
       }
-      const info = rewardService.getFailureInfo(input);
-      let message = uiText.rewardError || 'REWARD FLOW FAILED.';
-      if(info.category === 'busy'){
-        message = uiText.rewardBusy || 'REWARD ALREADY IN PROGRESS.';
-      }else if(info.category === 'loading'){
-        message = uiText.rewardLoading || 'AD IS LOADING. TRY AGAIN.';
-      }else if(info.category === 'unavailable'){
-        message = uiText.rewardUnavailable || 'REWARD NOT AVAILABLE RIGHT NOW.';
-      }else if(info.category === 'declined'){
-        message = uiText.rewardTrialFail || 'TRIAL NOT GRANTED.';
+
+      function showRewardFailureFeedback(placement, input){
+        if(!rewardService || typeof rewardService.getFailureInfo !== 'function'){
+          showMsg(uiText.rewardError || 'REWARD FLOW FAILED.', 2.8, 'major');
+          return;
+        }
+        const info = rewardService.getFailureInfo(input);
+        const message = getPlacementFailureMessage(placement, info);
+        showMsg(message, 2.8, 'major');
       }
-      showMsg(message, 2.8, 'major');
-    }
 
     function getCurrentChallengeNode(){
       const index = getActiveChallengeIndex();

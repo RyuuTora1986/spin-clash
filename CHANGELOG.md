@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.0.8 - 2026-04-21
+
+### Summary
+- Rewrote rewarded-failure feedback into scenario-specific guidance and retuned the message card for mobile readability.
+
+### User-visible changes
+- `double_reward`, `continue_once`, and `trial_unlock_arena` now tell players exactly what did not happen and what they can do next.
+- Long Chinese, Japanese, and English guidance now renders in a wider, calmer message card that stays readable on mobile.
+
+### Technical changes
+- Split reward failure copy by placement and failure category instead of reusing one generic reward message.
+- Rebalanced the `tone-major` message layer into a fixed-width guidance card with mobile-specific typography.
+- Kept the existing reward-provider flow untouched; only player-facing copy and presentation rules changed.
+
+### Verification
+- `npm run check:matchflow`
+- `npm run check:loadout`
+- `npm run check:localization`
+- `npm run preflight`
+- Mobile viewport browser validation for the longest Chinese continue-failure copy
+
 ## 1.0.7 - 2026-04-21
 
 ### Summary

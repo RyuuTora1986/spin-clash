@@ -40,11 +40,15 @@ function createUiText() {
     unlockArena: 'UNLOCKED',
     unlockTop: 'TOP UNLOCKED',
     trialArena: 'TRIAL ACTIVE',
-    rewardError: 'REWARD FLOW FAILED.',
-    rewardBusy: 'REWARD ALREADY IN PROGRESS.',
-    rewardLoading: 'AD IS LOADING. TRY AGAIN.',
-    rewardUnavailable: 'REWARD NOT AVAILABLE RIGHT NOW.',
-    rewardTrialFail: 'TRIAL NOT GRANTED.',
+      rewardError: 'REWARD FLOW FAILED.',
+      rewardBusy: 'REWARD REQUEST SENT. PLEASE WAIT A MOMENT.',
+      rewardLoading: 'REWARD IS STILL LOADING. TRY AGAIN IN A SECOND.',
+      rewardUnavailable: 'REWARD NOT AVAILABLE RIGHT NOW.',
+      rewardTrialBusy: 'ARENA TRIAL REQUEST SENT. PLEASE WAIT A MOMENT.',
+      rewardTrialLoading: 'ARENA TRIAL IS STILL LOADING. TRY AGAIN IN A SECOND.',
+      rewardTrialUnavailable: 'ARENA TRIAL COULD NOT START THIS TIME. TRY AGAIN LATER, OR PICK A DIFFERENT ARENA FOR NOW.',
+      rewardTrialDeclined: 'ARENA TRIAL DID NOT START. TAP AGAIN IF YOU WANT TO TRY THIS ARENA ONCE MORE.',
+      rewardTrialError: 'ARENA TRIAL COULD NOT START THIS TIME. TRY AGAIN LATER, OR PICK A DIFFERENT ARENA FOR NOW.',
     lockedTop: 'LOCKED'
   };
 }
@@ -300,7 +304,7 @@ async function testArenaTrialFailureShowsMajorFeedback() {
 
   assert(granted === false, 'Expected arena trial failure to resolve false.');
   assert(messages.length === 1, 'Expected arena trial failure to surface one feedback message.');
-  assert(messages[0].text === 'REWARD NOT AVAILABLE RIGHT NOW.', 'Expected arena trial failure to use the unavailable reward copy.');
+  assert(messages[0].text === 'ARENA TRIAL COULD NOT START THIS TIME. TRY AGAIN LATER, OR PICK A DIFFERENT ARENA FOR NOW.', 'Expected arena trial failure to use placement-specific unavailable guidance copy.');
   assert(messages[0].tone === 'major', 'Expected arena trial failure to elevate the message tone.');
   assert(messages[0].duration === 2.8, 'Expected arena trial failure to keep the message visible longer.');
 }
