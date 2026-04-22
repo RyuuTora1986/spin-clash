@@ -72,6 +72,8 @@
     const setLastRoundEndReason = typeof options.setLastRoundEndReason === 'function' ? options.setLastRoundEndReason : function(){};
     const getMatchStartedAt = typeof options.getMatchStartedAt === 'function' ? options.getMatchStartedAt : function(){ return null; };
     const setMatchStartedAt = typeof options.setMatchStartedAt === 'function' ? options.setMatchStartedAt : function(){};
+    let roundOutroTakeoverTimer = null;
+    let roundOutroFinishTimer = null;
     const DEFAULT_COMBAT_BY_FAMILY = {
       impact:{ collision:{ roleBias:1.08 }, attrition:{ hpDecayPerSec:0.08 } },
       armor:{ collision:{ roleBias:0.95 }, attrition:{ hpDecayPerSec:0.05 } },
@@ -110,7 +112,7 @@
         ? (normalizedTemplate.combat.actions.guard || {})
         : {};
       const isHeart = typeof options.isHeartArena === 'function' ? options.isHeartArena() : false;
-      const sx= isHeart?(isPlayer?-4.5:4.5):0;
+      const sx= isHeart?(isPlayer?-3.92:3.92):0;
       const sz= isHeart?0:(isPlayer?5.0:-5.0);
       return {
         mesh:null,isPlayer,x:sx,z:sz,vx:0,vz:0,
@@ -120,6 +122,8 @@
         intentType:null,intentT:0,intentLead:0,intentSkillId:null,
         roleBiasBoost:0,roleBiasBoostT:0,
         tiltX:0,tiltZ:0,tiltVX:0,tiltVZ:0,
+        joltX:0,joltY:0,joltZ:0,spinVisualBoost:0,
+        openingGraceT:0,openingGraceBase:0,
         wallCD:0, alive:true,template:normalizedTemplate
       };
     }
@@ -223,10 +227,55 @@
       return uiText.roundResultAdjustLose || 'Next round, fight for the first clean angle before committing to burst. If the entry is messy, guard and reset.';
     }
 
+    function clearRoundOutroTimers(){
+      if(roundOutroTakeoverTimer){
+        clearTimeout(roundOutroTakeoverTimer);
+        roundOutroTakeoverTimer = null;
+      }
+      if(roundOutroFinishTimer){
+        clearTimeout(roundOutroFinishTimer);
+        roundOutroFinishTimer = null;
+      }
+    }
+
+    function hideRoundResultOverlay(){
+      const ovRound = document.getElementById('ov-round');
+      if(ovRound){
+        ovRound.classList.add('hide');
+      }
+      setRoundResultTakeover(false);
+    }
+
+    function getRoundOutroTiming(reason, isMatchPoint){
+      if(reason === 'ringout'){
+        return {
+          takeoverDelayMs:isMatchPoint ? 980 : 920,
+          overlayDurationMs:isMatchPoint ? 1950 : 2050
+        };
+      }
+      if(reason === 'hpout'){
+        return {
+          takeoverDelayMs:360,
+          overlayDurationMs:isMatchPoint ? 1880 : 1980
+        };
+      }
+      if(reason === 'spinout'){
+        return {
+          takeoverDelayMs:320,
+          overlayDurationMs:isMatchPoint ? 1820 : 1920
+        };
+      }
+      return {
+        takeoverDelayMs:260,
+        overlayDurationMs:isMatchPoint ? 1780 : 1880
+      };
+    }
+
     function initRound(){
       let currentEnemyPreset = null;
+      clearRoundOutroTimers();
       setEndLock(false);
-      setRoundResultTakeover(false);
+      hideRoundResultOverlay();
       setGameState('prepare');
       const physTick = getPhysTick();
       if(physTick && physTick._orbTimer){
@@ -284,6 +333,16 @@
         : getCurrentEnemyPresetLabel();
       const nextTp = mkTopData(pt,true);
       const nextTe = mkTopData(et,false);
+      if(typeof options.isHeartArena === 'function' && options.isHeartArena()){
+        const activeArenaConfig = getArenaConfig(getCurrentArena());
+        const openingGrace = activeArenaConfig && activeArenaConfig.physics && typeof activeArenaConfig.physics.openingGrace === 'number'
+          ? activeArenaConfig.physics.openingGrace
+          : 0.9;
+        nextTp.openingGraceT = openingGrace;
+        nextTp.openingGraceBase = openingGrace;
+        nextTe.openingGraceT = openingGrace;
+        nextTe.openingGraceBase = openingGrace;
+      }
       nextTp.burst=Math.min(100, currentModifier.player && currentModifier.player.startBurst ? currentModifier.player.startBurst : 0);
       nextTe.burst=Math.min(100, currentModifier.enemy && currentModifier.enemy.startBurst ? currentModifier.enemy.startBurst : 0);
       nextTp.mesh=mkTop(pt.color,pt.emi,pt.meshFamily || getPlayerTopId(),true);
@@ -339,14 +398,23 @@
         setMatchStartedAt(Date.now());
       }
       sfxLaunch();
-      startMusic();
+      startMusic({
+        scene:'battle',
+        round:getRound(),
+        mode:getCurrentMode(),
+        restart:true,
+        fadeMs:getRound() > 1 ? 180 : 240
+      });
       document.getElementById('hint-bar').textContent=uiText.hintActive || 'SPACE to dash | Q to use your burst skill.';
       const tp = getTp();
       const te = getTe();
       const dx=tp.x-te.x,dz=tp.z-te.z,d=Math.sqrt(dx*dx+dz*dz)||1;
       const sp=(Math.random()-.5)*.5;
-      te.vx=(dx/d+sp)*te.template.spd*(.72+Math.random()*.28);
-      te.vz=dz/d*te.template.spd*(.72+Math.random()*.28);
+      const isHeartOpening = typeof options.isHeartArena === 'function' && options.isHeartArena();
+      const openingSpeedBase = isHeartOpening ? 0.58 : 0.72;
+      const openingSpeedSpread = isHeartOpening ? 0.16 : 0.28;
+      te.vx=(dx/d+sp)*te.template.spd*(openingSpeedBase+Math.random()*openingSpeedSpread);
+      te.vz=dz/d*te.template.spd*(openingSpeedBase+Math.random()*openingSpeedSpread);
       spawnOrbs();
       showMsg(uiText.fightCallout || 'FIGHT!',1.2,'impact');
       if(analyticsService){
@@ -375,8 +443,9 @@
     }
 
     function endRound(reason){
+      clearRoundOutroTimers();
       setEndLock(true);
-      setGameState('roundResult');
+      setGameState('roundOutro');
       setLastRoundEndReason(reason);
       const aimLine = getAimLine();
       if(aimLine) aimLine.visible=false;
@@ -400,26 +469,24 @@
       if(winner==='player') score[0]++;
       else if(winner==='enemy') score[1]++;
       setScore(score);
-      if(winner==='player') sfxRoundWin(); else sfxRoundLose();
-        const rdTxt=document.getElementById('rd-txt');
-        const rdDet=document.getElementById('rd-detail');
-        const rdCause=document.getElementById('rd-cause');
-        const rdKicker=document.getElementById('rd-kicker');
-        const rdAdjust=document.getElementById('rd-adjust');
-        const ovRound=document.getElementById('ov-round');
-        const msgTxt=document.getElementById('msg-txt');
-        if(msgTxt){
-          msgTxt.style.opacity='0';
-          msgTxt.textContent='';
-        }
-        if(rdKicker){
-          rdKicker.textContent=(uiText.roundLabel || 'ROUND')+' RESULT';
-        }
-        rdTxt.textContent=winner==='player'
-          ? (uiText.roundWinPlayer || 'YOU WIN!')
-          : winner==='enemy'
-          ? (uiText.roundWinEnemy || 'ENEMY WINS')
-          : (uiText.roundWinDraw || 'DRAW');
+      const isMatchPoint = score[0]>=2||score[1]>=2;
+      const outroTiming = getRoundOutroTiming(reason, isMatchPoint);
+      const rdTxt=document.getElementById('rd-txt');
+      const rdDet=document.getElementById('rd-detail');
+      const rdCause=document.getElementById('rd-cause');
+      const rdKicker=document.getElementById('rd-kicker');
+      const rdAdjust=document.getElementById('rd-adjust');
+      const ovRound=document.getElementById('ov-round');
+      const msgTxt=document.getElementById('msg-txt');
+      hideRoundResultOverlay();
+      if(rdKicker){
+        rdKicker.textContent=(uiText.roundLabel || 'ROUND')+' RESULT';
+      }
+      rdTxt.textContent=winner==='player'
+        ? (uiText.roundWinPlayer || 'YOU WIN!')
+        : winner==='enemy'
+        ? (uiText.roundWinEnemy || 'ENEMY WINS')
+        : (uiText.roundWinDraw || 'DRAW');
       rdTxt.style.color=winner==='player'?'#00ffcc':winner==='enemy'?'#ff4422':'#ffcc00';
       rdDet.textContent=(uiText.roundLabel || 'ROUND')+' '+getRound()+' - '+why;
       if(rdCause){
@@ -428,22 +495,27 @@
       if(rdAdjust){
         rdAdjust.textContent = getRoundResultAdjustment(winner, reason);
       }
-      setRoundResultTakeover(true);
-      ovRound.classList.remove('hide');
-      if(score[0]>=2||score[1]>=2){
-        setTimeout(()=>{
-          setRoundResultTakeover(false);
-          ovRound.classList.add('hide');
-          showMatchResult();
-        },2200);
-      }else{
-        setRound(getRound()+1);
-        setTimeout(()=>{
-          setRoundResultTakeover(false);
-          ovRound.classList.add('hide');
+      roundOutroTakeoverTimer = setTimeout(()=>{
+        roundOutroTakeoverTimer = null;
+        if(msgTxt){
+          msgTxt.style.opacity='0';
+          msgTxt.textContent='';
+        }
+        if(winner==='player') sfxRoundWin(); else sfxRoundLose();
+        setGameState('roundResult');
+        setRoundResultTakeover(true);
+        ovRound.classList.remove('hide');
+        roundOutroFinishTimer = setTimeout(()=>{
+          roundOutroFinishTimer = null;
+          hideRoundResultOverlay();
+          if(isMatchPoint){
+            showMatchResult();
+            return;
+          }
+          setRound(getRound()+1);
           initRound();
-        },2400);
-      }
+        },outroTiming.overlayDurationMs);
+      },outroTiming.takeoverDelayMs);
     }
 
     return {

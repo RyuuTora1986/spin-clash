@@ -33,6 +33,8 @@
       el.className=type;
       if(type==='instant'){
         setTimeout(()=>{el.style.transition='opacity .35s';el.style.opacity='0';},120);
+      }else if(type==='ringout'){
+        setTimeout(()=>{el.style.transition='opacity .78s';el.style.opacity='0';},90);
       }else{
         setTimeout(()=>{el.style.transition='opacity .6s';el.style.opacity='0';},700);
       }

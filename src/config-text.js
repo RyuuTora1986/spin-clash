@@ -54,7 +54,7 @@
     topPurchaseConfirmButton:'BUY NOW',
     topPurchaseCancelButton:'NOT YET',
     topPurchaseCloseButton:'GOT IT',
-    titleBuildVersion:'Version 1.1.2',
+    titleBuildVersion:'Version 1.2.0',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'Structured run with node rewards and rank pressure.',
     homeQuickNote:'Jump into one fast duel with your current top and arena pick.',
@@ -347,6 +347,55 @@
     messageSuperImpact:'Super Impact!!',
     messagePlayerRingOut:'You were knocked out of the arena!',
     messageEnemyRingOut:'The opponent flew out of the arena!',
+    battleCommentaryLabel:'LIVE',
+    battleCommentaryPlayer:'You',
+    battleCommentaryEnemy:'Opponent',
+    battleCommentary:{
+      openingClaim:[
+        '{leader} takes first contact.',
+        '{leader} opens clean.'
+      ],
+      centerClaim:[
+        '{leader} locks center.',
+        '{leader} owns the middle.'
+      ],
+      edgePressure:[
+        '{target} is getting driven wide.',
+        '{leader} is forcing the rim.'
+      ],
+      ringThreat:[
+        '{target} is right on the line.',
+        '{target} is one hit from ring-out.'
+      ],
+      heavyClash:[
+        'Heavy clash up front.',
+        'That contact landed hard.'
+      ],
+      superImpact:[
+        'Massive hit. The duel swings.',
+        'That shot could decide it.'
+      ],
+      burstReady:[
+        '{top} has burst online.',
+        '{top} is loaded to finish.'
+      ],
+      comeback:[
+        '{top} is still alive.',
+        '{top} keeps the comeback line.'
+      ],
+      ringOutFinish:[
+        '{winner} sends it flying!',
+        '{winner} closes with ring-out!'
+      ],
+      spinFinish:[
+        '{winner} wins the spin war.',
+        '{winner} outlasts the rival.'
+      ],
+      hpBreak:[
+        '{winner} cracks it open.',
+        '{winner} breaks straight through.'
+      ]
+    },
     copyShareText:'Copy share text',
     shareCardPlayerTop:'PLAYER TOP',
     shareCardEnemyTop:'ENEMY TOP',
@@ -521,7 +570,7 @@
     topPurchaseConfirmButton:'现在就买',
     topPurchaseCancelButton:'再看看',
     topPurchaseCloseButton:'知道了',
-    titleBuildVersion:'版本 1.1.2',
+    titleBuildVersion:'版本 1.2.0',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'逐节点推进，适合认真打一段并拿路线上奖励。',
     homeQuickNote:'直接开一局，适合短时间快速对战。',
@@ -814,6 +863,55 @@
     messageSuperImpact:'超强冲击！',
     messagePlayerRingOut:'你被撞出了场地！',
     messageEnemyRingOut:'对手被撞飞出场！',
+    battleCommentaryLabel:'热评',
+    battleCommentaryPlayer:'你',
+    battleCommentaryEnemy:'对手',
+    battleCommentary:{
+      openingClaim:[
+        '{leader}先抢第一撞。',
+        '{leader}起手很干净。'
+      ],
+      centerClaim:[
+        '{leader}卡住中圈。',
+        '{leader}把中圈拿稳了。'
+      ],
+      edgePressure:[
+        '{target}被压到外圈。',
+        '{leader}开始赶人出边。'
+      ],
+      ringThreat:[
+        '{target}出界线危险。',
+        '{target}这下再吃就飞。'
+      ],
+      heavyClash:[
+        '正面重撞！',
+        '这一下撞得很结实。'
+      ],
+      superImpact:[
+        '超重一撞，局势翻了。',
+        '这一下就是胜负手。'
+      ],
+      burstReady:[
+        '{top}爆发点亮。',
+        '{top}终结手上线。'
+      ],
+      comeback:[
+        '{top}还没死。',
+        '{top}还留着反打线。'
+      ],
+      ringOutFinish:[
+        '{winner}直接轰飞！',
+        '{winner}场外收掉！'
+      ],
+      spinFinish:[
+        '{winner}拖赢转力战。',
+        '{winner}把转力熬到底了。'
+      ],
+      hpBreak:[
+        '{winner}直接打穿了。',
+        '{winner}硬生生撞碎了。'
+      ]
+    },
     copyShareText:'复制分享文本',
     shareCardPlayerTop:'玩家陀螺',
     shareCardEnemyTop:'敌方陀螺',
@@ -988,7 +1086,7 @@
     topPurchaseConfirmButton:'今すぐ買う',
     topPurchaseCancelButton:'まだやめる',
     topPurchaseCloseButton:'了解',
-    titleBuildVersion:'Version 1.1.2',
+    titleBuildVersion:'Version 1.2.0',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'ノードを順に進める本筋のラン。報酬とランク圧を見ながら進む。',
     homeQuickNote:'今のトップとアリーナで、すぐ一戦だけ始める短いモード。',
@@ -1281,6 +1379,55 @@
     messageSuperImpact:'超高衝撃!!',
     messagePlayerRingOut:'場外へ弾き出された！',
     messageEnemyRingOut:'相手が場外へ吹き飛んだ！',
+    battleCommentaryLabel:'実況',
+    battleCommentaryPlayer:'あなた',
+    battleCommentaryEnemy:'相手',
+    battleCommentary:{
+      openingClaim:[
+        '{leader}が先手を取った。',
+        '{leader}の入りがきれいだ。'
+      ],
+      centerClaim:[
+        '{leader}が中央を押さえた。',
+        '{leader}がセンターを固める。'
+      ],
+      edgePressure:[
+        '{target}が外周へ追い込まれる。',
+        '{leader}が場外線へ押している。'
+      ],
+      ringThreat:[
+        '{target}は場外寸前だ。',
+        '{target}は次で飛ぶぞ。'
+      ],
+      heavyClash:[
+        '真正面の重い激突だ。',
+        '今の一発は重い。'
+      ],
+      superImpact:[
+        '超重量級の一撃だ。',
+        '今ので流れが変わる。'
+      ],
+      burstReady:[
+        '{top}のBURSTが点いた。',
+        '{top}が決め手を持った。'
+      ],
+      comeback:[
+        '{top}はまだ死んでいない。',
+        '{top}は返しの線を残す。'
+      ],
+      ringOutFinish:[
+        '{winner}がそのまま吹き飛ばした！',
+        '{winner}がリングアウトで締めた！'
+      ],
+      spinFinish:[
+        '{winner}が回転勝負を制した。',
+        '{winner}が最後まで持たせた。'
+      ],
+      hpBreak:[
+        '{winner}が装甲を割った。',
+        '{winner}がそのまま打ち抜いた。'
+      ]
+    },
     copyShareText:'共有テキストをコピー',
     shareCardPlayerTop:'PLAYER TOP',
     shareCardEnemyTop:'ENEMY TOP',

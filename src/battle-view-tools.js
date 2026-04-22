@@ -78,8 +78,14 @@
       }
       [tp,te].forEach((top)=>{
         if(!top.alive||!top.mesh) return;
-        top.mesh.position.set(top.x,.6,top.z);
-        top.mesh.rotation.y+=top.spin/top.maxSpin*150*dt;
+        const joltDamp = Math.pow(0.76,dt*60);
+        const liftDamp = Math.pow(0.68,dt*60);
+        top.joltX = (top.joltX || 0) * joltDamp;
+        top.joltZ = (top.joltZ || 0) * joltDamp;
+        top.joltY = (top.joltY || 0) * liftDamp;
+        top.spinVisualBoost = Math.max(0,(top.spinVisualBoost || 0) - dt*2.8);
+        top.mesh.position.set(top.x + (top.joltX || 0),0.6 + (top.joltY || 0),top.z + (top.joltZ || 0));
+        top.mesh.rotation.y+=top.spin/top.maxSpin*150*(1 + (top.spinVisualBoost || 0))*dt;
         if(top.mesh._crown){
           top.mesh._crown.rotation.y-=top.spin/top.maxSpin*150*dt;
           const pulse=0.35+Math.sin(battleVisualTime*3.2)*0.17;
@@ -97,10 +103,12 @@
         top.tiltZ+=top.tiltVZ*dt;
         const spinRatio=top.spin/top.maxSpin;
         const wobble=spinRatio<0.15?Math.sin(battleVisualTime*14)*(1-spinRatio/0.15)*.28:0;
+        const impactLeanX = (top.joltZ || 0) * 0.32;
+        const impactLeanZ = (top.joltX || 0) * -0.32;
         top.tiltX=Math.max(-0.55,Math.min(0.55,top.tiltX));
         top.tiltZ=Math.max(-0.55,Math.min(0.55,top.tiltZ+wobble));
-        top.mesh.rotation.x=top.tiltX;
-        top.mesh.rotation.z=top.tiltZ;
+        top.mesh.rotation.x=top.tiltX + impactLeanX;
+        top.mesh.rotation.z=top.tiltZ + impactLeanZ;
       });
       if(shouldRefreshHud(tp,te,dt)){
         updateHUD();

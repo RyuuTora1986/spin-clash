@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.2.0 - 2026-04-23
+
+### Summary
+- Rebuilt the battle presentation layer into a louder, more readable release: stronger launch guidance, heavier clash/ring-out beats, floating live commentary, and the first external BGM line.
+
+### User-visible changes
+- Drag aiming now reads as a stronger procedural launch guide instead of the earlier weak dashed line or deformed stretched sprite.
+- Battle finishes now hold their impact longer, especially ring-outs, with more pronounced flash, slow-motion, and result timing.
+- The old fixed commentary bar is gone; combat reactions now appear as short live-chat style floating comments above the arena.
+- The game now plays external homepage and battle MP3 music, with menu and round-based battle switching.
+
+### Technical changes
+- Added a battle-feel event layer that ties collisions, wall hits, ring-out beats, commentary, and screen effects into one runtime path.
+- Integrated authored FX textures for impact / ring-out layering and prepared the audio asset folder structure plus SUNO prompt pack for the next sound pass.
+- Reworked runtime audio to support external MP3 BGM with scene-aware switching, fade handling, autoplay attempts, and procedural fallback behavior.
+- Synced release-facing asset query params and build-version labels to `1.2.0`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run verify:release`
+- Local browser verification against `http://127.0.0.1:4174/`
+- Mobile battle screenshots and runtime-state checks for menu BGM, battle A/B/C routing, and commentary behavior
+
 ## 1.1.2 - 2026-04-21
 
 ### Summary

@@ -2139,3 +2139,286 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical meaning:
   - the repo now carries the UX optimization as actual runtime behavior rather than as a detached design package
   - the most critical comprehension gaps identified in the earlier review are now covered by code, style, and test contracts instead of depending on later manual polish
+
+2026-04-23 battle feel first-pass branch implementation in progress
+- Context:
+  - user approved a dedicated battle-feel optimization branch and explicitly wanted branch-first execution with parallel work where possible
+  - this pass focused on the first small-but-complete runtime slice instead of a broad unfocused polish pass: heavier collision feedback, micro slow motion, stronger drag guidance, and heart-arena opening tolerance
+- Branch:
+  - `codex/battle-feel-pass-20260423`
+- Main files changed:
+  - `src/aim-line-tools.js`
+  - `src/battle-effects-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/battle-view-tools.js`
+  - `src/round-flow-tools.js`
+  - `src/config-arenas.js`
+  - `src/arena-math-tools.js`
+  - `src/main.js`
+- Main runtime outcomes:
+  - drag aim guidance no longer uses the old weak single dashed line:
+    - upgraded to a brighter layered guide with arrow head, landing marker, force segments, and pulse animation
+    - kept the existing `setAimLine/showAimLine/hideAimLine/getAimLine` call contract stable
+  - battle feedback now has a richer event path:
+    - dedicated clash / wall-impact / ring-out effect emitters were added on top of the pooled particle system
+    - heavy hits and strong wall impacts now trigger micro slow-motion instead of only edge/ring-out slow beats
+  - top presentation now reacts more like physical contact instead of only HP/spin changing:
+    - added short-lived visual jolt/lift response
+    - added temporary spin visual boost after strong impacts
+  - heart-arena opening tolerance was partially improved:
+    - spawn positions were moved slightly inward
+    - heart arenas now expose opening-grace / inward-assist tuning in arena config/profile
+    - enemy opening velocity on heart arenas was reduced to make the first exchange less instantly punishing
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:battleperf`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - local Playwright mobile playtest captures against `http://127.0.0.1:4174/index.html`
+- Evidence:
+  - `output/battle-feel-pass-20260423/mobile-circle/04-aimline.png`
+  - `output/battle-feel-pass-20260423/mobile-circle/07-skill.png`
+  - `output/battle-feel-pass-20260423/mobile-heart/04-aimline.png`
+  - `output/battle-feel-pass-20260423/mobile-heart/09-outcome.png`
+- Current assessment:
+  - drag guidance and mid-fight impact readability are materially stronger than before
+  - the heart arena is still more punishing than ideal on very bad opening angles; this is improved infrastructure, not final tuning lock
+- Next likely step:
+  - add 2D/VFX art resources for drag arrow / impact burst / ring-out shock layer after user confirmation, then integrate them on top of the new event hooks instead of inventing a second feedback path
+
+2026-04-23 battle feel first-pass art integration verified
+- Added assets:
+  - `assets/fx/aim-trail-v1.png`
+  - `assets/fx/impact-burst-v1.png`
+  - `assets/fx/ringout-flash-v1.png`
+- Integration outcomes:
+  - `src/main.js` now loads the generated FX textures and injects them into the aim-line and battle-effects tool factories
+  - `src/aim-line-tools.js` now layers the generated drag-tail texture over the rebuilt guide so the launch vector reads as a real authored effect instead of only line primitives
+  - `src/battle-effects-tools.js` now uses the generated impact and ring-out textures as additive overlay bursts on top of the existing pooled particles
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:battleperf`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - local Playwright mobile revalidation against `http://127.0.0.1:4174/`
+- Evidence:
+  - `output/battle-feel-pass-20260423/asset-verify-circle-20260423-014816/01-aimline.png`
+  - `output/battle-feel-pass-20260423/asset-verify-circle-20260423-014816/early-03.png`
+  - `output/battle-feel-pass-20260423/asset-verify-circle-20260423-014816/early-09.png`
+  - `output/battle-feel-pass-20260423/asset-verify-heart-ringout-20260423-015121/01-aimline.png`
+  - `output/battle-feel-pass-20260423/asset-verify-heart-ringout-20260423-015121/round-result.png`
+- Current assessment:
+  - the drag-tail bitmap is reading correctly in both circle and heart arenas
+  - clash / heavy-hit feedback is materially more authored now that the impact burst texture sits on top of the existing particle spray
+  - ring-out outcomes are happening correctly in heart-arena stress cases, but the authored ring-out flash has less readable screen time than intended because the round-result overlay appears almost immediately in fast outs
+- Next likely step:
+  - keep this art pass as-is for merge readiness
+  - if the next slice is another feel pass rather than merge prep, tune ring-out readability separately by delaying the round-result layer slightly or pinning the ring-out burst above result-overlay timing
+
+2026-04-23 ring-out cinematic timing pass completed
+- Main files changed:
+  - `src/main.js`
+  - `src/round-flow-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/battle-effects-tools.js`
+  - `src/combat-action-tools.js`
+  - `css/game.css`
+- Main runtime outcomes:
+  - ring-out no longer jumps straight from impact to result-card takeover:
+    - round endings now split into `roundOutro -> roundResult`
+    - ring-out gets a dedicated no-overlay cinematic window before the round-result card appears
+    - next-round / match-result transition now happens after a longer result-card hold instead of immediately swallowing the finish beat
+  - post-round battle presentation now keeps ticking:
+    - particle bursts, additive overlay bursts, trail cleanup, camera shake decay, and time-dilation recovery continue during `roundOutro` and `roundResult`
+    - this fixed the earlier problem where ring-out VFX effectively froze the instant the round ended
+  - ring-out feel is more exaggerated now:
+    - stronger ring-out slow motion with a longer visible finish beat
+    - longer local ring-out burst lifetime and larger additive flash scale
+    - added a full-screen `ringout` flash layer so edge-side knockouts still read as a decisive finish
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:battleperf`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - local Playwright mobile revalidation against `http://127.0.0.1:4174/`
+- Evidence:
+  - `output/battle-feel-pass-20260423/ringout-cinematic-20260423-020228/frame-03.png`
+  - `output/battle-feel-pass-20260423/ringout-cinematic-20260423-020228/frame-05.png`
+  - `output/battle-feel-pass-20260423/ringout-cinematic-flash-20260423-020506/frame-03.png`
+  - `output/battle-feel-pass-20260423/ringout-cinematic-flash-20260423-020506/frame-04.png`
+  - `output/battle-feel-pass-20260423/ringout-cinematic-flash-20260423-020506/frame-05.png`
+- Current assessment:
+  - the ring-out finish now reads as a clear three-beat sequence: hit lands, flash/outro lingers, result card takes over
+  - the global flash solved the earlier edge-case where local ring-out bursts were visually easy to miss when the knockout happened near the arena boundary
+
+2026-04-23 drag-direction correction and battle-commentary pass completed
+- Context:
+  - local user playtest reported two concrete problems after the previous feel pass:
+    - the drag guide direction and the imported art direction felt reversed
+    - the generated art resources did not read clearly enough in actual play
+  - the same review also requested stronger battle narration inspired by the hype / momentum framing common in official BEYBLADE X anime and match presentation
+- Main files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/battle-commentary-tools.js`
+  - `src/aim-line-tools.js`
+  - `src/battle-effects-tools.js`
+  - `src/battle-sim-tools.js`
+  - `src/config-text.js`
+  - `src/main.js`
+- Main runtime outcomes:
+  - drag guidance direction was corrected at the transform level instead of only re-rotating the bitmap:
+    - the aim-line yaw now matches screen-intuitive drag direction
+    - the guide texture keeps its authored slanted tail read instead of collapsing into a generic thin laser line
+    - guide render priority / depth behavior was raised so the authored layer is no longer lost against arena/top rendering
+  - generated VFX resources now read more clearly in battle:
+    - impact and ring-out overlay bursts render above the arena with stronger scale, lifetime, and visibility
+    - authored FX are still additive but no longer disappear into the bowl as easily as before
+  - battle narration now exists as a dedicated UI layer instead of piggybacking on the existing big center message:
+    - added a separate `battle commentary` card near the combat controls
+    - commentary triggers cover common fight states such as clean opener, center control, edge pressure, ring-out danger, heavy clash, burst ready, comeback state, and finish type
+    - all commentary keys were added in `en / zh / ja` so localization contracts remain intact
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:localization`
+  - `npm run check:battleperf`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - local Chrome CDP mobile revalidation against `http://127.0.0.1:4174/`
+- Evidence:
+  - `output/tmp-verify/aimline-test-4.png`
+  - `output/tmp-verify/battle-impact-early.png`
+  - `output/tmp-verify/battle-impact.png`
+- Practical assessment:
+  - the drag guide no longer points the wrong way during upward center-entry drags
+  - the commentary layer is now visible in live play and reads as a parallel “match call” rather than as a replacement for existing impact callouts
+  - the imported drag art is now meaningfully present, but if a later polish round wants even more authored presence, the next highest-value slice would be replacing part of the remaining procedural guide geometry with fully sprite-driven start / end markers
+
+2026-04-23 procedural drag guide and broadcast commentary refinement completed
+- Context:
+  - the next live user review explicitly rejected the mixed drag guide: the stretched full-image sprite made the interaction look deformed rather than authored
+  - the first commentary pass also failed the readability bar on mobile because it sat too low, used too much copy, and lost too much hierarchy against the combat HUD
+- Main files changed:
+  - `src/aim-line-tools.js`
+  - `src/main.js`
+  - `css/game.css`
+  - `src/config-text.js`
+- Main runtime outcomes:
+  - drag aiming is now intentionally one-system again:
+    - removed the live stretched drag bitmap from the aim-line render path
+    - removed the runtime load/use of `aim-trail-v1.png` for active dragging
+    - kept the stronger procedural shaft / arrow / landing-ring composition as the only launch guide
+  - commentary now behaves like a readable match broadcast layer instead of a weak footer note:
+    - moved the strap into the timer-to-arena buffer zone
+    - increased size, contrast, and prominence
+    - shortened commentary copy in all locales so the line can be read in one glance on mobile
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:localization`
+  - `npm run check:ui`
+  - local Chrome CDP mobile screenshots against `http://127.0.0.1:4174/`
+- Evidence:
+  - `output/tmp-verify-ui/aimline-procedural-2.png`
+  - `output/tmp-verify-ui/commentary-broadcast-2.png`
+- Practical assessment:
+  - the drag guide now reads as one coherent interaction surface instead of a procedural line fighting a stretched sprite
+  - the commentary layer is materially more legible and no longer competes directly with the skill buttons
+
+2026-04-23 floating live-commentary and SUNO audio pack prep completed
+- Context:
+  - the next user review preferred battle commentary that feels like a live-stream room or floating hot comments instead of a single fixed broadcast bar
+  - the same review also requested a full music / SFX / voice prompt pack matched to the game's actual pacing so external audio can be generated and dropped into the repo cleanly
+- Main files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/battle-commentary-tools.js`
+  - `src/config-text.js`
+  - `docs/suno-audio-pack-20260423.md`
+  - `assets/audio/README.md`
+  - `assets/audio/music/.gitkeep`
+  - `assets/audio/sfx/.gitkeep`
+  - `assets/audio/voice/.gitkeep`
+- Main runtime outcomes:
+  - battle commentary is no longer a single strap:
+    - switched to an ephemeral floating-comment feed that spawns short chat-like bubbles, lets them rise, then fades them out
+    - kept the existing battle event hook surface stable so simulation code still only emits commentary keys / tone / priority instead of owning UI animation
+    - shortened commentary copy in `en / zh / ja` so the new floating chips stay readable in one glance
+  - battle commentary presentation now reads closer to a live-room hot-comment layer:
+    - multiple tones still exist (`momentum / alert / finish`) but they now show up as compact floating chips instead of one large panel replacement
+    - the feed stays in the timer-to-arena transition space so it reads above the fight without competing with skill controls
+  - audio staging is now explicit in-repo even before playback integration:
+    - added a SUNO-ready prompt pack covering menu BGM, three battle loops, UI / battle / finish SFX, and a small announcer voice pack
+    - added `assets/audio/music`, `assets/audio/sfx`, and `assets/audio/voice` as the agreed drop targets for generated assets
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:localization`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - `npm run check:battleperf`
+  - local Playwright mobile screenshot capture against `http://127.0.0.1:4174/`
+- Evidence:
+  - `output/tmp-verify-ui/commentary-float-live-1.png`
+  - `output/tmp-verify-ui/commentary-float-live-2.png`
+- Practical assessment:
+  - the commentary layer now behaves like short-lived floating live reactions rather than a static HUD banner
+  - the audio work is not yet wired into runtime playback, but the repo now has exact filenames, folder targets, and generation prompts so the next pass can focus only on integration instead of renaming or rediscovering requirements
+
+2026-04-23 external mp3 bgm integration and first-pass mix calibration completed
+- Context:
+  - the user generated the first external BGM batch already (`home + battle A/B/C`) and asked for actual runtime playback setup rather than more prompt work
+  - the pass needed to solve both playback orchestration and basic mix balance, because the imported tracks are not level-matched to each other
+- Main files changed:
+  - `src/runtime-audio-tools.js`
+  - `src/main.js`
+  - `src/ui-entry-tools.js`
+  - `src/round-flow-tools.js`
+  - `scripts/serve-local.js`
+  - `docs/suno-audio-pack-20260423.md`
+  - `assets/audio/README.md`
+- Main runtime outcomes:
+  - external BGM support is now live:
+    - menu / loadout / workshop / settings / info now use `assets/audio/music/home_neon_grind_01.mp3`
+    - battle launch now switches to external battle BGM instead of the old synthesized loop
+    - battle tracks rotate by round: round 1 -> `battle_redline_01.mp3`, round 2 -> `battle_redline_02.mp3`, round 3 -> `battle_redline_03.mp3`
+    - the old procedural music loop remains as a fallback if an external battle track fails
+  - music state is now context-driven instead of only `start/stop`:
+    - first user interaction primes audio so the homepage can actually start its BGM without requiring a route change
+    - entering loadout/menu routes keeps menu BGM active
+    - entering battle prepare now fades music out so aiming and launch staging do not fight a leftover menu loop
+    - launching a round restarts the correct battle track from its hook instead of resuming from an arbitrary position
+  - first-pass mix tuning was applied from measured waveform strength rather than pure guesswork:
+    - measured rough RMS values: `home 0.1554`, `battle A 0.1949`, `battle B 0.1532`, `battle C 0.2007`
+    - resulting target volumes were set to `home 0.20`, `battle A 0.16`, `battle B 0.20`, `battle C 0.15`
+    - practical goal was to keep imported BGM under the current procedural collision / countdown / skill SFX layer instead of flattening the whole match under hot masters
+  - local server now serves mp3 with the correct MIME:
+    - added `.mp3 -> audio/mpeg` to `scripts/serve-local.js`
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:roundflow`
+  - `npm run check:ui`
+  - local Playwright runtime-state verification against `http://127.0.0.1:4174/`
+- Evidence:
+  - homepage interaction -> `menu_home`
+  - quick route -> `menu_home`
+  - battle prepare -> no active music
+  - battle round 1 -> `battle_a`
+  - battle round 2 mapping -> `battle_b`
+  - battle round 3 mapping -> `battle_c`
+- Practical assessment:
+  - the imported menu track is shorter than originally planned at about `53.44s`, so long home / workshop browsing will hear the loop sooner than ideal
+  - battle A and battle C are materially hotter than home and battle B, so lowering them was necessary to preserve hit readability; the current values are intentionally conservative and should be treated as a first UX mix pass, not final mastering lock
+
+2026-04-23 homepage autoplay attempt restored for menu bgm
+- Context:
+  - the next user check explicitly called out that homepage BGM still felt interaction-gated, which was against the intended menu experience
+- Main files changed:
+  - `src/main.js`
+- Main runtime outcomes:
+  - homepage/menu music now attempts playback during startup instead of waiting for first pointer/key/touch interaction
+  - kept the previous gesture-based retry path intact as a fallback for browsers that still enforce stricter autoplay rules
+  - also retries on `visibilitychange -> visible` so re-entering the page has another chance to pick up the menu track in restrictive environments
+- Verification:
+  - `npm run check:syntax`
+  - local Playwright load-only probe against `http://127.0.0.1:4174/`
+- Evidence:
+  - no-interaction load now reports `currentKey=menu_home`, `currentMode=menu`, `usingExternal=true`

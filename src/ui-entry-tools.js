@@ -35,6 +35,7 @@
     const updateModeUI = typeof options.updateModeUI === 'function' ? options.updateModeUI : function(){};
     const syncDebugPanel = typeof options.syncDebugPanel === 'function' ? options.syncDebugPanel : function(){};
     const initAudioSafely = typeof options.initAudioSafely === 'function' ? options.initAudioSafely : function(){};
+    const syncMusicState = typeof options.syncMusicState === 'function' ? options.syncMusicState : function(){};
     const showRuntimeError = typeof options.showRuntimeError === 'function' ? options.showRuntimeError : function(){};
     const updateSkillIcon = typeof options.updateSkillIcon === 'function' ? options.updateSkillIcon : function(){};
     const attemptArenaAccess = typeof options.attemptArenaAccess === 'function' ? options.attemptArenaAccess : function(){ return Promise.resolve(true); };
@@ -155,6 +156,7 @@
         }
         updateModeUI();
         initAudioSafely();
+        syncMusicState();
       }catch(error){
         const message = error instanceof Error ? error.message : String(error);
         showRuntimeError(message);

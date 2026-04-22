@@ -5,10 +5,45 @@
     const runtimeOptions = options || {};
     const storageService = runtimeOptions.storageService || null;
     const signatureSkills = runtimeOptions.signatureSkills || {};
+    const MUSIC_TRACKS = {
+      menu:{
+        id:'menu_home',
+        src:'assets/audio/music/home_neon_grind_01.mp3',
+        volume:0.20
+      },
+      battle:[
+        {
+          id:'battle_a',
+          src:'assets/audio/music/battle_redline_01.mp3',
+          volume:0.16
+        },
+        {
+          id:'battle_b',
+          src:'assets/audio/music/battle_redline_02.mp3',
+          volume:0.20
+        },
+        {
+          id:'battle_c',
+          src:'assets/audio/music/battle_redline_03.mp3',
+          volume:0.15
+        }
+      ]
+    };
     let AC=null,mGain=null,_beatTimer=null,_nextBeat=0,_beatStep=0;
     let _wallCD=0;
+    let _currentMusicKey='';
+    let _currentMusicMode='none';
+    let _currentMusicTargetVolume=0;
+    let _currentMusicEl=null;
+    const _musicEntries={};
     const BPM=174;
     const S16=60/BPM/4;
+
+    function getNowMs(){
+      return (window.performance && typeof window.performance.now === 'function')
+        ? window.performance.now()
+        : Date.now();
+    }
 
     function getAudioSettings(){
       const save = storageService && typeof storageService.get === 'function'
@@ -104,6 +139,203 @@
       mGain=AC.createGain();
       mGain.gain.value=0.54;
       mGain.connect(AC.destination);
+    }
+
+    function createMusicEntry(track){
+      if(typeof Audio !== 'function' || !track || !track.src){
+        return null;
+      }
+      const audio = new Audio(track.src);
+      audio.preload = 'auto';
+      audio.loop = true;
+      audio.volume = 0;
+      audio.playsInline = true;
+      audio.crossOrigin = 'anonymous';
+      const entry = {
+        id:track.id,
+        track,
+        audio,
+        failed:false,
+        ready:false
+      };
+      audio.addEventListener('canplaythrough', function(){
+        entry.ready = true;
+      });
+      audio.addEventListener('error', function(){
+        entry.failed = true;
+      });
+      return entry;
+    }
+
+    function ensureMusicEntry(track){
+      if(!track || !track.id) return null;
+      if(!_musicEntries[track.id]){
+        const entry = createMusicEntry(track);
+        if(!entry) return null;
+        _musicEntries[track.id] = entry;
+      }
+      return _musicEntries[track.id];
+    }
+
+    function cancelMusicFade(audio){
+      if(!audio) return;
+      audio.__fadeToken = (audio.__fadeToken || 0) + 1;
+    }
+
+    function fadeMusicVolume(audio,targetVolume,durationMs,onDone){
+      if(!audio){
+        if(onDone) onDone();
+        return;
+      }
+      cancelMusicFade(audio);
+      const fadeToken = audio.__fadeToken;
+      const fromVolume = Number.isFinite(audio.volume) ? audio.volume : 0;
+      const toVolume = Math.max(0, Math.min(1, targetVolume || 0));
+      const fadeDuration = Math.max(0, durationMs || 0);
+      if(fadeDuration <= 0 || Math.abs(fromVolume - toVolume) < 0.001){
+        audio.volume = toVolume;
+        if(onDone) onDone();
+        return;
+      }
+      const startedAt = getNowMs();
+      const step = function(){
+        if(audio.__fadeToken !== fadeToken) return;
+        const elapsed = getNowMs() - startedAt;
+        const t = Math.max(0, Math.min(1, elapsed / fadeDuration));
+        audio.volume = fromVolume + (toVolume - fromVolume) * t;
+        if(t >= 1){
+          audio.volume = toVolume;
+          if(onDone) onDone();
+          return;
+        }
+        window.requestAnimationFrame(step);
+      };
+      window.requestAnimationFrame(step);
+    }
+
+    function pauseMusicEntry(entry){
+      if(!entry || !entry.audio) return;
+      cancelMusicFade(entry.audio);
+      entry.audio.pause();
+    }
+
+    function playMusicEntry(entry, options){
+      if(!entry || !entry.audio || entry.failed) return false;
+      const playbackOptions = options || {};
+      if(playbackOptions.restart){
+        try{
+          entry.audio.currentTime = 0;
+        }catch(_error){
+          // Some browsers block currentTime before metadata is ready. Ignore and continue.
+        }
+      }
+      const playPromise = entry.audio.play();
+      if(playPromise && typeof playPromise.catch === 'function'){
+        playPromise.catch(function(error){
+          if(error && error.name !== 'AbortError'){
+            console.warn('Music play blocked', entry.track ? entry.track.src : entry.id, error);
+          }
+        });
+      }
+      return true;
+    }
+
+    function stopProceduralMusic(){
+      if(_beatTimer){
+        clearInterval(_beatTimer);
+        _beatTimer=null;
+      }
+    }
+
+    function resolveBattleTrack(roundNumber){
+      const safeRound = Math.max(1, parseInt(roundNumber, 10) || 1);
+      const trackIndex = Math.max(0, Math.min(MUSIC_TRACKS.battle.length - 1, safeRound - 1));
+      return MUSIC_TRACKS.battle[trackIndex] || null;
+    }
+
+    function resolveExternalTrack(context){
+      const settings = context || {};
+      if(settings.scene === 'menu'){
+        return MUSIC_TRACKS.menu;
+      }
+      if(settings.scene === 'battle'){
+        return resolveBattleTrack(settings.round);
+      }
+      return null;
+    }
+
+    function clearExternalMusic(options){
+      const stopOptions = options || {};
+      const fadeMs = typeof stopOptions.fadeMs === 'number' ? stopOptions.fadeMs : 220;
+      const immediate = !!stopOptions.immediate;
+      if(!_currentMusicEl){
+        _currentMusicKey = '';
+        _currentMusicMode = 'none';
+        _currentMusicTargetVolume = 0;
+        return;
+      }
+      const audio = _currentMusicEl;
+      const finalize = function(){
+        audio.pause();
+      };
+      _currentMusicKey = '';
+      _currentMusicMode = 'none';
+      _currentMusicTargetVolume = 0;
+      _currentMusicEl = null;
+      if(immediate){
+        cancelMusicFade(audio);
+        audio.volume = 0;
+        finalize();
+        return;
+      }
+      fadeMusicVolume(audio, 0, fadeMs, finalize);
+    }
+
+    function activateExternalMusic(track, options){
+      const entry = ensureMusicEntry(track);
+      if(!entry || entry.failed){
+        return false;
+      }
+      const settings = options || {};
+      const fadeMs = typeof settings.fadeMs === 'number' ? settings.fadeMs : 320;
+      const restart = !!settings.restart;
+      const targetVolume = Math.max(0, Math.min(1, settings.volume != null ? settings.volume : (track.volume || 0.18)));
+      stopProceduralMusic();
+
+      if(_currentMusicKey === track.id && _currentMusicEl === entry.audio){
+        _currentMusicMode = settings.mode || _currentMusicMode || 'music';
+        _currentMusicTargetVolume = targetVolume;
+        playMusicEntry(entry, { restart });
+        fadeMusicVolume(entry.audio, targetVolume, fadeMs);
+        return true;
+      }
+
+      const previousAudio = _currentMusicEl;
+      _currentMusicKey = track.id;
+      _currentMusicMode = settings.mode || 'music';
+      _currentMusicTargetVolume = targetVolume;
+      _currentMusicEl = entry.audio;
+      entry.audio.volume = 0;
+      playMusicEntry(entry, { restart });
+      fadeMusicVolume(entry.audio, targetVolume, fadeMs);
+      if(previousAudio){
+        const oldAudio = previousAudio;
+        fadeMusicVolume(oldAudio, 0, Math.max(160, Math.min(420, fadeMs)), function(){
+          oldAudio.pause();
+        });
+      }
+      return true;
+    }
+
+    function getMusicDebugState(){
+      return {
+        currentKey:_currentMusicKey || null,
+        currentMode:_currentMusicMode,
+        targetVolume:_currentMusicTargetVolume,
+        usingExternal:!!_currentMusicEl,
+        proceduralActive:!!_beatTimer,
+        musicEnabled:isMusicEnabled()
+      };
     }
 
     function initAudioSafely(){
@@ -315,18 +547,38 @@
       }
     }
 
-    function startMusic(){
+    function startProceduralMusic(){
       if(_beatTimer||!AC||!isMusicEnabled()) return;
       _nextBeat=AC.currentTime+0.05;
       _beatStep=0;
       _beatTimer=setInterval(_scheduleBeat,20);
     }
 
-    function stopMusic(){
-      if(_beatTimer){
-        clearInterval(_beatTimer);
-        _beatTimer=null;
+    function startMusic(context){
+      if(!isMusicEnabled()){
+        stopMusic({ immediate:true });
+        return;
       }
+      const settings = context || { scene:'battle' };
+      const externalTrack = resolveExternalTrack(settings);
+      if(externalTrack){
+        const activated = activateExternalMusic(externalTrack, {
+          mode:settings.scene || 'music',
+          restart:!!settings.restart,
+          fadeMs:settings.fadeMs,
+          volume:settings.volume
+        });
+        if(activated) return;
+      }
+      clearExternalMusic({ fadeMs:settings.fadeMs, immediate:!!settings.immediate });
+      if(settings.scene === 'battle'){
+        startProceduralMusic();
+      }
+    }
+
+    function stopMusic(options){
+      stopProceduralMusic();
+      clearExternalMusic(options || {});
     }
 
     function sfxCollide(force){
@@ -545,6 +797,7 @@
       initAudioSafely,
       isMusicEnabled,
       isSfxEnabled,
+      getMusicDebugState,
       resolveSignatureAudioStyle,
       startMusic,
       stopMusic,

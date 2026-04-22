@@ -11,6 +11,7 @@
     const hexPoints = deps.hexPoints;
     const getTimeScale = deps.getTimeScale;
     const setTimeScale = deps.setTimeScale;
+    const triggerTimeDilation = typeof deps.triggerTimeDilation === 'function' ? deps.triggerTimeDilation : function(scale){ setTimeScale(scale); };
     const getCamShake = deps.getCamShake;
     const setCamShake = deps.setCamShake;
     const getPlayerTrailPositions = deps.getPlayerTrailPositions;
@@ -29,7 +30,12 @@
     const getBattleVisualTime = typeof deps.getBattleVisualTime === 'function' ? deps.getBattleVisualTime : function(){ return 0; };
     const getEnemyAiConfig = deps.getEnemyAiConfig || function(){ return null; };
     const spawnParts = deps.spawnParts;
+    const emitClashEffect = typeof deps.emitClashEffect === 'function' ? deps.emitClashEffect : function(){};
+    const emitWallImpactEffect = typeof deps.emitWallImpactEffect === 'function' ? deps.emitWallImpactEffect : function(){};
+    const emitRingOutEffect = typeof deps.emitRingOutEffect === 'function' ? deps.emitRingOutEffect : function(){};
+    const flashScreen = typeof deps.flashScreen === 'function' ? deps.flashScreen : function(){};
     const showMsg = deps.showMsg;
+    const showCommentary = typeof deps.showCommentary === 'function' ? deps.showCommentary : function(){ return false; };
     const sfxWall = deps.sfxWall;
     const sfxRingOut = deps.sfxRingOut;
     const sfxCollide = deps.sfxCollide;
@@ -53,6 +59,205 @@
       intentSkillLead:0.36,
       useSkillOnBurstReady:true
     };
+    let commentaryState = createCommentaryState();
+
+    function createCommentaryState(){
+      return {
+        roundT:0,
+        centerOwner:null,
+        centerHoldT:0,
+        centerCalledFor:null,
+        edgeOwner:null,
+        edgeHoldT:0,
+        edgeCalledFor:null,
+        ringThreatCooldownT:0,
+        burstReadyPlayer:false,
+        burstReadyEnemy:false,
+        comebackPlayer:false,
+        comebackEnemy:false,
+        openingClaimDone:false
+      };
+    }
+
+    function clamp(value, min, max){
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getCommentaryName(isPlayer){
+      return isPlayer
+        ? (uiText.battleCommentaryPlayer || 'You')
+        : (uiText.battleCommentaryEnemy || 'Opponent');
+    }
+
+    function commentate(key, tokens, options){
+      return showCommentary(key, tokens, options);
+    }
+
+    function getArenaDanger(top, arenaProfile){
+      const dist = Math.sqrt(top.x*top.x + top.z*top.z);
+      if(arenaProfile.type === 'circle'){
+        return clamp((dist - (arenaProfile.hazardStart - 0.45)) / 1.05, 0, 1.25);
+      }
+      if(arenaProfile.type === 'heart'){
+        const hazard = arenaMathTools
+          ? arenaMathTools.heartInHaz(top.x, top.z, arenaProfile)
+          : heartInHaz(top.x, top.z);
+        if(hazard) return 1.08;
+        const nearWall = arenaMathTools
+          ? arenaMathTools.heartNearWall(top.x, top.z, arenaProfile)
+          : heartNearWall(top.x, top.z);
+        return nearWall ? 0.82 : clamp(dist / Math.max(0.001, arenaProfile.outerRadius || (arenaRadius + 1.0)), 0, 0.62);
+      }
+      const activePolygon = arenaProfile.polygonPoints || hexPoints;
+      if(!polygonContains(activePolygon, top.x, top.z)){
+        return 1.12;
+      }
+      const edge = nearestPolygonEdgeData(activePolygon, top.x, top.z);
+      return clamp((topRadius + 0.24 - edge.dist) / 0.34, 0, 1.05);
+    }
+
+    function getOutwardSpeed(top, arenaProfile){
+      if(arenaProfile.type === 'circle'){
+        const dist = Math.sqrt(top.x*top.x + top.z*top.z) || 1;
+        return (top.vx * top.x + top.vz * top.z) / dist;
+      }
+      if(arenaProfile.type === 'heart'){
+        const normal = arenaMathTools
+          ? arenaMathTools.heartWallNormal(top.x, top.z, arenaProfile.heartPoints)
+          : heartWallNormal(top.x, top.z);
+        return top.vx * normal.nx + top.vz * normal.nz;
+      }
+      const edge = nearestPolygonEdgeData(arenaProfile.polygonPoints || hexPoints, top.x, top.z);
+      return top.vx * edge.nx + top.vz * edge.nz;
+    }
+
+    function maybeCommentateBurstReady(top){
+      const flagKey = top.isPlayer ? 'burstReadyPlayer' : 'burstReadyEnemy';
+      if(commentaryState[flagKey] || top.burst < 100) return;
+      commentaryState[flagKey] = true;
+      commentate('burstReady',{
+        top:getCommentaryName(top.isPlayer)
+      },{
+        duration:1.8,
+        tone:'momentum',
+        priority:1,
+        minGapMs:1200
+      });
+    }
+
+    function maybeCommentateComeback(top, opponent){
+      const flagKey = top.isPlayer ? 'comebackPlayer' : 'comebackEnemy';
+      if(commentaryState[flagKey]) return;
+      const hpRatio = top.hp / Math.max(1, top.maxHp || 1);
+      const spinRatio = top.spin / Math.max(1, top.maxSpin || 1);
+      if((hpRatio >= 0.26 && spinRatio >= 0.22) || opponent.hp <= top.hp * 1.08){
+        return;
+      }
+      commentaryState[flagKey] = true;
+      commentate('comeback',{
+        top:getCommentaryName(top.isPlayer)
+      },{
+        duration:1.9,
+        tone:'momentum',
+        priority:1,
+        minGapMs:1400
+      });
+    }
+
+    function tickCommentary(player, enemy, dt){
+      if(!player || !enemy || !player.alive || !enemy.alive) return;
+      const arenaProfile = getActiveArenaProfile();
+      commentaryState.roundT += dt;
+      commentaryState.ringThreatCooldownT = Math.max(0, commentaryState.ringThreatCooldownT - dt);
+      maybeCommentateBurstReady(player);
+      maybeCommentateBurstReady(enemy);
+      maybeCommentateComeback(player, enemy);
+      maybeCommentateComeback(enemy, player);
+
+      const centerRadius = arenaProfile.type === 'circle' ? 2.2 : 2.05;
+      const playerCenter = Math.sqrt(player.x*player.x + player.z*player.z) <= centerRadius;
+      const enemyCenter = Math.sqrt(enemy.x*enemy.x + enemy.z*enemy.z) <= centerRadius;
+      let centerOwner = null;
+      if(playerCenter && !enemyCenter) centerOwner = 'player';
+      if(enemyCenter && !playerCenter) centerOwner = 'enemy';
+      if(!centerOwner){
+        commentaryState.centerOwner = null;
+        commentaryState.centerHoldT = 0;
+      }else{
+        if(commentaryState.centerOwner !== centerOwner){
+          commentaryState.centerOwner = centerOwner;
+          commentaryState.centerHoldT = 0;
+        }
+        commentaryState.centerHoldT += dt;
+        if(commentaryState.centerHoldT >= 1.05 && commentaryState.centerCalledFor !== centerOwner){
+          commentaryState.centerCalledFor = centerOwner;
+          commentate('centerClaim',{
+            leader:getCommentaryName(centerOwner === 'player')
+          },{
+            duration:1.95,
+            tone:'momentum',
+            priority:1,
+            minGapMs:1300
+          });
+        }
+      }
+
+      const playerDanger = getArenaDanger(player, arenaProfile);
+      const enemyDanger = getArenaDanger(enemy, arenaProfile);
+      let pressureOwner = null;
+      let pressureTarget = null;
+      if(enemyDanger > 0.78 && enemyDanger >= playerDanger + 0.18){
+        pressureOwner = 'player';
+        pressureTarget = 'enemy';
+      }else if(playerDanger > 0.78 && playerDanger >= enemyDanger + 0.18){
+        pressureOwner = 'enemy';
+        pressureTarget = 'player';
+      }
+      if(!pressureOwner){
+        commentaryState.edgeOwner = null;
+        commentaryState.edgeHoldT = 0;
+      }else{
+        if(commentaryState.edgeOwner !== pressureOwner){
+          commentaryState.edgeOwner = pressureOwner;
+          commentaryState.edgeHoldT = 0;
+        }
+        commentaryState.edgeHoldT += dt;
+        if(commentaryState.edgeHoldT >= 0.55 && commentaryState.edgeCalledFor !== pressureOwner){
+          commentaryState.edgeCalledFor = pressureOwner;
+          commentate('edgePressure',{
+            leader:getCommentaryName(pressureOwner === 'player'),
+            target:getCommentaryName(pressureTarget === 'player')
+          },{
+            duration:1.85,
+            tone:'alert',
+            priority:1,
+            minGapMs:1300
+          });
+        }
+      }
+
+      const dangerTarget = playerDanger >= enemyDanger ? player : enemy;
+      const dangerValue = Math.max(playerDanger, enemyDanger);
+      if(
+        commentaryState.ringThreatCooldownT <= 0
+        && dangerValue >= 0.96
+        && getOutwardSpeed(dangerTarget, arenaProfile) > 1.65
+      ){
+        commentaryState.ringThreatCooldownT = 3.4;
+        commentate('ringThreat',{
+          target:getCommentaryName(!!dangerTarget.isPlayer)
+        },{
+          duration:1.8,
+          tone:'alert',
+          priority:2,
+          minGapMs:0
+        });
+      }
+    }
+
+    function resetCommentary(){
+      commentaryState = createCommentaryState();
+    }
 
     function getPolygonRadius(points){
       let best = 0;
@@ -324,6 +529,50 @@
       return outcome;
     }
 
+    function applyVisualImpact(top,dirX,dirZ,force,verticalLift){
+      if(!top) return;
+      const impactForce = Math.max(0, force || 0);
+      const lift = typeof verticalLift === 'number' ? verticalLift : (0.03 + Math.min(0.11, impactForce * 0.006));
+      top.joltX = (top.joltX || 0) + dirX * Math.min(0.34, impactForce * 0.016);
+      top.joltZ = (top.joltZ || 0) + dirZ * Math.min(0.34, impactForce * 0.016);
+      top.joltY = Math.max(top.joltY || 0, lift);
+      top.spinVisualBoost = Math.max(top.spinVisualBoost || 0, Math.min(0.6, 0.08 + impactForce * 0.026));
+    }
+
+    function triggerImpactSlowMo(force,scale,hold,recoverRate){
+      if(force<=0) return;
+      triggerTimeDilation(scale, hold, recoverRate);
+    }
+
+    function rescueHeartOpening(top,arenaProfile,wallNx,wallNz){
+      top.x -= wallNx * arenaProfile.openingClampPush;
+      top.z -= wallNz * arenaProfile.openingClampPush;
+      const outwardSpeed = top.vx*wallNx + top.vz*wallNz;
+      if(outwardSpeed>0){
+        top.vx -= outwardSpeed*wallNx*1.75;
+        top.vz -= outwardSpeed*wallNz*1.75;
+      }
+      top.vx -= wallNx * arenaProfile.openingInwardAssist * 0.32;
+      top.vz -= wallNz * arenaProfile.openingInwardAssist * 0.32;
+      top.vx *= 0.82;
+      top.vz *= 0.82;
+      top.wallCD = 0.12;
+      top.spin = Math.max(0,top.spin-10);
+      top.openingGraceT = 0;
+      applyVisualImpact(top,wallNx,wallNz,8.5,0.07);
+      emitWallImpactEffect({
+        x:top.x,
+        z:top.z,
+        nx:wallNx,
+        nz:wallNz,
+        speed:9,
+        color:top.template.color,
+        rimColor:arenaProfile.rimColor,
+        openingSave:true
+      });
+      triggerTimeDilation(0.24,0.08,4.6);
+    }
+
     function movTop(top,dt){
       if(!top.alive) return;
       const arenaProfile = getActiveArenaProfile();
@@ -384,6 +633,9 @@
           top.roleBiasBoost = 0;
         }
       }
+      if(top.openingGraceT>0){
+        top.openingGraceT = Math.max(0, top.openingGraceT - dt);
+      }
       top.dashCD = Math.max(0,top.dashCD-dt);
       top.guardCD = Math.max(0,(top.guardCD||0)-dt);
       top.skillCD = Math.max(0,top.skillCD-dt);
@@ -431,6 +683,18 @@
         }
       }
 
+      if(arenaProfile.type === 'heart' && top.openingGraceT>0 && nearWall){
+        const openingRatio = Math.min(1, top.openingGraceT / Math.max(top.openingGraceBase || top.openingGraceT, 0.001));
+        const assistForce = arenaProfile.openingInwardAssist * (0.72 + openingRatio * 0.38);
+        top.vx -= wallNx * assistForce * dt;
+        top.vz -= wallNz * assistForce * dt;
+        const outwardSpeed = top.vx*wallNx + top.vz*wallNz;
+        if(outwardSpeed>0){
+          top.vx -= outwardSpeed*wallNx*0.42;
+          top.vz -= outwardSpeed*wallNz*0.42;
+        }
+      }
+
       if(nearWall && top.wallCD<=0){
         const dot = top.vx*wallNx + top.vz*wallNz;
         if(dot>0){
@@ -452,11 +716,25 @@
           const tiltForce = dot*0.65;
           top.tiltVX += wallNz*tiltForce;
           top.tiltVZ -= wallNx*tiltForce;
+          applyVisualImpact(top,wallNx,wallNz,Math.abs(dot),0.035 + Math.min(0.06,Math.abs(dot)*0.004));
           (top.isPlayer ? getPlayerTrailPositions() : getEnemyTrailPositions()).length = 0;
           sfxWall(Math.abs(dot));
           spawnParts(top.x,top.z,arenaProfile.rimColor,6);
           spawnParts(top.x,top.z,0xffffff,3);
+          emitWallImpactEffect({
+            x:top.x,
+            z:top.z,
+            nx:wallNx,
+            nz:wallNz,
+            speed:Math.abs(dot),
+            color:top.template.color,
+            rimColor:arenaProfile.rimColor,
+            isPlayer:!!top.isPlayer
+          });
           setCamShake(Math.min(0.8,getCamShake()+Math.abs(dot)*0.11));
+          if(Math.abs(dot)>9){
+            triggerImpactSlowMo(Math.abs(dot),Math.abs(dot)>14 ? 0.3 : 0.42,Math.abs(dot)>14 ? 0.08 : 0.05,Math.abs(dot)>14 ? 4.5 : 5.8);
+          }
         }
       }
 
@@ -467,32 +745,57 @@
             ? arenaMathTools.heartRingOut(top.x, top.z, arenaProfile)
             : heartRingOut(top.x, top.z))
           : !polygonContains(arenaProfile.outerPoints || hexOuter,top.x,top.z));
-      if(arenaProfile.type === 'circle' && dist>arenaRadius+0.05&&dist<arenaRadius+0.3&&getTimeScale()>0.5) setTimeScale(0.18);
+      if(arenaProfile.type === 'circle' && dist>arenaRadius+0.05&&dist<arenaRadius+0.3&&getTimeScale()>0.5) triggerTimeDilation(0.18,0.08,4.2);
       if(
         arenaProfile.type === 'heart'
         && (arenaMathTools ? arenaMathTools.heartCrossed(top.x, top.z, arenaProfile) : heartCrossed(top.x, top.z))
         && !(arenaMathTools ? arenaMathTools.heartRingOut(top.x, top.z, arenaProfile) : heartRingOut(top.x, top.z))
         && getTimeScale()>0.5
-      ) setTimeScale(0.18);
+      ) triggerTimeDilation(0.18,0.08,4.2);
       if(
         arenaProfile.type === 'hex'
         && polygonContains(arenaProfile.outerPoints || hexOuter,top.x,top.z)
         && !polygonContains(arenaProfile.polygonPoints || hexPoints,top.x,top.z)
         && getTimeScale()>0.5
-      ) setTimeScale(0.18);
+      ) triggerTimeDilation(0.18,0.08,4.2);
 
-      if(isOut){
-        top.alive=false;
-        if(top.mesh){
-          spawnParts(top.x,top.z,top.template.color,32);
-          spawnParts(top.x,top.z,0xffffff,16);
+      if(arenaProfile.type === 'heart' && top.openingGraceT>0 && isOut){
+        const wallNormal = arenaMathTools
+          ? arenaMathTools.heartWallNormal(top.x, top.z, arenaProfile.heartPoints)
+          : heartWallNormal(top.x, top.z);
+        rescueHeartOpening(top,arenaProfile,wallNormal.nx,wallNormal.nz);
+        return;
+      }
+
+        if(isOut){
+          top.alive=false;
+          if(top.mesh){
+            spawnParts(top.x,top.z,top.template.color,32);
+            spawnParts(top.x,top.z,0xffffff,16);
           spawnParts(top.x,top.z,0xffcc00,10);
           scene.remove(top.mesh);
           top.mesh=null;
         }
         (top.isPlayer ? getPlayerTrailPositions() : getEnemyTrailPositions()).length = 0;
+        emitRingOutEffect({
+          x:top.x,
+          z:top.z,
+          color:top.template.color,
+          flashColor:0xffffff,
+          isPlayer:!!top.isPlayer
+        });
+        flashScreen('ringout');
+        triggerTimeDilation(0.09,0.085,0.72,{ replaceRecoverRate:true });
         setCamShake(1.1);
         sfxRingOut();
+        commentate('ringOutFinish',{
+          winner:getCommentaryName(!top.isPlayer)
+        },{
+          duration:2.15,
+          tone:'finish',
+          priority:3,
+          minGapMs:0
+        });
         showMsg(
           top.isPlayer
             ? (uiText.messagePlayerRingOut || 'You were knocked out of the arena!')
@@ -506,6 +809,14 @@
       if(top.spin<=0){
         top.alive=false;
         if(top.mesh){ spawnParts(top.x,top.z,top.template.color,10); scene.remove(top.mesh); top.mesh=null; }
+        commentate('spinFinish',{
+          winner:getCommentaryName(!top.isPlayer)
+        },{
+          duration:1.95,
+          tone:'finish',
+          priority:2,
+          minGapMs:0
+        });
         endRound('spinout');
         return;
       }
@@ -513,6 +824,14 @@
         top.hp=0;
         top.alive=false;
         if(top.mesh){ spawnParts(top.x,top.z,top.template.color,10); scene.remove(top.mesh); top.mesh=null; }
+        commentate('hpBreak',{
+          winner:getCommentaryName(!top.isPlayer)
+        },{
+          duration:1.95,
+          tone:'finish',
+          priority:2,
+          minGapMs:0
+        });
         endRound('hpout');
       }
     }
@@ -553,6 +872,8 @@
       topA.tiltVZ += nx*tiltForce/ma;
       topB.tiltVX += nz*tiltForce/mb;
       topB.tiltVZ += (-nx)*tiltForce/mb;
+      applyVisualImpact(topA,nx,nz,force*0.82);
+      applyVisualImpact(topB,-nx,-nz,force*0.82);
       const centerX=(topA.x+topB.x)/2;
       const centerZ=(topA.z+topB.z)/2;
       const bigHit=force>5.5;
@@ -562,10 +883,54 @@
         spawnParts(centerX,centerZ,topA.template.color,5);
         spawnParts(centerX,centerZ,topB.template.color,5);
       }
+      emitClashEffect({
+        x:centerX,
+        z:centerZ,
+        nx:nx,
+        nz:nz,
+        force:force,
+        coreColor:bigHit ? 0xffffaa : 0xffffff,
+        accentColor:bigHit ? 0xffaa44 : topA.template.color
+      });
       setCamShake(Math.min(.9,force*.13));
       sfxCollide(force);
-      if(force>7) showMsg(uiText.messageHeavyCollision || 'Heavy Collision!',.6,'impact');
-      if(force>11) showMsg(uiText.messageSuperImpact || 'Super Impact!!',.8,'impact');
+      if(
+        !commentaryState.openingClaimDone
+        && commentaryState.roundT <= 4.2
+        && collisionRoles.clearAdvantage
+        && force > 5.8
+      ){
+        commentaryState.openingClaimDone = true;
+        commentate('openingClaim',{
+          leader:getCommentaryName(collisionRoles.aggressor === 'A' ? topA.isPlayer : topB.isPlayer)
+        },{
+          duration:2.05,
+          tone:'momentum',
+          priority:1,
+          minGapMs:0
+        });
+      }
+      if(force>6.5){
+        triggerImpactSlowMo(force,force>10.5 ? 0.28 : 0.42,force>10.5 ? 0.08 : 0.05,force>10.5 ? 4.2 : 5.6);
+      }
+      if(force>7){
+        showMsg(uiText.messageHeavyCollision || 'Heavy Collision!',.6,'impact');
+        commentate('heavyClash',null,{
+          duration:1.55,
+          tone:'momentum',
+          priority:1,
+          minGapMs:1200
+        });
+      }
+      if(force>11){
+        showMsg(uiText.messageSuperImpact || 'Super Impact!!',.8,'impact');
+        commentate('superImpact',null,{
+          duration:1.7,
+          tone:'finish',
+          priority:2,
+          minGapMs:800
+        });
+      }
     }
 
     function aiTick(ai,player,dt){
@@ -637,7 +1002,9 @@
       getDefenseMultipliers,
       checkColl,
       resolveCollisionRoles,
-      aiTick
+      aiTick,
+      tickCommentary,
+      resetCommentary
     };
   };
 })();

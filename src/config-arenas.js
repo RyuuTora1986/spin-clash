@@ -51,8 +51,11 @@
       },
       physics:{
         slopeForce:4.8,
-        radialPull:0.6,
-        wallPush:0.42
+        radialPull:0.72,
+        wallPush:0.5,
+        openingGrace:1.02,
+        openingInwardAssist:10.5,
+        openingClampPush:0.52
       },
       renderer:{
         floorColor:0x07050f,
@@ -145,7 +148,10 @@
       physics:{
         slopeForce:5.1,
         radialPull:0.68,
-        wallPush:0.48
+        wallPush:0.48,
+        openingGrace:0.92,
+        openingInwardAssist:9.6,
+        openingClampPush:0.48
       },
       renderer:{
         floorColor:0x140712,

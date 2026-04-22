@@ -345,6 +345,110 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   white-space:normal;word-break:break-word;
 }
 #msg-txt.tone-impact{font-size:26px;letter-spacing:5px;text-shadow:0 0 30px rgba(255,110,40,.58)}
+.battle-commentary{
+  position:fixed;
+  top:158px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(760px,calc(100vw - 34px));
+  height:136px;
+  opacity:1;
+  visibility:visible;
+  transition:opacity .18s ease, transform .18s ease;
+  z-index:141;
+  pointer-events:none;
+  overflow:visible;
+}
+.battle-commentary.hide{
+  opacity:0;
+  visibility:hidden;
+  transform:translate(-50%,-6px);
+}
+.battle-commentary-item{
+  position:absolute;
+  bottom:0;
+  left:50%;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  max-width:min(420px,82vw);
+  min-height:44px;
+  padding:9px 14px 9px 10px;
+  border-radius:999px;
+  border:1px solid rgba(180,232,255,.14);
+  background:linear-gradient(180deg, rgba(9,14,28,.94), rgba(5,10,22,.88));
+  box-shadow:0 14px 36px rgba(0,0,0,.28), 0 0 24px rgba(0,180,255,.08);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  color:#f4fbff;
+  text-shadow:0 0 12px rgba(0,0,0,.22);
+  white-space:nowrap;
+  opacity:0;
+  transform:translate3d(calc(-50% + var(--commentary-drift,0px)),18px,0) scale(.94);
+  animation:commentaryFloat var(--commentary-duration,2.45s) cubic-bezier(.2,.78,.2,1) forwards;
+}
+.battle-commentary-badge{
+  flex:0 0 auto;
+  padding:5px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.07);
+  background:rgba(255,255,255,.04);
+  font:700 8px var(--font-display);
+  letter-spacing:1.8px;
+  color:rgba(194,241,255,.8);
+}
+.battle-commentary-line{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  font:700 15px/1.25 var(--font-display);
+  letter-spacing:.2px;
+}
+.battle-commentary-item.tone-momentum{
+  border-color:rgba(88,255,204,.18);
+  box-shadow:0 14px 36px rgba(0,0,0,.28), 0 0 26px rgba(46,255,186,.12);
+}
+.battle-commentary-item.tone-momentum .battle-commentary-badge{
+  color:rgba(144,255,224,.88);
+  border-color:rgba(78,255,198,.18);
+  background:rgba(28,108,84,.28);
+}
+.battle-commentary-item.tone-alert{
+  border-color:rgba(255,170,112,.22);
+  box-shadow:0 14px 36px rgba(0,0,0,.3), 0 0 28px rgba(255,120,72,.16);
+}
+.battle-commentary-item.tone-alert .battle-commentary-badge{
+  color:rgba(255,214,176,.9);
+  border-color:rgba(255,170,112,.18);
+  background:rgba(120,58,30,.32);
+}
+.battle-commentary-item.tone-finish{
+  border-color:rgba(255,228,160,.24);
+  box-shadow:0 14px 40px rgba(0,0,0,.32), 0 0 30px rgba(255,210,104,.18);
+}
+.battle-commentary-item.tone-finish .battle-commentary-badge{
+  color:rgba(255,238,194,.94);
+  border-color:rgba(255,226,156,.2);
+  background:rgba(124,96,34,.32);
+}
+@keyframes commentaryFloat{
+  0%{
+    opacity:0;
+    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),18px,0) scale(.94);
+  }
+  12%{
+    opacity:1;
+    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),0,0) scale(1);
+  }
+  72%{
+    opacity:1;
+    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),-44px,0) scale(1);
+  }
+  100%{
+    opacity:0;
+    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),var(--commentary-rise,-82px),0) scale(.98);
+  }
+}
 #hint-bar{
   position:absolute;
   bottom:max(102px,calc(env(safe-area-inset-bottom,16px)+88px));
@@ -362,11 +466,19 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 
 
 #skill-flash{
-  position:fixed;inset:0;pointer-events:none;z-index:19;opacity:0;
-  border:3px solid transparent;transition:opacity .07s;
-}
+    position:fixed;inset:0;pointer-events:none;z-index:19;opacity:0;
+    border:3px solid transparent;transition:opacity .07s;
+  }
 #skill-flash.instant{border-color:#ff6600;box-shadow:inset 0 0 50px rgba(255,80,0,.3)}
 #skill-flash.sustained{border-color:#00aaff;box-shadow:inset 0 0 50px rgba(0,160,255,.2)}
+#skill-flash.ringout{
+    border-color:rgba(255,244,214,.92);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,255,255,.44) 0%, rgba(255,210,150,.28) 22%, rgba(255,116,48,.18) 42%, rgba(0,0,0,0) 72%);
+    box-shadow:
+      inset 0 0 150px rgba(255,224,176,.58),
+      inset 0 0 260px rgba(255,112,48,.22);
+  }
 
 
 #act-swap{
@@ -1865,6 +1977,7 @@ body.round-result-takeover #e-panel,
 body.round-result-takeover #skill-panel,
 body.round-result-takeover #act-swap,
 body.round-result-takeover #hint-bar,
+body.round-result-takeover #battle-commentary,
 body.round-result-takeover #msg-txt{
   pointer-events:none;
 }
@@ -2433,6 +2546,26 @@ body.round-result-takeover #msg-txt{
     font-size:7.5px;
     line-height:1.35;
   }
+  .battle-commentary{
+    top:max(148px,calc(env(safe-area-inset-top,0px) + 138px));
+    width:min(calc(100vw - 20px),560px);
+    height:122px;
+  }
+  .battle-commentary-item{
+    max-width:min(82vw,328px);
+    min-height:40px;
+    padding:8px 12px 8px 9px;
+    gap:8px;
+  }
+  .battle-commentary-badge{
+    padding:4px 7px;
+    font-size:6.5px;
+    letter-spacing:1.4px;
+  }
+  .battle-commentary-line{
+    font-size:12.5px;
+    line-height:1.24;
+  }
   #act-swap{
     top:auto;
     right:max(10px,env(safe-area-inset-right,10px));
@@ -2578,6 +2711,11 @@ body.round-result-takeover #msg-txt{
   body.round-result-takeover #act-swap,
   body.round-result-takeover #hint-bar,
   body.round-result-takeover #msg-txt{
+    opacity:0!important;
+    visibility:hidden!important;
+    display:none!important;
+  }
+  body.round-result-takeover #battle-commentary{
     opacity:0!important;
     visibility:hidden!important;
     display:none!important;
@@ -2735,6 +2873,26 @@ body.round-result-takeover #msg-txt{
     letter-spacing:.8px;
   }
   #hint-bar{bottom:max(64px,calc(env(safe-area-inset-bottom,6px)+54px));font-size:8px}
+  .battle-commentary{
+    top:max(64px,calc(env(safe-area-inset-top,0px) + 58px));
+    width:min(calc(100vw - 16px),420px);
+    height:86px;
+  }
+  .battle-commentary-item{
+    max-width:min(68vw,250px);
+    min-height:34px;
+    padding:6px 10px 6px 8px;
+    gap:6px;
+  }
+  .battle-commentary-badge{
+    padding:3px 5px;
+    font-size:5.5px;
+    letter-spacing:1px;
+  }
+  .battle-commentary-line{
+    font-size:10px;
+    line-height:1.2;
+  }
   .hud-hp-track{height:9px}
   #score-area{top:4px}
   #timer-txt{top:40px;font-size:19px}

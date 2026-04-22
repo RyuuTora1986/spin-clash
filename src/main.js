@@ -8,11 +8,14 @@ function initAudioSafely(){
   if(runtimeAudioTools) runtimeAudioTools.initAudioSafely();
 }
 
-function startMusic(){
-  if(runtimeAudioTools) runtimeAudioTools.startMusic();
+function startMusic(options){
+  if(runtimeAudioTools) runtimeAudioTools.startMusic(options);
 }
-function stopMusic(){
-  if(runtimeAudioTools) runtimeAudioTools.stopMusic();
+function stopMusic(options){
+  if(runtimeAudioTools) runtimeAudioTools.stopMusic(options);
+}
+function getMusicDebugState(){
+  return runtimeAudioTools ? runtimeAudioTools.getMusicDebugState() : null;
 }
 function sfxCollide(force){
   if(runtimeAudioTools) runtimeAudioTools.sfxCollide(force);
@@ -70,6 +73,8 @@ function heartCrossed(x,z){return arenaMathTools ? arenaMathTools.heartCrossed(x
 function heartRingOut(x,z){return arenaMathTools ? arenaMathTools.heartRingOut(x,z) : false;}
 
 let timeScale=1;
+let timeDilationHoldT=0;
+let timeDilationRecoverRate=1.1;
 
 const pTrailPos=[],eTrailPos=[];
 
@@ -109,6 +114,7 @@ const createHomeTopShowcaseTools = root.createHomeTopShowcaseTools || null;
 const createQuickBattlePreviewTools = root.createQuickBattlePreviewTools || null;
 const createAimLineTools = root.createAimLineTools || null;
 const createSceneShellTools = root.createSceneShellTools || null;
+const createBattleCommentaryTools = root.createBattleCommentaryTools || null;
 const createMessageUiTools = root.createMessageUiTools || null;
 const createBattleViewTools = root.createBattleViewTools || null;
 const createBattleSimTools = root.createBattleSimTools || null;
@@ -246,6 +252,7 @@ let homeTopShowcaseTools=null;
 let quickBattlePreviewTools=null;
 let aimLineTools=null;
 let sceneShellTools=null;
+let battleCommentaryTools=null;
 let messageUiTools=null;
 let battleViewTools=null;
 let battleSimTools=null;
@@ -354,6 +361,23 @@ scene.fog=new THREE.Fog(0x010108,22,55);
 
 const cam=new THREE.PerspectiveCamera(50,1,0.1,100);
 cam.position.set(0,17,12);cam.lookAt(0,0,0);
+const textureLoader = new THREE.TextureLoader();
+function loadFxTexture(relativePath){
+  const texture = textureLoader.load(relativePath, function(loadedTexture){
+    loadedTexture.magFilter = THREE.LinearFilter;
+    loadedTexture.minFilter = THREE.LinearMipmapLinearFilter;
+    loadedTexture.generateMipmaps = true;
+  }, undefined, function(){
+    showRuntimeError('Failed to load FX texture: '+relativePath);
+  });
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  return texture;
+}
+const FX_TEXTURES = {
+  impactBurst:loadFxTexture('assets/fx/impact-burst-v1.png'),
+  ringOutFlash:loadFxTexture('assets/fx/ringout-flash-v1.png')
+};
 const HEX_R = 7.1;
 const HEX_PTS = Array.from({length:6},(_,i)=>{
   const a = Math.PI/6 + i*Math.PI/3;
@@ -469,6 +493,9 @@ if(sceneShellTools){
   });
 }
 messageUiTools = createMessageUiTools ? createMessageUiTools() : null;
+battleCommentaryTools = createBattleCommentaryTools ? createBattleCommentaryTools({
+  uiText:UI_TEXT
+}) : null;
 
 function mkSpotTex(bgCol,dotCol,patId){
   return topRenderTools ? topRenderTools.mkSpotTex(bgCol,dotCol,patId) : null;
@@ -478,10 +505,42 @@ function mkTop(color,emi,typeId,isPlayer){
   return topRenderTools ? topRenderTools.mkTop(color,emi,typeId,isPlayer) : new THREE.Group();
 }
 
+function setBattleTimeScale(next){
+  timeScale = next;
+  if(next >= 1){
+    timeDilationHoldT = 0;
+    timeDilationRecoverRate = 1.1;
+  }
+}
+
+function triggerTimeDilation(nextScale,holdT=0.06,recoverRate=4.8){
+  let options = null;
+  if(arguments.length > 3 && arguments[3] && typeof arguments[3] === 'object'){
+    options = arguments[3];
+  }
+  if(typeof nextScale !== 'number' || !isFinite(nextScale) || nextScale >= 1) return;
+  timeScale = Math.max(0.12, Math.min(timeScale, nextScale));
+  timeDilationHoldT = Math.max(timeDilationHoldT, holdT || 0);
+  if(options && options.replaceRecoverRate === true){
+    timeDilationRecoverRate = Math.max(0.2, recoverRate || 1.1);
+    return;
+  }
+  timeDilationRecoverRate = Math.max(timeDilationRecoverRate, recoverRate || 1.1);
+}
+
 const partPool=[];
 const pGeo=new THREE.SphereGeometry(.07,5,5);
 function spawnParts(x,z,color,n=8){
   if(battleEffectsTools) battleEffectsTools.spawnParts(partPool,x,z,color,n);
+}
+function emitClashEffect(payload){
+  if(battleEffectsTools) battleEffectsTools.emitClashEffect(partPool,payload);
+}
+function emitWallImpactEffect(payload){
+  if(battleEffectsTools) battleEffectsTools.emitWallImpactEffect(partPool,payload);
+}
+function emitRingOutEffect(payload){
+  if(battleEffectsTools) battleEffectsTools.emitRingOutEffect(partPool,payload);
 }
 function tickParts(dt){
   if(battleEffectsTools) battleEffectsTools.tickParts(partPool,dt);
@@ -606,13 +665,53 @@ function toggleMusicPreference(){
   patchCurrentSettings({ musicEnabled:nextEnabled });
   if(nextEnabled){
     initAudioSafely();
-    if(gameState === 'active'){
-      startMusic();
-    }
+    syncMusicState();
   }else{
-    stopMusic();
+    stopMusic({ fadeMs:180 });
   }
   return nextEnabled;
+}
+function syncMusicState(){
+  if(!runtimeAudioTools) return;
+  if(!getCurrentSettings().musicEnabled){
+    stopMusic({ fadeMs:180 });
+    return;
+  }
+  if(gameState === 'active' || gameState === 'roundOutro' || gameState === 'roundResult' || gameState === 'matchResult'){
+    startMusic({
+      scene:'battle',
+      round:round,
+      fadeMs:220
+    });
+    return;
+  }
+  if(gameState === 'prepare'){
+    stopMusic({ fadeMs:220 });
+    return;
+  }
+  if(uiRoute === 'home' || uiRoute === 'quick' || uiRoute === 'path' || uiRoute === 'workshop' || uiRoute === 'settings' || uiRoute === 'info'){
+    startMusic({
+      scene:'menu',
+      route:uiRoute,
+      fadeMs:320
+    });
+    return;
+  }
+  stopMusic({ fadeMs:220 });
+}
+let audioGesturePrimed = false;
+function primeAudioFromInteraction(){
+  if(audioGesturePrimed) return;
+  audioGesturePrimed = true;
+  initAudioSafely();
+  syncMusicState();
+  window.removeEventListener('pointerdown', primeAudioFromInteraction, true);
+  window.removeEventListener('keydown', primeAudioFromInteraction, true);
+  window.removeEventListener('touchstart', primeAudioFromInteraction, true);
+}
+function attemptInitialMusicPlayback(){
+  initAudioSafely();
+  syncMusicState();
 }
 function toggleSfxPreference(){
   const nextEnabled = !getCurrentSettings().sfxEnabled;
@@ -760,6 +859,7 @@ uiEntryTools = createUiEntryTools ? createUiEntryTools({
   updateModeUI,
   syncDebugPanel,
   initAudioSafely,
+  syncMusicState,
   showRuntimeError,
   updateSkillIcon,
   attemptArenaAccess,
@@ -852,7 +952,7 @@ roundFlowTools = createRoundFlowTools ? createRoundFlowTools({
   setEndLock:(next)=>{ endLock = next; },
   getPhysTick:()=>physTick,
   getTimeScale:()=>timeScale,
-  setTimeScale:(next)=>{ timeScale = next; },
+  setTimeScale:setBattleTimeScale,
   getAimLine:()=>aimLineTools ? aimLineTools.getAimLine() : null,
   getCurrentModifier:()=>activeModifier,
   setCurrentModifier:(next)=>{ activeModifier = next; },
@@ -872,6 +972,8 @@ battleEffectsTools = createBattleEffectsTools ? createBattleEffectsTools({
   sfxOrb,
   partGeo:pGeo,
   orbGeo,
+  impactTexture:FX_TEXTURES.impactBurst,
+  ringOutTexture:FX_TEXTURES.ringOutFlash,
   getBattlePerformanceMode:()=>battlePerformanceMode
 }) : null;
 battleViewTools = createBattleViewTools ? createBattleViewTools({
@@ -891,7 +993,8 @@ battleSimTools = createBattleSimTools ? createBattleSimTools({
   topRadius:TOP_R,
   hexPoints:HEX_PTS,
   getTimeScale:()=>timeScale,
-  setTimeScale:(next)=>{ timeScale = next; },
+  setTimeScale:setBattleTimeScale,
+  triggerTimeDilation,
   getCamShake:()=>camShake,
   setCamShake:(next)=>{ camShake = next; },
   getPlayerTrailPositions:()=>pTrailPos,
@@ -910,9 +1013,14 @@ battleSimTools = createBattleSimTools ? createBattleSimTools({
   getBattleVisualTime:()=>battleVisualClock,
   getEnemyAiConfig:getCurrentEnemyAiConfig,
   spawnParts,
-  showMsg,
-  sfxWall,
-  sfxRingOut,
+    emitClashEffect,
+    emitWallImpactEffect,
+    emitRingOutEffect,
+    flashScreen,
+    showMsg,
+    showCommentary,
+    sfxWall,
+    sfxRingOut,
   sfxCollide,
   endRound,
   fireSkill,
@@ -935,6 +1043,15 @@ else {
   applyStaticText();
   updateModeUI();
 }
+window.addEventListener('load', attemptInitialMusicPlayback, { once:true });
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && !audioGesturePrimed){
+    attemptInitialMusicPlayback();
+  }
+});
+window.addEventListener('pointerdown', primeAudioFromInteraction, true);
+window.addEventListener('keydown', primeAudioFromInteraction, true);
+window.addEventListener('touchstart', primeAudioFromInteraction, true);
 
 let tp,te,camShake=0,lastT=0,endLock=false;
 let battleVisualClock=0;
@@ -987,8 +1104,15 @@ function fireSkill(user,target){
 function initRound(){
   battleVisualClock = 0;
   battlePerformanceMode.activeBattle = true;
+  timeDilationHoldT = 0;
+  timeDilationRecoverRate = 1.1;
   resetBattlePerfMetrics();
+  clearBattleCommentary();
+  if(battleSimTools && typeof battleSimTools.resetCommentary === 'function'){
+    battleSimTools.resetCommentary();
+  }
   if(roundFlowTools) roundFlowTools.initRound();
+  syncMusicState();
 }
 
 function launch(){
@@ -996,10 +1120,39 @@ function launch(){
 }
 
 function physTick(dt){
-  if(gameState!=='active')return;
+  if(gameState!=='active' && gameState!=='roundOutro' && gameState!=='roundResult') return;
+  const tickBattlePresentation = function(){
+    battleVisualClock += dt;
+    tickParts(dt);
+    if(tp){
+      updateTrail(true,pTrailPos,tp.x,tp.z,tp.alive);
+    }
+    if(te){
+      updateTrail(false,eTrailPos,te.x,te.z,te.alive);
+    }
+    if(timeDilationHoldT>0){
+      timeDilationHoldT = Math.max(0,timeDilationHoldT-dt);
+    }else if(timeScale<1){
+      timeScale=Math.min(1,timeScale+dt*timeDilationRecoverRate);
+      if(timeScale>=0.999){
+        timeScale = 1;
+        timeDilationRecoverRate = 1.1;
+      }
+    }
+    if(battleViewTools){
+      const battleViewStartedAt = getPerfNow();
+      camShake = battleViewTools.updateFrame(tp,te,dt,camShake);
+      if(gameState==='active'){
+        recordBattlePerfPhase('battleView', getPerfNow() - battleViewStartedAt);
+      }
+    }
+  };
+  if(gameState!=='active'){
+    tickBattlePresentation();
+    return;
+  }
   battlePerformanceMode.activeBattle = true;
   const physTickStartedAt = getPerfNow();
-  battleVisualClock += dt;
   roundTimer-=dt;
   if(roundTimer<=0){roundTimer=0;endRound('time');return;}
   const ts=Math.ceil(roundTimer);
@@ -1010,19 +1163,15 @@ function physTick(dt){
   movTop(te,dt);if(gameState!=='active')return;
   aiTick(te,tp,dt);
   checkColl(tp,te);if(gameState!=='active')return;
-  tickOrbs(dt,tp,te);tickParts(dt);
+  tickOrbs(dt,tp,te);
+  if(battleSimTools && typeof battleSimTools.tickCommentary === 'function'){
+    battleSimTools.tickCommentary(tp,te,dt);
+  }
   if(scratchLayerTools) scratchLayerTools.tick(tp,te,dt);
-  updateTrail(true,pTrailPos,tp.x,tp.z,tp.alive);
-  updateTrail(false,eTrailPos,te.x,te.z,te.alive);
-  if(timeScale<1) timeScale=Math.min(1,timeScale+dt*1.1);
+  tickBattlePresentation();
   const allOrbDead=orbObjs.length===0||orbObjs.every(o=>!o.alive);
   if(allOrbDead&&roundTimer>5&&!physTick._orbTimer){
     physTick._orbTimer=setTimeout(()=>{spawnOrbs();physTick._orbTimer=null;},9500);
-  }
-  if(battleViewTools){
-    const battleViewStartedAt = getPerfNow();
-    camShake = battleViewTools.updateFrame(tp,te,dt,camShake);
-    recordBattlePerfPhase('battleView', getPerfNow() - battleViewStartedAt);
   }
   recordBattlePerfPhase('physTick', getPerfNow() - physTickStartedAt);
 }
@@ -1048,6 +1197,8 @@ function endRound(reason){
 function showMatchResult(){
   gameState='matchResult';
   battlePerformanceMode.activeBattle = false;
+  clearBattleCommentary();
+  syncMusicState();
   if(matchFlowTools) matchFlowTools.showMatchResult();
 }
 
@@ -1077,6 +1228,16 @@ function handleShare(){
 
 function showMsg(txt,dur,tone){
   if(messageUiTools) messageUiTools.showMsg(txt,dur,tone);
+}
+
+function showCommentary(key,tokens,options){
+  return battleCommentaryTools
+    ? battleCommentaryTools.showCommentary(key,tokens,options)
+    : false;
+}
+
+function clearBattleCommentary(){
+  if(battleCommentaryTools) battleCommentaryTools.clear();
 }
 
 function updateHUD(){
@@ -1141,9 +1302,11 @@ function doSwap(){
   if(te&&te.mesh){scene.remove(te.mesh);te.mesh=null;}
   pTrailPos.length=0;eTrailPos.length=0;
   battlePerformanceMode.activeBattle = false;
+  clearBattleCommentary();
   if(uiShellTools) uiShellTools.hideBattleHud();
   showLoadoutOverlay();
   updateModeUI();
+  syncMusicState();
 }
 
 function updateSkillIcon(){
@@ -1247,6 +1410,7 @@ startupTools = createStartupTools ? createStartupTools({
   }
 }) : null;
 if(startupTools) startupTools.initialize();
+attemptInitialMusicPlayback();
 
 
 

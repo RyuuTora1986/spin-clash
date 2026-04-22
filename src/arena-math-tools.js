@@ -177,6 +177,9 @@
         profile.heartPoints = createHeartPoints(shape);
         profile.hazardScale = readNumber(geometry.hazardScale, 0.84);
         profile.nearWallScale = readNumber(geometry.nearWallScale, 0.94);
+        profile.openingGrace = Math.max(0, readNumber(physics.openingGrace, 0.72));
+        profile.openingInwardAssist = Math.max(0, readNumber(physics.openingInwardAssist, 9.6));
+        profile.openingClampPush = Math.max(0.1, readNumber(physics.openingClampPush, 0.48));
         profile.hazardPoints = scalePolygon(profile.heartPoints, profile.hazardScale);
         profile.nearWallPoints = scalePolygon(profile.heartPoints, profile.nearWallScale);
         profile.outerPoints = scalePolygon(profile.heartPoints, profile.outerScale);
