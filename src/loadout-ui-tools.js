@@ -713,6 +713,38 @@
         : (uiText.workshopNext || 'NEXT')+': '+state.nextLevelConfig.preview;
     }
 
+    function formatResearchImpact(state){
+      if(state.maxed){
+        return '';
+      }
+      return (uiText.workshopImpactLabel || 'NEXT DUEL IMPACT')+': '+state.nextLevelConfig.preview;
+    }
+
+    function formatResearchCostNote(state){
+      if(state.maxed){
+        return uiText.workshopCostMaxed || 'This line is capped. Shift scrap into another track.';
+      }
+      const save = getSave();
+      const balance = save && typeof save.currency === 'number' ? save.currency : 0;
+      const cost = state.nextLevelConfig && typeof state.nextLevelConfig.cost === 'number' ? state.nextLevelConfig.cost : 0;
+      if(balance >= cost){
+        return formatText(
+          uiText.workshopCostReady || 'Spend now and keep {remaining} {currency} in reserve.',
+          {
+            remaining:Math.max(0, balance - cost),
+            currency:uiText.currencyLabel || 'SCRAP'
+          }
+        );
+      }
+      return formatText(
+        uiText.workshopCostShort || 'Need {shortfall} more {currency} before this upgrade is affordable.',
+        {
+          shortfall:Math.max(0, cost - balance),
+          currency:uiText.currencyLabel || 'SCRAP'
+        }
+      );
+    }
+
     function getResearchButtonText(state){
       if(state.maxed){
         return uiText.workshopMaxed || 'MAXED';
@@ -740,12 +772,15 @@
           row.style.display = '';
           row.classList.toggle('maxed', state.maxed);
           row.classList.toggle('locked', !state.maxed && getSave().currency < state.nextLevelConfig.cost);
+          row.classList.toggle('affordable', !state.maxed && state.nextLevelConfig && getSave().currency >= state.nextLevelConfig.cost);
         }
         setText('research-name-'+index, state.track.label);
         setText('research-desc-'+index, state.track.description);
         setText('research-level-'+index, formatResearchLevel(state));
         setText('research-bonus-'+index, formatResearchCurrent(state));
         setText('research-next-'+index, formatResearchNext(state));
+        setText('research-impact-'+index, formatResearchImpact(state));
+        setText('research-cost-'+index, formatResearchCostNote(state));
         if(buyButton){
           buyButton.textContent = getResearchButtonText(state);
           buyButton.disabled = state.maxed || (!state.nextLevelConfig || getSave().currency < state.nextLevelConfig.cost);
@@ -1165,6 +1200,8 @@
       const pathButton = document.getElementById('btn-enter');
       const quickButton = document.getElementById('btn-enter-quick');
       setText('title-progress', getTitleProgressText());
+      setText('title-note-path', uiText.homePathNote || 'Structured run with node rewards and rank pressure.');
+      setText('title-note-quick', uiText.homeQuickNote || 'Jump into one fast duel with your current top and arena pick.');
       updateHomeTopUI();
       if(pathButton){
         pathButton.disabled = homePreviewLocked;
@@ -1321,7 +1358,14 @@
           tierLabel
         ].filter(Boolean).join(' - '));
         setText('challenge-node-detail', detailBits.join(' - '));
+        setText('challenge-progress-kicker', uiText.challengeRewardKicker || 'CLEAR REWARD');
         setText('challenge-progress', progressBits.join(' - '));
+        setText(
+          'challenge-goal-note',
+          activeChallengeIndex < challengeRoad.length - 1
+            ? (uiText.challengeGoalAdvance || 'Clear this node to claim the payout and unlock the next duel.')
+            : (uiText.challengeGoalRetry || 'This node is the current gate. Tune the opener, then come back for a cleaner clear.')
+        );
         setText('challenge-kicker', [
           uiText.challengeMode || 'CHAMPIONSHIP PATH',
           roadRank ? roadRank.label : null,

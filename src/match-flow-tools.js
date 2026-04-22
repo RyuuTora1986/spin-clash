@@ -355,6 +355,74 @@
       return (uiText.resultArenaLabel || 'Arena')+': '+(context.arenaLabel || 'ARENA');
     }
 
+    function getMatchGuidance(context, continueVisible){
+      if(context.mode === 'challenge'){
+        if(context.result === 'loss'){
+          return continueVisible
+            ? (uiText.resultGuidanceChallengeContinue || 'Continue this run now if you want another shot at the same node. If not, tune your loadout before the next attempt.')
+            : (uiText.resultGuidanceChallengeRetry || 'This run ends here. Go back, tune the loadout, and attack the same node again with a cleaner opener.');
+        }
+        return context.hasNextNode
+          ? (uiText.resultGuidanceChallengeAdvance || 'The next node is ready. Take the payout, then push the road while your current momentum is still clear.')
+          : (uiText.resultGuidanceRoadClear || 'Road clear secured. Collect the payout first, then decide whether to replay for cleaner clears and extra scrap.');
+      }
+      return context.result === 'win'
+        ? (uiText.resultGuidanceQuickWin || 'You won the duel. Take the payout, then queue another short match or rotate your setup while the matchup is fresh.')
+        : (uiText.resultGuidanceQuickLoss || 'You still keep the payout. Decide whether to tune the setup first or jump back into another short duel immediately.');
+    }
+
+    function setResultActionPriority(button, role, order, visible){
+      if(!button) return;
+      button.style.display = visible === false ? 'none' : '';
+      button.style.order = String(order || 0);
+      button.classList.remove('result-action-primary','result-action-support','result-action-optional','result-action-utility','result-action-recovery','is-recommended');
+      if(role){
+        button.classList.add('result-action-'+role);
+        if(role === 'primary'){
+          button.classList.add('is-recommended');
+        }
+      }
+    }
+
+    function updateResultActionHierarchy(context, continueVisible){
+      const replayButton = document.getElementById('btn-replay');
+      const swapButton = document.getElementById('btn-swap-rematch');
+      const rewardButton = document.getElementById('btn-double-reward');
+      const continueButton = document.getElementById('btn-continue');
+      const shareButton = document.getElementById('btn-share');
+      const replayLabel = context.mode === 'challenge' && context.result === 'win'
+        ? (context.hasNextNode ? (uiText.nextNode || 'NEXT NODE') : (uiText.roadClear || 'ROAD CLEAR'))
+        : getResultReturnLabel();
+      if(replayButton) replayButton.textContent = replayLabel;
+      if(swapButton) swapButton.textContent = getResultAdjustLabel();
+      if(rewardButton){
+        rewardButton.textContent = getDoubleRewardUsed() ? uiText.rewardClaimed : uiText.rewardDouble;
+        rewardButton.disabled = getDoubleRewardUsed();
+        rewardButton.style.opacity = getDoubleRewardUsed() ? '.5' : '1';
+      }
+      if(context.mode === 'challenge' && context.result === 'loss' && continueVisible){
+        setResultActionPriority(continueButton, 'primary', 1, true);
+        setResultActionPriority(swapButton, 'recovery', 2, true);
+        setResultActionPriority(rewardButton, 'optional', 3, true);
+        setResultActionPriority(replayButton, 'utility', 4, true);
+        setResultActionPriority(shareButton, 'utility', 5, true);
+        return;
+      }
+      if(context.mode === 'challenge' && context.result === 'loss'){
+        setResultActionPriority(continueButton, 'primary', 1, false);
+        setResultActionPriority(swapButton, 'primary', 1, true);
+        setResultActionPriority(replayButton, 'support', 2, true);
+        setResultActionPriority(rewardButton, 'optional', 3, true);
+        setResultActionPriority(shareButton, 'utility', 4, true);
+        return;
+      }
+      setResultActionPriority(continueButton, 'primary', 1, false);
+      setResultActionPriority(replayButton, 'primary', 1, true);
+      setResultActionPriority(rewardButton, 'optional', 2, true);
+      setResultActionPriority(swapButton, 'support', 3, true);
+      setResultActionPriority(shareButton, 'utility', 4, true);
+    }
+
     function getResultReturnLabel(){
       const route = getBattleReturnRoute();
       if(route === 'path'){
@@ -592,18 +660,17 @@
         +' - '+(uiText.resultReasonLabel || 'Finish')+' '+getEndReasonLabel(resultContext.endReason);
       document.getElementById('mt-breakdown').textContent = buildBreakdownText(resultContext)+' - '+(uiText.resultRewardLabel || 'Reward')+' '+reward+' '+uiText.currencyLabel;
       document.getElementById('mt-next').textContent = buildNextText(resultContext);
+      const continueVisible = currentMode==='challenge' && !won && isChallengeContinueEnabled() && !getChallengeContinueUsed();
+      const guidance = document.getElementById('mt-guidance');
+      if(guidance){
+        guidance.textContent = getMatchGuidance(resultContext, continueVisible);
+      }
       grantMatchReward(1);
       if(msgTxt){
         msgTxt.style.opacity = '0';
         msgTxt.textContent = '';
       }
-      document.getElementById('btn-replay').textContent = getResultReturnLabel();
-      document.getElementById('btn-swap-rematch').textContent = getResultAdjustLabel();
-      document.getElementById('btn-double-reward').textContent = getDoubleRewardUsed() ? uiText.rewardClaimed : uiText.rewardDouble;
-      document.getElementById('btn-double-reward').disabled = getDoubleRewardUsed();
-      document.getElementById('btn-double-reward').style.opacity = getDoubleRewardUsed() ? '.5' : '1';
-      const continueVisible = currentMode==='challenge' && !won && isChallengeContinueEnabled() && !getChallengeContinueUsed();
-      document.getElementById('btn-continue').style.display = continueVisible ? '' : 'none';
+      updateResultActionHierarchy(resultContext, continueVisible);
       document.getElementById('ov-match').classList.remove('hide');
       updateCurrencyUI();
 
@@ -700,9 +767,20 @@
       setMatchStartedAt(null);
       lastResultContext = null;
       document.getElementById('ov-match').classList.add('hide');
+      const guidance = document.getElementById('mt-guidance');
+      if(guidance){
+        guidance.textContent = '';
+      }
       document.getElementById('btn-double-reward').disabled = false;
       document.getElementById('btn-double-reward').style.opacity = '1';
       document.getElementById('btn-double-reward').textContent = uiText.rewardDouble;
+      ['btn-replay','btn-swap-rematch','btn-double-reward','btn-continue','btn-share'].forEach(function(id){
+        const button = document.getElementById(id);
+        if(!button) return;
+        button.style.order = '';
+        button.classList.remove('result-action-support','result-action-optional','result-action-utility','result-action-recovery','is-recommended');
+      });
+      document.getElementById('btn-continue').style.display = 'none';
       if(resetOptions.skipInitRound !== true){
         initRound();
       }

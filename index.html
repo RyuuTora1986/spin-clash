@@ -150,10 +150,18 @@
       </div>
       <div class="deco-line"></div>
       <div class="title-actions">
-        <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('goPath')"></button>
-        <button class="title-alt-btn" id="btn-enter-quick" onclick="return window.__spinClashInvoke('goQuick')"></button>
-        <button class="title-alt-btn" id="btn-enter-workshop" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
-        <button class="title-alt-btn" id="btn-enter-settings" onclick="return window.__spinClashInvoke('goSettings')"></button>
+        <div class="title-actions-primary">
+          <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('goPath')"></button>
+          <button class="title-primary-btn" id="btn-enter-quick" onclick="return window.__spinClashInvoke('goQuick')"></button>
+        </div>
+        <div class="title-action-notes">
+          <div class="title-action-note" id="title-note-path"></div>
+          <div class="title-action-note" id="title-note-quick"></div>
+        </div>
+        <div class="title-actions-utility">
+          <button class="title-alt-btn" id="btn-enter-workshop" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
+          <button class="title-alt-btn" id="btn-enter-settings" onclick="return window.__spinClashInvoke('goSettings')"></button>
+        </div>
       </div>
       <div class="title-build-meta" id="title-build-meta">
         <div class="title-build-line" id="title-build-version"></div>
@@ -220,6 +228,8 @@
         <div class="research-level" id="research-level-0"></div>
         <div class="research-bonus" id="research-bonus-0"></div>
         <div class="research-next" id="research-next-0"></div>
+        <div class="research-impact" id="research-impact-0"></div>
+        <div class="research-cost-note" id="research-cost-0"></div>
       </div>
       <button class="research-buy" id="research-buy-0" type="button" onclick="return window.__spinClashInvoke('buyResearch',0)"></button>
     </div>
@@ -232,6 +242,8 @@
         <div class="research-level" id="research-level-1"></div>
         <div class="research-bonus" id="research-bonus-1"></div>
         <div class="research-next" id="research-next-1"></div>
+        <div class="research-impact" id="research-impact-1"></div>
+        <div class="research-cost-note" id="research-cost-1"></div>
       </div>
       <button class="research-buy" id="research-buy-1" type="button" onclick="return window.__spinClashInvoke('buyResearch',1)"></button>
     </div>
@@ -244,6 +256,8 @@
         <div class="research-level" id="research-level-2"></div>
         <div class="research-bonus" id="research-bonus-2"></div>
         <div class="research-next" id="research-next-2"></div>
+        <div class="research-impact" id="research-impact-2"></div>
+        <div class="research-cost-note" id="research-cost-2"></div>
       </div>
       <button class="research-buy" id="research-buy-2" type="button" onclick="return window.__spinClashInvoke('buyResearch',2)"></button>
     </div>
@@ -289,7 +303,9 @@
         <div class="challenge-line" id="challenge-node-detail"></div>
       </div>
       <div class="challenge-summary-card challenge-summary-reward">
+        <div class="challenge-progress-kicker" id="challenge-progress-kicker"></div>
         <div class="challenge-line" id="challenge-progress"></div>
+        <div class="challenge-line challenge-goal-note" id="challenge-goal-note"></div>
       </div>
     </div>
     <div class="challenge-route-strip" id="challenge-route-strip"></div>
@@ -366,15 +382,23 @@
   </div>
 </div>
 <div class="battle-intro hide" id="battle-intro">
+  <div class="battle-intro-kicker" id="battle-intro-kicker"></div>
   <div class="battle-intro-title" id="battle-intro-title"></div>
   <div class="battle-intro-meta" id="battle-intro-meta"></div>
+  <div class="battle-intro-brief">
+    <div class="battle-intro-brief-title" id="battle-intro-brief-title"></div>
+    <div class="battle-intro-brief-line" id="battle-intro-brief-primary"></div>
+    <div class="battle-intro-brief-line" id="battle-intro-brief-secondary"></div>
+  </div>
 </div>
 <div class="ov hide result-overlay" id="ov-round">
   <div class="result-shell round-result-shell">
     <div class="result-kicker" id="rd-kicker">ROUND RESULT</div>
     <h2 id="rd-txt"></h2>
     <div class="rd-detail" id="rd-detail"></div>
+    <div class="rd-cause" id="rd-cause"></div>
     <div class="rd-next" id="rd-next"></div>
+    <div class="rd-adjust" id="rd-adjust"></div>
   </div>
 </div>
 <div class="ov hide result-overlay" id="ov-match">
@@ -386,6 +410,7 @@
     <div class="mt-breakdown" id="mt-breakdown"></div>
     <div class="mt-wallet" id="mt-wallet"></div>
     <div class="mt-next" id="mt-next"></div>
+    <div class="mt-guidance" id="mt-guidance"></div>
     <div class="result-actions">
       <button class="sec-btn result-action-primary" id="btn-replay" onclick="return window.__spinClashInvoke('replay')"></button>
       <button class="sec-btn result-action-path" id="btn-swap-rematch" onclick="return window.__spinClashInvoke('swapRematch')"></button>

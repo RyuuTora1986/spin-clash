@@ -2099,3 +2099,43 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - `npm run check:localization`
   - `npm run check:ui`
   - `npm run preflight`
+
+2026-04-22 gameplay ux visual optimization implementation completed
+- Context:
+  - this pass executed the approved gameplay UX / visual optimization package instead of only documenting problems
+  - the implementation stayed locked to the underlying design principles: clarify the player's immediate question, move guidance closer to action, strengthen causality in result states, reduce same-level CTA competition, and keep public-reading surfaces formal on both desktop and mobile
+- Main files changed:
+  - `index.html`
+  - `css/game.css`
+  - `src/ui-shell-tools.js`
+  - `src/round-flow-tools.js`
+  - `src/match-flow-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/config-text.js`
+  - `scripts/check-shell-presentation.js`
+  - `scripts/check-route-return-flow.js`
+- Main outcomes:
+  - restructured the home shell so `Championship Path` and `Quick Battle` now read as clear first-step choices with supporting notes, while workshop/settings drop into a secondary utility lane
+  - moved battle opening guidance into a two-layer model: a readable top hint for the current action and a bottom-side opening brief anchored near the combat controls
+  - upgraded round-result feedback from pure win/loss reporting into a causal card with `cause + next adjustment`, so players can see both what happened and what to correct next round
+  - rebuilt match-result hierarchy so the primary CTA reflects the real recommended next move, with guided copy and role-based CTA ordering instead of a flat list of equal buttons
+  - strengthened path and workshop decision support by surfacing payout intent, progression guidance, next-duel impact, and affordability notes directly inside the decision surface
+  - expanded the public info shell into a more formal desktop reading surface and stabilized the mobile CJK header layout so the legal/info pages no longer read like temporary popups
+  - upgraded the shell presentation / route return contracts to lock the new progression-first result behavior in tests
+- Verification:
+  - `npm run preflight`
+  - `npm run verify:release`
+  - local Chromium dogfood capture using Playwright against `http://127.0.0.1:4174/index.html`
+- Evidence:
+  - `output/ux-visual-qa-20260422/desktop-home.png`
+  - `output/ux-visual-qa-20260422/desktop-battle-intro.png`
+  - `output/ux-visual-qa-20260422/desktop-round-result.png`
+  - `output/ux-visual-qa-20260422/desktop-match-result.png`
+  - `output/ux-visual-qa-20260422/desktop-about.png`
+  - `output/ux-visual-qa-20260422/mobile-home.png`
+  - `output/ux-visual-qa-20260422/mobile-round-result.png`
+  - `output/ux-visual-qa-20260422/mobile-match-result.png`
+  - `output/ux-visual-qa-20260422/mobile-privacy.png`
+- Practical meaning:
+  - the repo now carries the UX optimization as actual runtime behavior rather than as a detached design package
+  - the most critical comprehension gaps identified in the earlier review are now covered by code, style, and test contracts instead of depending on later manual polish

@@ -431,7 +431,9 @@ async function checkPathResultReturn() {
   assert(harness.state.battleReturnRoute === 'path', 'Expected path fight to capture battleReturnRoute=path.');
 
   harness.showMatchResult();
-  assert(harness.document.getElementById('btn-replay').textContent === 'RETURN TO PATH', 'Expected path result CTA to say RETURN TO PATH.');
+  assert(harness.document.getElementById('btn-replay').textContent === 'NEXT NODE', 'Expected challenge win CTA to prioritize advancing to the next node.');
+  assert(harness.document.getElementById('btn-replay').style.order === '1', 'Expected challenge win CTA hierarchy to keep the progression action in the first slot.');
+  assert(harness.document.getElementById('mt-guidance').textContent.indexOf('next node') >= 0, 'Expected challenge win guidance to explain that the next node is ready.');
   assert(!harness.document.getElementById('ov-match').classList.contains('hide'), 'Expected result overlay visible for path flow.');
 
   harness.actions.replay();

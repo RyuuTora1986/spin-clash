@@ -1217,8 +1217,26 @@ function checkResultPresentation() {
     'Expected result presentation to render a next-step recommendation.'
   );
   assert(
-    document.getElementById('btn-replay').textContent === 'RETURN TO QUICK',
-    'Expected result primary CTA wording to reflect the battle return route.'
+    document.getElementById('mt-guidance').textContent.indexOf('next node is ready') >= 0,
+    'Expected result presentation to render route-aware guidance that explains the recommended next step.'
+  );
+  assert(
+    document.getElementById('btn-replay').textContent === 'NEXT NODE',
+    'Expected result primary CTA wording to reflect progression-first guidance after a challenge win.'
+  );
+  assert(
+    document.getElementById('btn-replay').style.order === '1'
+      && document.getElementById('btn-double-reward').style.order === '2'
+      && document.getElementById('btn-swap-rematch').style.order === '3',
+    'Expected result CTA hierarchy to prioritize progression first, then optional reward, then loadout adjustment.'
+  );
+  assert(
+    document.getElementById('btn-continue').style.display === 'none',
+    'Expected continue CTA to stay hidden after a challenge win.'
+  );
+  assert(
+    document.getElementById('btn-replay').classList.contains('result-action-primary'),
+    'Expected the result primary CTA to receive the primary action styling contract.'
   );
   assert(
     document.getElementById('btn-swap-rematch').textContent === 'ADJUST QUICK LOADOUT',

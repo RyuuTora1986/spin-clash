@@ -156,7 +156,7 @@
       const hintBar = refs.hintBar;
       if(!hintBar) return;
       if(getGameState()!=='active'){
-        hintBar.textContent = uiText.hintAim || 'Drag to aim, then release to launch.';
+        hintBar.textContent = uiText.hintAim || 'Drag to aim for the first clean hit, then release to launch.';
         hintBar.style.color = '';
         return;
       }
@@ -343,10 +343,17 @@
 
     function showBattleIntro(context){
       const overlay = document.getElementById('battle-intro');
+      const kicker = document.getElementById('battle-intro-kicker');
       const title = document.getElementById('battle-intro-title');
       const meta = document.getElementById('battle-intro-meta');
-      if(!overlay || !title || !meta) return;
+      const briefTitle = document.getElementById('battle-intro-brief-title');
+      const briefPrimary = document.getElementById('battle-intro-brief-primary');
+      const briefSecondary = document.getElementById('battle-intro-brief-secondary');
+      if(!overlay || !title || !meta || !briefTitle || !briefPrimary || !briefSecondary) return;
       const parts = [];
+      if(kicker){
+        kicker.textContent = context.kicker || uiText.battleIntroKicker || 'OPENING PLAN';
+      }
       if(context.playerTopLabel || context.enemyTopLabel){
         title.textContent = (context.playerTopLabel || 'TOP')+(uiText.battleIntroVersus || ' VS ')+(context.enemyTopLabel || 'TOP');
       }
@@ -354,11 +361,14 @@
       if(context.arenaLabel) parts.push(context.arenaLabel);
       if(context.roadRankLabel) parts.push(context.roadRankLabel);
       meta.textContent = parts.join(' - ');
+      briefTitle.textContent = context.briefTitle || uiText.battleIntroBriefTitle || 'FIRST MOVE';
+      briefPrimary.textContent = context.briefPrimary || uiText.battleIntroBriefPrimary || 'Take the first clean line and hold center before spending burst.';
+      briefSecondary.textContent = context.briefSecondary || uiText.battleIntroBriefSecondary || 'If the angle feels bad, guard first and re-enter on the next opening.';
       overlay.classList.remove('hide');
       clearTimeout(introTimer);
       introTimer = setTimeout(function(){
         overlay.classList.add('hide');
-      }, 1300);
+      }, 1700);
     }
 
     function showBattleHud(){

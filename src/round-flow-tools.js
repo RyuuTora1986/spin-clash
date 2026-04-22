@@ -180,6 +180,49 @@
       document.body.classList.toggle('round-result-takeover', !!active);
     }
 
+    function getRoundResultCause(winner, reason){
+      if(winner === 'draw'){
+        return uiText.roundResultCauseDraw || 'Both tops stalled into the same finish state. The next round will come down to cleaner first contact.';
+      }
+      if(reason === 'ringout'){
+        return winner === 'player'
+          ? (uiText.roundResultCauseRingoutWin || 'You won the edge fight and pushed the rival cleanly out of the bowl.')
+          : (uiText.roundResultCauseRingoutLose || 'You lost the edge fight and got pushed out before recovering your lane.');
+      }
+      if(reason === 'spinout'){
+        return winner === 'player'
+          ? (uiText.roundResultCauseSpinoutWin || 'The rival ran out of spin first after losing the sustained contact battle.')
+          : (uiText.roundResultCauseSpinoutLose || 'Your spin drained first, so the round slipped away before the final clash.');
+      }
+      if(reason === 'hpout'){
+        return winner === 'player'
+          ? (uiText.roundResultCauseHpWin || 'Your pressure held up longer, so the rival broke first under repeated collisions.')
+          : (uiText.roundResultCauseHpLose || 'You took too much collision damage and your frame broke first this round.');
+      }
+      return winner === 'player'
+        ? (uiText.roundResultCauseTimeWin || 'Time expired with your top in the healthier state, so the decision went your way.')
+        : (uiText.roundResultCauseTimeLose || 'Time expired while your top was in the weaker state, so the decision went against you.');
+    }
+
+    function getRoundResultAdjustment(winner, reason){
+      if(winner === 'player'){
+        if(reason === 'ringout'){
+          return uiText.roundResultAdjustWinRingout || 'Keep the center longer and look for the same outward angle before you spend burst.';
+        }
+        if(reason === 'time'){
+          return uiText.roundResultAdjustWinTime || 'You are ahead on attrition. Do not rush the next exchange unless a clean line opens.';
+        }
+        return uiText.roundResultAdjustWin || 'Your pressure worked. Repeat the clean opener first, then spend burst only when the lane is stable.';
+      }
+      if(reason === 'ringout'){
+        return uiText.roundResultAdjustLoseRingout || 'Next round, protect the outer lane first. Guard the bad angle, then re-enter toward center.';
+      }
+      if(reason === 'time'){
+        return uiText.roundResultAdjustLoseTime || 'You fell behind on endurance. Stay in cleaner contact and avoid wasting burst from a weak angle.';
+      }
+      return uiText.roundResultAdjustLose || 'Next round, fight for the first clean angle before committing to burst. If the entry is messy, guard and reset.';
+    }
+
     function initRound(){
       let currentEnemyPreset = null;
       setEndLock(false);
@@ -305,7 +348,7 @@
       te.vx=(dx/d+sp)*te.template.spd*(.72+Math.random()*.28);
       te.vz=dz/d*te.template.spd*(.72+Math.random()*.28);
       spawnOrbs();
-      showMsg(uiText.fightCallout || 'FIGHT!',1.2,'major');
+      showMsg(uiText.fightCallout || 'FIGHT!',1.2,'impact');
       if(analyticsService){
         const currentArenaIndex = getCurrentArena();
         const currentArenaConfig = typeof options.getArenaConfig === 'function'
@@ -360,7 +403,9 @@
       if(winner==='player') sfxRoundWin(); else sfxRoundLose();
         const rdTxt=document.getElementById('rd-txt');
         const rdDet=document.getElementById('rd-detail');
+        const rdCause=document.getElementById('rd-cause');
         const rdKicker=document.getElementById('rd-kicker');
+        const rdAdjust=document.getElementById('rd-adjust');
         const ovRound=document.getElementById('ov-round');
         const msgTxt=document.getElementById('msg-txt');
         if(msgTxt){
@@ -377,6 +422,12 @@
           : (uiText.roundWinDraw || 'DRAW');
       rdTxt.style.color=winner==='player'?'#00ffcc':winner==='enemy'?'#ff4422':'#ffcc00';
       rdDet.textContent=(uiText.roundLabel || 'ROUND')+' '+getRound()+' - '+why;
+      if(rdCause){
+        rdCause.textContent = getRoundResultCause(winner, reason);
+      }
+      if(rdAdjust){
+        rdAdjust.textContent = getRoundResultAdjustment(winner, reason);
+      }
       setRoundResultTakeover(true);
       ovRound.classList.remove('hide');
       if(score[0]>=2||score[1]>=2){
