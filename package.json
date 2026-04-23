@@ -1,6 +1,6 @@
 {
   "name": "spin-clash",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Static single-player spinning-top arena battle prototype refactor.",
   "scripts": {
     "serve": "node scripts/serve-local.js",

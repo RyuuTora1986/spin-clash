@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.1 - 2026-04-23
+
+### Summary
+- Shipped a production hotfix for the GitHub Pages package so authored FX textures and external MP3 music are actually present in the deployed static build.
+
+### User-visible changes
+- The deployed site no longer throws the red runtime banner for missing `assets/fx/ringout-flash-v1.png`.
+- Homepage and battle music files are now included in the production package instead of only existing in the repo workspace.
+
+### Technical changes
+- Expanded the static release packaging allowlist to include `assets/fx` and `assets/audio`, not just `assets/vendor`.
+- Hardened the static package check so release validation now fails if the required FX textures or music files are missing from `dist-static`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run verify:release`
+- Local static-host probe: `http://127.0.0.1:4175/assets/fx/ringout-flash-v1.png` returned `200`
+- Deployed-host probe: `https://play.hakurokudo.com/assets/fx/ringout-flash-v1.png` returned `200` after Pages run `24815429546`
+
 ## 1.2.0 - 2026-04-23
 
 ### Summary
