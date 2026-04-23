@@ -36,7 +36,13 @@ function main() {
       'src',
       path.join('src', 'config-providers-override.js'),
       path.join('src', 'config-providers-runtime.js'),
-      path.join('assets', 'vendor', 'three.min.js')
+      path.join('assets', 'vendor', 'three.min.js'),
+      path.join('assets', 'fx', 'impact-burst-v1.png'),
+      path.join('assets', 'fx', 'ringout-flash-v1.png'),
+      path.join('assets', 'audio', 'music', 'home_neon_grind_01.mp3'),
+      path.join('assets', 'audio', 'music', 'battle_redline_01.mp3'),
+      path.join('assets', 'audio', 'music', 'battle_redline_02.mp3'),
+      path.join('assets', 'audio', 'music', 'battle_redline_03.mp3')
     ].forEach(expectExists);
     ['docs', 'originals', 'scripts', 'package.json', 'README.md', 'progress.md'].forEach(expectMissing);
 

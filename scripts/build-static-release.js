@@ -13,7 +13,9 @@ const includedPaths = [
   'ads.txt',
   'css',
   'src',
-  path.join('assets', 'vendor')
+  path.join('assets', 'vendor'),
+  path.join('assets', 'fx'),
+  path.join('assets', 'audio')
 ];
 
 function parseBooleanEnv(name) {
