@@ -854,6 +854,12 @@ function syncCrazyGamesGameplayState(){
 
 function setGameState(next){
   gameState = next;
+  if(document && document.body && document.body.classList){
+    ['title','prepare','active','roundOutro','roundResult','matchResult'].forEach(function(stateName){
+      document.body.classList.remove('state-' + stateName);
+    });
+    document.body.classList.add('state-' + String(next || 'title').replace(/[^a-zA-Z0-9_-]/g, ''));
+  }
   syncCrazyGamesGameplayState();
 }
 

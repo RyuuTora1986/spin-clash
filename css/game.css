@@ -2873,6 +2873,17 @@ body.round-result-takeover #msg-txt{
     top:42%;
     max-width:min(92vw,420px);
   }
+  body.state-active #msg-txt,
+  body.state-roundOutro #msg-txt{
+    top:auto;
+    bottom:max(136px,calc(env(safe-area-inset-bottom,12px) + 122px));
+    transform:translateX(-50%);
+  }
+  body.state-active #msg-txt.tone-major,
+  body.state-roundOutro #msg-txt.tone-major{
+    text-align:center;
+    width:min(86vw,324px);
+  }
 
   #msg-txt.tone-major{
     width:min(88vw,336px);

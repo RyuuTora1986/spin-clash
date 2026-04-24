@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.2.5 - 2026-04-24
+
+### Summary
+- Shipped a follow-up mobile battle message safe-zone hotfix after visual review of the 1.2.4 screenshots.
+
+### User-visible changes
+- Mobile battle skill/status message cards now move below the arena during active combat instead of briefly covering the playfield.
+
+### Technical changes
+- Added body-level game-state classes so active-battle-only message positioning can be controlled without affecting menus or result overlays.
+- Synced release-facing asset query params and build-version labels to `1.2.5`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run check:battleui`
+- `npm run check:battlemusic`
+- `npm run verify:release`
+
 ## 1.2.4 - 2026-04-24
 
 ### Summary
