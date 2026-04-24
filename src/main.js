@@ -92,6 +92,8 @@ const UI_TEXT = (root.config && root.config.text) || {};
 const storageService = (root.services && root.services.storage) || null;
 const analyticsService = (root.services && root.services.analytics) || null;
 const rewardService = (root.services && root.services.reward) || null;
+const crazyGamesService = (root.services && root.services.crazyGames) || null;
+const sharedBackendBridge = (root.services && root.services.sharedBackendBridge) || null;
 const shareService = (root.services && root.services.share) || null;
 const debugService = (root.services && root.services.debug) || null;
 const createProgressionTools = root.createProgressionTools || null;
@@ -467,6 +469,11 @@ quickBattlePreviewTools = createQuickBattlePreviewTools ? createQuickBattlePrevi
   arenaMathTools,
   getUiRoute:()=>uiRoute,
   getSelectedArenaIndex:()=>selectedArenaIndex,
+  normalizeArenaIndex:(index)=>{
+    return loadoutUiTools && typeof loadoutUiTools.normalizeQuickArenaIndex === 'function'
+      ? loadoutUiTools.normalizeQuickArenaIndex(index)
+      : Math.max(0, Math.min(ARENAS.length - 1, parseInt(index, 10) || 0));
+  },
   isArenaUnlocked:(index)=>loadoutUiTools ? loadoutUiTools.isArenaUnlocked(index) : true,
   getPlayerTopId:()=>playerTopId,
   isTopUnlocked:(index)=>loadoutUiTools ? loadoutUiTools.isTopUnlocked(index) : true
@@ -553,6 +560,15 @@ function spawnOrbs(){
 }
 function tickOrbs(dt,tp,te){
   if(battleEffectsTools) battleEffectsTools.tickOrbs(orbObjs,dt,tp,te);
+}
+function clearBattleEffects(){
+  if(physTick._orbTimer){
+    clearTimeout(physTick._orbTimer);
+    physTick._orbTimer = null;
+  }
+  if(battleEffectsTools && typeof battleEffectsTools.clearEffects === 'function'){
+    battleEffectsTools.clearEffects(partPool, orbObjs);
+  }
 }
 
 function mkTopData(template,isPlayer){
@@ -660,6 +676,12 @@ function patchCurrentSettings(patch){
   }
   return nextSettings;
 }
+function patchRuntimeState(patch){
+  if(storageService && typeof storageService.patch === 'function'){
+    return storageService.patch(patch || {});
+  }
+  return patch || {};
+}
 function toggleMusicPreference(){
   const nextEnabled = !getCurrentSettings().musicEnabled;
   patchCurrentSettings({ musicEnabled:nextEnabled });
@@ -677,7 +699,7 @@ function syncMusicState(){
     stopMusic({ fadeMs:180 });
     return;
   }
-  if(gameState === 'active' || gameState === 'roundOutro' || gameState === 'roundResult' || gameState === 'matchResult'){
+  if(gameState === 'active' || gameState === 'roundOutro'){
     startMusic({
       scene:'battle',
       round:round,
@@ -727,6 +749,12 @@ function getCurrentRoadRank(){
 const unlockArenaById = progressionTools ? progressionTools.unlockArenaById : function(){};
 const unlockTopById = progressionTools ? progressionTools.unlockTopById : function(){};
 const resetDebugProgress = progressionTools ? progressionTools.resetDebugProgress : function(){};
+function getStoredRuntimeIndex(key, fallback){
+  const save = getSave();
+  return save && typeof save[key] === 'number' && isFinite(save[key]) && save[key] >= 0
+    ? Math.floor(save[key])
+    : fallback;
+}
 loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   uiText:UI_TEXT,
   tops:TOPS,
@@ -750,6 +778,11 @@ loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   getSfxEnabled:()=>getCurrentSettings().sfxEnabled,
   getActiveChallengeIndex:()=>activeChallengeIndex,
   getSelectedArenaIndex:()=>selectedArenaIndex,
+  setSelectedArenaIndex:(next)=>{
+    selectedArenaIndex = Math.max(0, Math.min(ARENAS.length - 1, parseInt(next, 10) || 0));
+    patchRuntimeState({ selectedArenaIndex:selectedArenaIndex });
+    return selectedArenaIndex;
+  },
   getPlayerTopId:()=>playerTopId,
   getHomePreviewTopId:()=>homePreviewTopId,
   getSessionTrialArenaIds:()=>sessionTrialArenaIds,
@@ -761,10 +794,47 @@ loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   setCurrentArena:(index)=>{ currentArena = index; },
   goPathRoute:()=>{ if(uiEntryTools) uiEntryTools.goPath(); },
   rewardService,
+  isRewardPlacementAvailable,
   showMsg,
   refresh:refreshDebugState
   }) : null;
-let gameState='title',playerTopId=0,homePreviewTopId=0,score=[0,0],round=1,roundTimer=(ECONOMY.runtime && typeof ECONOMY.runtime.defaultRoundTimer === 'number' ? ECONOMY.runtime.defaultRoundTimer : 30);
+if(loadoutUiTools && typeof loadoutUiTools.normalizeQuickArenaIndex === 'function'){
+  selectedArenaIndex = loadoutUiTools.normalizeQuickArenaIndex(selectedArenaIndex);
+  currentArena = selectedArenaIndex;
+}
+let gameState='title',playerTopId=getStoredRuntimeIndex('selectedTopIndex',0),homePreviewTopId=getStoredRuntimeIndex('homePreviewTopIndex',getStoredRuntimeIndex('selectedTopIndex',0)),score=[0,0],round=1,roundTimer=(ECONOMY.runtime && typeof ECONOMY.runtime.defaultRoundTimer === 'number' ? ECONOMY.runtime.defaultRoundTimer : 30);
+function isRewardPlacementAvailable(placement){
+  if(!rewardService || typeof rewardService.isRewardAvailable !== 'function'){
+    return { available:false, reason:'provider_disabled' };
+  }
+  return rewardService.isRewardAvailable(placement) || { available:false, reason:'provider_unavailable' };
+}
+
+function buildCrazyGamesGameplayContext(){
+  return {
+    mode:currentMode,
+    state:gameState,
+    arenaId:getArenaConfig(currentArena).id || null,
+    arenaLabel:getArenaLabel(currentArena),
+    playerTopId:(TOPS[playerTopId] && TOPS[playerTopId].id) || null,
+    enemyTopId:(TOPS[enemyTopId] && TOPS[enemyTopId].id) || null,
+    challengeNode:currentMode === 'challenge' ? activeChallengeIndex : null
+  };
+}
+
+function syncCrazyGamesGameplayState(){
+  if(!crazyGamesService || crazyGamesService.enabled !== true || typeof crazyGamesService.syncGameplayActive !== 'function'){
+    return;
+  }
+  const gameplayActive = gameState === 'prepare' || gameState === 'active';
+  crazyGamesService.syncGameplayActive(gameplayActive, gameplayActive ? buildCrazyGamesGameplayContext() : null);
+}
+
+function setGameState(next){
+  gameState = next;
+  syncCrazyGamesGameplayState();
+}
+
 if(homeTopShowcaseTools) homeTopShowcaseTools.initialize();
 if(quickBattlePreviewTools) quickBattlePreviewTools.initialize();
 uiShellTools = createUiShellTools ? createUiShellTools({
@@ -786,6 +856,7 @@ matchFlowTools = createMatchFlowTools ? createMatchFlowTools({
   roadRanks:ROAD_RANKS,
   economy:ECONOMY,
   rewardService,
+  isRewardPlacementAvailable,
   shareService,
   analyticsService,
   getScore:()=>score,
@@ -814,6 +885,7 @@ matchFlowTools = createMatchFlowTools ? createMatchFlowTools({
   updateModeUI,
   syncDebugPanel,
   initRound,
+  setGameState,
   getChallengeContinueUsed:()=>challengeContinueUsed,
   setChallengeContinueUsed:(next)=>{ challengeContinueUsed = next; },
   getRoundRewardGranted:()=>roundRewardGranted,
@@ -842,11 +914,27 @@ uiEntryTools = createUiEntryTools ? createUiEntryTools({
   getCurrentArena:()=>currentArena,
   setCurrentArena:(next)=>{ currentArena = next; },
   getSelectedArenaIndex:()=>selectedArenaIndex,
-  setSelectedArenaIndex:(next)=>{ selectedArenaIndex = next; },
+  setSelectedArenaIndex:(next)=>{
+    const normalized = loadoutUiTools && typeof loadoutUiTools.normalizeQuickArenaIndex === 'function'
+      ? loadoutUiTools.normalizeQuickArenaIndex(next)
+      : Math.max(0, Math.min(ARENAS.length - 1, parseInt(next, 10) || 0));
+    selectedArenaIndex = normalized;
+    patchRuntimeState({ selectedArenaIndex:normalized });
+  },
+  normalizeQuickArenaIndex:(index)=>{
+    return loadoutUiTools && typeof loadoutUiTools.normalizeQuickArenaIndex === 'function'
+      ? loadoutUiTools.normalizeQuickArenaIndex(index)
+      : Math.max(0, Math.min(ARENAS.length - 1, parseInt(index, 10) || 0));
+  },
+  getNextQuickArenaIndex:(index, step)=>{
+    return loadoutUiTools && typeof loadoutUiTools.getNextQuickArenaIndex === 'function'
+      ? loadoutUiTools.getNextQuickArenaIndex(index, step)
+      : Math.max(0, Math.min(ARENAS.length - 1, parseInt(index, 10) || 0));
+  },
   getPlayerTopId:()=>playerTopId,
-  setPlayerTopId:(next)=>{ playerTopId = next; homePreviewTopId = next; },
+  setPlayerTopId:(next)=>{ playerTopId = next; homePreviewTopId = next; patchRuntimeState({ selectedTopIndex:next, homePreviewTopIndex:next }); },
   getHomePreviewTopId:()=>homePreviewTopId,
-  setHomePreviewTopId:(next)=>{ homePreviewTopId = next; },
+  setHomePreviewTopId:(next)=>{ homePreviewTopId = next; patchRuntimeState({ homePreviewTopIndex:next }); },
   getInfoPage:()=>infoPage,
   setInfoPage:(next)=>{ infoPage = next; },
   resetScoreRound:()=>{ score=[0,0]; round=1; },
@@ -948,7 +1036,7 @@ roundFlowTools = createRoundFlowTools ? createRoundFlowTools({
   startMusic,
   sfxRoundWin,
   sfxRoundLose,
-  setGameState:(next)=>{ gameState = next; },
+  setGameState,
   setEndLock:(next)=>{ endLock = next; },
   getPhysTick:()=>physTick,
   getTimeScale:()=>timeScale,
@@ -1108,6 +1196,7 @@ function initRound(){
   timeDilationRecoverRate = 1.1;
   resetBattlePerfMetrics();
   clearBattleCommentary();
+  clearBattleEffects();
   if(battleSimTools && typeof battleSimTools.resetCommentary === 'function'){
     battleSimTools.resetCommentary();
   }
@@ -1116,6 +1205,7 @@ function initRound(){
 }
 
 function launch(){
+  initAudioSafely();
   if(roundFlowTools) roundFlowTools.launch();
 }
 
@@ -1195,11 +1285,22 @@ function endRound(reason){
 }
 
 function showMatchResult(){
-  gameState='matchResult';
+  setGameState('matchResult');
   battlePerformanceMode.activeBattle = false;
   clearBattleCommentary();
+  clearBattleEffects();
   syncMusicState();
   if(matchFlowTools) matchFlowTools.showMatchResult();
+  if(
+    crazyGamesService
+    && crazyGamesService.enabled === true
+    && typeof crazyGamesService.happytime === 'function'
+    && currentMode === 'challenge'
+    && score[0] >= 2
+    && activeChallengeIndex >= CHALLENGE_ROAD.length - 1
+  ){
+    crazyGamesService.happytime();
+  }
 }
 
 function resetMatch(options){
@@ -1303,6 +1404,7 @@ function doSwap(){
   pTrailPos.length=0;eTrailPos.length=0;
   battlePerformanceMode.activeBattle = false;
   clearBattleCommentary();
+  clearBattleEffects();
   if(uiShellTools) uiShellTools.hideBattleHud();
   showLoadoutOverlay();
   updateModeUI();
@@ -1395,9 +1497,26 @@ debugRuntimeTools = createDebugRuntimeTools ? createDebugRuntimeTools({
 startupTools = createStartupTools ? createStartupTools({
   debugRuntimeTools,
   storageService,
+  analyticsService,
+  arenas:ARENAS,
   uiText:UI_TEXT,
+  getSave,
+  saveProgress,
+  getCurrentMode:()=>currentMode,
+  getCurrentArena:()=>currentArena,
   getRenderGameToText:()=>renderGameToText,
-  setAdvanceTime:(handler)=>{ window.advanceTime = handler; },
+  setTimeAdvanceHook:(handler)=>{
+    const advanceTimeGlobalKey = ['advance', 'Time'].join('');
+    if(typeof handler === 'function'){
+      window[advanceTimeGlobalKey] = handler;
+      return;
+    }
+    try{
+      delete window[advanceTimeGlobalKey];
+    }catch(error){
+      window[advanceTimeGlobalKey] = undefined;
+    }
+  },
   setActiveChallengeIndex:(next)=>{ activeChallengeIndex = next; },
   maxChallengeIndex:CHALLENGE_ROAD.length - 1,
   updateModeUI,
@@ -1410,6 +1529,54 @@ startupTools = createStartupTools ? createStartupTools({
   }
 }) : null;
 if(startupTools) startupTools.initialize();
+if(crazyGamesService && crazyGamesService.enabled === true){
+  crazyGamesService.initialize({
+    getRuntimeAudioTools:()=>runtimeAudioTools
+  }).then(function(){
+    return crazyGamesService.reportLoadingComplete();
+  }).catch(function(error){
+    console.warn('CrazyGames initialization failed.', error);
+  });
+}
+
+function applyHydratedSharedBackendState(payload){
+  const save = payload && payload.save ? payload.save : null;
+  if(!save) return;
+  if(typeof save.selectedTopIndex === 'number' && isFinite(save.selectedTopIndex)){
+    playerTopId = Math.max(0, Math.min(TOPS.length - 1, Math.floor(save.selectedTopIndex)));
+  }
+  if(typeof save.homePreviewTopIndex === 'number' && isFinite(save.homePreviewTopIndex)){
+    homePreviewTopId = Math.max(0, Math.min(TOPS.length - 1, Math.floor(save.homePreviewTopIndex)));
+  }else{
+    homePreviewTopId = playerTopId;
+  }
+  if(typeof save.selectedArenaIndex === 'number' && isFinite(save.selectedArenaIndex)){
+    selectedArenaIndex = Math.max(0, Math.min(ARENAS.length - 1, Math.floor(save.selectedArenaIndex)));
+    if(loadoutUiTools && typeof loadoutUiTools.normalizeQuickArenaIndex === 'function'){
+      selectedArenaIndex = loadoutUiTools.normalizeQuickArenaIndex(selectedArenaIndex);
+    }
+    currentArena = selectedArenaIndex;
+  }
+  if(save.challenge && typeof save.challenge.unlockedNodeIndex === 'number' && isFinite(save.challenge.unlockedNodeIndex)){
+    activeChallengeIndex = Math.max(0, Math.min(CHALLENGE_ROAD.length - 1, Math.floor(save.challenge.unlockedNodeIndex)));
+  }
+  if(save.settings && typeof save.settings.locale === 'string' && save.settings.locale){
+    if(localizationTools && typeof localizationTools.setLocale === 'function'){
+      localizationTools.setLocale(save.settings.locale);
+    }else{
+      currentLocale = save.settings.locale;
+    }
+  }
+  updateModeUI();
+  syncDebugPanel();
+  syncMusicState();
+}
+
+if(sharedBackendBridge && sharedBackendBridge.enabled === true && typeof sharedBackendBridge.hydrate === 'function'){
+  sharedBackendBridge.hydrate().then(applyHydratedSharedBackendState).catch(function(error){
+    console.warn('Shared backend hydrate failed.', error);
+  });
+}
 attemptInitialMusicPlayback();
 
 

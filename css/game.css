@@ -347,11 +347,16 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 #msg-txt.tone-impact{font-size:26px;letter-spacing:5px;text-shadow:0 0 30px rgba(255,110,40,.58)}
 .battle-commentary{
   position:fixed;
-  top:158px;
+  top:128px;
   left:50%;
   transform:translateX(-50%);
   width:min(760px,calc(100vw - 34px));
-  height:136px;
+  height:164px;
+  display:flex;
+  flex-direction:column-reverse;
+  align-items:center;
+  justify-content:flex-start;
+  gap:14px;
   opacity:1;
   visibility:visible;
   transition:opacity .18s ease, transform .18s ease;
@@ -365,13 +370,13 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   transform:translate(-50%,-6px);
 }
 .battle-commentary-item{
-  position:absolute;
-  bottom:0;
-  left:50%;
+  position:relative;
+  bottom:auto;
+  left:auto!important;
   display:inline-flex;
   align-items:center;
   gap:10px;
-  max-width:min(420px,82vw);
+  max-width:min(520px,86vw);
   min-height:44px;
   padding:9px 14px 9px 10px;
   border-radius:999px;
@@ -384,7 +389,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   text-shadow:0 0 12px rgba(0,0,0,.22);
   white-space:nowrap;
   opacity:0;
-  transform:translate3d(calc(-50% + var(--commentary-drift,0px)),18px,0) scale(.94);
+  transform:translate3d(var(--commentary-drift,0px),18px,0) scale(.94);
   animation:commentaryFloat var(--commentary-duration,2.45s) cubic-bezier(.2,.78,.2,1) forwards;
 }
 .battle-commentary-badge{
@@ -434,19 +439,19 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 @keyframes commentaryFloat{
   0%{
     opacity:0;
-    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),18px,0) scale(.94);
+    transform:translate3d(var(--commentary-drift,0px),18px,0) scale(.94);
   }
   12%{
     opacity:1;
-    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),0,0) scale(1);
+    transform:translate3d(var(--commentary-drift,0px),0,0) scale(1);
   }
   72%{
     opacity:1;
-    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),-44px,0) scale(1);
+    transform:translate3d(var(--commentary-drift,0px),-18px,0) scale(1);
   }
   100%{
     opacity:0;
-    transform:translate3d(calc(-50% + var(--commentary-drift,0px)),var(--commentary-rise,-82px),0) scale(.98);
+    transform:translate3d(var(--commentary-drift,0px),var(--commentary-rise,-48px),0) scale(.98);
   }
 }
 #hint-bar{
@@ -460,7 +465,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   background:rgba(6,10,22,.72);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
-  font-size:10px;opacity:.9;letter-spacing:1px;line-height:1.45;text-align:center;pointer-events:none;
+  font-size:11.5px;opacity:.92;letter-spacing:1px;line-height:1.45;text-align:center;pointer-events:none;
   color:rgba(232,242,255,.84);
 }
 
@@ -748,11 +753,19 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   display:grid;
   grid-template-columns:minmax(0,1.15fr) minmax(0,.95fr);
   gap:8px;
+  align-items:stretch;
+}
+.title-action-block{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
 }
 .title-actions .big-btn,
 .title-primary-btn{
   width:100%;
   margin-top:0;
+  margin-bottom:0;
 }
 .title-primary-btn{
   padding:13px 18px;
@@ -770,6 +783,54 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   background:linear-gradient(180deg,rgba(0,255,200,.12),rgba(255,255,255,.05));
   color:#fff;
 }
+#btn-enter{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(0,255,210,.72);
+  background:
+    radial-gradient(circle at 30% 0%,rgba(0,255,210,.18),transparent 42%),
+    linear-gradient(180deg,rgba(0,255,200,.08),rgba(0,70,72,.03));
+  box-shadow:0 0 24px rgba(0,255,200,.12), inset 0 0 18px rgba(0,255,200,.05);
+}
+#btn-enter::before{
+  content:"";
+  position:absolute;
+  top:-55%;
+  bottom:-55%;
+  left:-42%;
+  width:34%;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(185,255,242,.72),transparent);
+  transform:skewX(-18deg);
+  opacity:.62;
+  animation:pathCtaSheen 4.8s cubic-bezier(.5,0,.22,1) infinite;
+}
+#btn-enter::after{
+  content:"";
+  position:absolute;
+  inset:1px;
+  border-radius:3px;
+  pointer-events:none;
+  border:1px solid rgba(168,255,232,.14);
+}
+#btn-enter:disabled::before,
+#btn-enter.is-disabled::before{
+  display:none;
+}
+#btn-enter:hover{
+  box-shadow:0 0 34px rgba(0,255,200,.28), inset 0 0 22px rgba(0,255,200,.08);
+}
+@keyframes pathCtaSheen{
+  0%,44%{left:-44%;opacity:0}
+  55%{opacity:.76}
+  74%,100%{left:112%;opacity:0}
+}
+@media (prefers-reduced-motion: reduce){
+  #btn-enter::before{
+    animation:none;
+    opacity:0;
+  }
+}
 .title-action-notes{
   display:grid;
   grid-template-columns:minmax(0,1fr) minmax(0,1fr);
@@ -786,6 +847,10 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   letter-spacing:.8px;
   line-height:1.55;
   text-align:left;
+}
+.title-action-block-path .title-action-note{
+  border-color:rgba(0,255,200,.14);
+  background:linear-gradient(180deg,rgba(0,255,200,.045),rgba(255,255,255,.018));
 }
 .title-actions-utility{
   display:grid;
@@ -2543,13 +2608,14 @@ body.round-result-takeover #msg-txt{
   #hint-bar{
     bottom:max(78px,calc(env(safe-area-inset-bottom,12px)+64px));
     width:min(88vw,320px);
-    font-size:7.5px;
+    font-size:8.7px;
     line-height:1.35;
   }
   .battle-commentary{
-    top:max(148px,calc(env(safe-area-inset-top,0px) + 138px));
+    top:max(126px,calc(env(safe-area-inset-top,0px) + 116px));
     width:min(calc(100vw - 20px),560px);
-    height:122px;
+    height:154px;
+    gap:10px;
   }
   .battle-commentary-item{
     max-width:min(82vw,328px);
@@ -2872,11 +2938,12 @@ body.round-result-takeover #msg-txt{
     font-size:6.5px;
     letter-spacing:.8px;
   }
-  #hint-bar{bottom:max(64px,calc(env(safe-area-inset-bottom,6px)+54px));font-size:8px}
+  #hint-bar{bottom:max(64px,calc(env(safe-area-inset-bottom,6px)+54px));font-size:9px}
   .battle-commentary{
-    top:max(64px,calc(env(safe-area-inset-top,0px) + 58px));
+    top:max(58px,calc(env(safe-area-inset-top,0px) + 52px));
     width:min(calc(100vw - 16px),420px);
-    height:86px;
+    height:106px;
+    gap:8px;
   }
   .battle-commentary-item{
     max-width:min(68vw,250px);

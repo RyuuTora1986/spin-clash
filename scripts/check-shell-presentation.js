@@ -729,6 +729,9 @@ function checkQuickBattlePresentation() {
       },
       setCurrentArena() {},
       rewardService: null,
+      isRewardPlacementAvailable(placement) {
+        return { available: placement === 'trial_unlock_arena' };
+      },
       showMsg() {},
       refresh() {}
     });
@@ -1101,6 +1104,9 @@ function checkResultPresentation() {
       rewards: { winBase: 20, lossBase: 8, doubleRewardMultiplier: 2 }
     },
     rewardService: null,
+    isRewardPlacementAvailable(placement) {
+      return { available: placement === 'double_reward' || placement === 'continue_once' };
+    },
     shareService: null,
     analyticsService: null,
     getScore() {

@@ -50,12 +50,12 @@
         outerScale:1.14
       },
       physics:{
-        slopeForce:4.8,
-        radialPull:0.72,
-        wallPush:0.5,
-        openingGrace:1.02,
-        openingInwardAssist:10.5,
-        openingClampPush:0.52
+        slopeForce:4.4,
+        radialPull:0.84,
+        wallPush:0.38,
+        openingGrace:1.28,
+        openingInwardAssist:16.0,
+        openingClampPush:0.34
       },
       renderer:{
         floorColor:0x07050f,
@@ -77,6 +77,10 @@
         sides:6,
         radiusScale:1,
         rotation:Math.PI / 6
+      },
+      launchSlots:{
+        player:{ x:-1.15, z:4.45 },
+        enemy:{ x:1.15, z:-4.45 }
       },
       geometry:{
         bowlHeight:0.62,
@@ -193,6 +197,119 @@
         centerColor:0xfff0b8,
         accentColor:0x50437d,
         deepAccentColor:0x27213f
+      }
+    },
+    {
+      id:'heart_bowl_intro',
+      label:'Heart Entry Bowl',
+      type:'heart',
+      hiddenFromQuick:true,
+      challengeOnly:true,
+      unlockCost:0,
+      shape:{
+        scaleX:1.08,
+        scaleZ:1.08,
+        pinch:0.02
+      },
+      launchSlots:{
+        player:{ x:-2.88, z:0.42 },
+        enemy:{ x:2.88, z:-0.42 }
+      },
+      geometry:{
+        bowlHeight:0.54,
+        scratchBowlHeight:0.74,
+        hazardScale:0.9,
+        nearWallScale:0.975,
+        outerScale:1.2
+      },
+      physics:{
+        slopeForce:3.7,
+        radialPull:1.02,
+        wallPush:0.28,
+        openingGrace:1.82,
+        openingInwardAssist:26.0,
+        openingClampPush:0.22
+      },
+      renderer:{
+        floorColor:0x081018,
+        floorEmissive:0x02060e,
+        rimColor:0xff6fa8,
+        hazardColor:0xff8cb6,
+        centerColor:0x7ff4ff,
+        accentColor:0x243a52,
+        deepAccentColor:0x112032
+      }
+    },
+    {
+      id:'hex_bowl_intro',
+      label:'Hex Entry Bowl',
+      type:'hex',
+      hiddenFromQuick:true,
+      challengeOnly:true,
+      unlockCost:0,
+      shape:{
+        sides:6,
+        radiusScale:1.2,
+        rotation:Math.PI / 6
+      },
+      launchSlots:{
+        player:{ x:0, z:3.15 },
+        enemy:{ x:0, z:-3.15 }
+      },
+      geometry:{
+        bowlHeight:0.58,
+        scratchBowlHeight:0.76,
+        hazardScale:0.92,
+        outerScale:1.36
+      },
+      physics:{
+        slopeForce:3.85,
+        radialPull:1.08,
+        wallPush:0.5
+      },
+      renderer:{
+        floorColor:0x0b1016,
+        floorEmissive:0x08111b,
+        rimColor:0xffcc72,
+        hazardColor:0xffdf9d,
+        centerColor:0xc2fff2,
+        accentColor:0x34506f,
+        deepAccentColor:0x162536
+      }
+    },
+    {
+      id:'circle_boss_intro',
+      label:'Redline Training Ring',
+      type:'circle',
+      hiddenFromQuick:true,
+      challengeOnly:true,
+      hazardSpinThreshold:6.9,
+      unlockCost:0,
+      launchSlots:{
+        player:{ x:0, z:4.35 },
+        enemy:{ x:0, z:-4.35 }
+      },
+      geometry:{
+        bowlHeight:0.58,
+        scratchBowlHeight:0.78,
+        hazardStart:6.9,
+        outerScale:1.3,
+        markerScales:[0.25, 0.5, 0.75]
+      },
+      physics:{
+        slopeForce:5.2,
+        radialPull:1,
+        safeWallInset:0.38,
+        wallPush:0.42
+      },
+      renderer:{
+        floorColor:0x100809,
+        floorEmissive:0x120303,
+        rimColor:0xff4c2c,
+        hazardColor:0xff8b42,
+        centerColor:0xfff0b0,
+        accentColor:0x4b1820,
+        deepAccentColor:0x1c0a10
       }
     }
   ];

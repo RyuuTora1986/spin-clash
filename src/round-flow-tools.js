@@ -111,9 +111,17 @@
       const guardAction = normalizedTemplate.combat && normalizedTemplate.combat.actions
         ? (normalizedTemplate.combat.actions.guard || {})
         : {};
-      const isHeart = typeof options.isHeartArena === 'function' ? options.isHeartArena() : false;
-      const sx= isHeart?(isPlayer?-3.92:3.92):0;
-      const sz= isHeart?0:(isPlayer?5.0:-5.0);
+      const arenaConfig = getArenaConfig(getCurrentArena());
+      const isHeart = arenaConfig && arenaConfig.type === 'heart';
+      const launchSlots = arenaConfig && arenaConfig.launchSlots ? arenaConfig.launchSlots : null;
+      const defaultSpawn = isHeart
+        ? { x:isPlayer ? -3.92 : 3.92, z:0 }
+        : { x:0, z:isPlayer ? 5.0 : -5.0 };
+      const slot = launchSlots
+        ? (isPlayer ? launchSlots.player : launchSlots.enemy)
+        : null;
+      const sx = slot && typeof slot.x === 'number' && isFinite(slot.x) ? slot.x : defaultSpawn.x;
+      const sz = slot && typeof slot.z === 'number' && isFinite(slot.z) ? slot.z : defaultSpawn.z;
       return {
         mesh:null,isPlayer,x:sx,z:sz,vx:0,vz:0,
         hp:normalizedTemplate.hp,maxHp:normalizedTemplate.hp,spin:normalizedTemplate.maxSpin,maxSpin:normalizedTemplate.maxSpin,burst:0,

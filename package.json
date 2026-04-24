@@ -1,9 +1,29 @@
 {
   "name": "spin-clash",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "Static single-player spinning-top arena battle prototype refactor.",
   "scripts": {
     "serve": "node scripts/serve-local.js",
+    "preview:crazygames": "node scripts/serve-crazygames-preview.js",
+    "preview:channel": "node scripts/preview-channel-release.js",
+    "channel:list": "node scripts/list-channel-rules.js",
+    "build:channel": "node scripts/build-channel-release.js",
+    "check:channel": "node scripts/check-channel-release.js",
+    "verify:channel": "node scripts/verify-channel-release.js",
+    "verify:channels": "node scripts/verify-channel-release.js --all-active",
+    "capture:marketing": "node scripts/capture-marketing-assets.js",
+    "render:cover-board": "node scripts/render-crazygames-cover-board.js",
+    "export:cover-drafts": "node scripts/export-cover-drafts.js",
+    "build:crazygamesvideo": "node scripts/build-crazygames-preview-video.js",
+    "recut:crazygamesvideo": "node scripts/recut-crazygames-preview-video.js",
+    "build:core": "node scripts/build-core-release.js",
+    "check:core": "node scripts/check-core-package.js",
+    "build:crazygames": "node scripts/build-crazygames-release.js",
+    "check:crazygames": "node scripts/check-crazygames-package.js",
+    "smoke:crazygames": "node scripts/smoke-crazygames-preview.js",
+    "verify:crazygames": "npm run build:crazygames && npm run check:crazygames && npm run smoke:crazygames",
+    "probe:roadbalance": "node scripts/probe-championship-path-balance.js",
+    "prepare:crazygames": "node scripts/prepare-crazygames-submission.js",
     "sync:staticversion": "node scripts/sync-static-asset-versions.js",
     "build:static": "node scripts/build-static-release.js",
     "check:static": "node scripts/check-static-package.js",
@@ -32,6 +52,7 @@
     "check:settings": "node scripts/check-settings-flow.js",
     "check:roadrank": "node scripts/check-road-rank-flow.js && node scripts/check-road-rank-ui.js",
     "check:providers": "node scripts/check-provider-services.js",
+    "check:sharedbackend": "node scripts/check-shared-backend-bridge.js",
     "check:debugservice": "node scripts/check-debug-service.js",
     "check:debug": "node scripts/check-debug-tuning.js",
     "check:debugruntime": "node scripts/check-debug-runtime-snapshots.js",
@@ -45,7 +66,7 @@
     "check:share": "node scripts/check-share-service.js",
     "check:ui": "node scripts/check-ui-actions.js",
     "check:proxyvisualflow": "node scripts/check-proxy-visual-flow-capture.js",
-    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:arenas && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:naming && npm run check:ja-ruby && npm run check:battleperf && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui && npm run check:proxyvisualflow",
+    "preflight": "npm run check:syntax && npm run check:repo && npm run check:docs && npm run check:localserver && npm run check:dom && npm run check:config && npm run check:arenas && npm run check:nextphase && npm run check:analytics && npm run check:storage && npm run check:combatschema && npm run check:collisionhelpers && npm run check:guard && npm run check:signatures && npm run check:combatintent && npm run check:localization && npm run check:naming && npm run check:ja-ruby && npm run check:battleperf && npm run check:roster && npm run check:encounter && npm run check:workshop && npm run check:settings && npm run check:roadrank && npm run check:providers && npm run check:sharedbackend && npm run check:debugservice && npm run check:debug && npm run check:debugruntime && npm run check:loadout && npm run check:routes && npm run check:routeflow && npm run check:shellpresentation && npm run check:session && npm run check:roundflow && npm run check:matchflow && npm run check:share && npm run check:ui && npm run check:proxyvisualflow",
     "verify:release": "npm run preflight && npm run build:static && npm run check:static"
   },
   "repository": {
@@ -60,6 +81,7 @@
   },
   "homepage": "https://github.com/RyuuTora1986/spin-clash#readme",
   "devDependencies": {
-    "playwright": "^1.59.1"
+    "playwright": "^1.59.1",
+    "terser": "^5.46.2"
   }
 }

@@ -211,6 +211,11 @@ async function testArenaTrialAnalytics() {
       currentArenaCalls.push(index);
     },
     rewardService: {
+      isRewardAvailable(placement) {
+        return placement === 'trial_unlock_arena'
+          ? { available: true }
+          : { available: false, reason: 'unsupported_placement' };
+      },
       request(placement, payload) {
         rewardRequests += 1;
         assert(placement === 'trial_unlock_arena', 'Expected arena trial flow to use the trial_unlock_arena placement.');
@@ -284,6 +289,11 @@ async function testArenaTrialFailureShowsMajorFeedback() {
     },
     setCurrentArena() {},
     rewardService: {
+      isRewardAvailable(placement) {
+        return placement === 'trial_unlock_arena'
+          ? { available: true }
+          : { available: false, reason: 'unsupported_placement' };
+      },
       request() {
         return Promise.reject(new Error('provider_unavailable'));
       },

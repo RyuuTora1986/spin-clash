@@ -34,6 +34,7 @@
     const getSfxEnabled = typeof options.getSfxEnabled === 'function' ? options.getSfxEnabled : function(){ return true; };
     const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
     const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
+    const setSelectedArenaIndex = typeof options.setSelectedArenaIndex === 'function' ? options.setSelectedArenaIndex : function(index){ return index; };
     const getPlayerTopId = typeof options.getPlayerTopId === 'function' ? options.getPlayerTopId : function(){ return 0; };
     const getHomePreviewTopId = typeof options.getHomePreviewTopId === 'function' ? options.getHomePreviewTopId : function(){ return getPlayerTopId(); };
     const getSessionTrialArenaIds = typeof options.getSessionTrialArenaIds === 'function'
@@ -55,11 +56,39 @@
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
     const goPathRoute = typeof options.goPathRoute === 'function' ? options.goPathRoute : function(){};
     const rewardService = options.rewardService || null;
+    const isRewardPlacementAvailable = typeof options.isRewardPlacementAvailable === 'function'
+      ? options.isRewardPlacementAvailable
+      : function(placement){
+        if(!rewardService || typeof rewardService.isRewardAvailable !== 'function'){
+          return { available:false, reason:'provider_disabled' };
+        }
+        return rewardService.isRewardAvailable(placement) || { available:false, reason:'provider_unavailable' };
+      };
     const showMsg = typeof options.showMsg === 'function' ? options.showMsg : function(){};
     const refresh = typeof options.refresh === 'function' ? options.refresh : function(){};
     let purchaseDialogBound = false;
     let pendingTopPurchase = null;
     let trialUnlockContextCounter = 0;
+
+    function getPlatformRuntime(){
+      return root.runtime && root.runtime.platform
+        ? root.runtime.platform
+        : { id:'web', isCrazyGames:false, crazyGamesLaunchStage:'basic' };
+    }
+
+    function isCrazyGamesBasicChannel(){
+      const platformRuntime = getPlatformRuntime();
+      return platformRuntime.isCrazyGames === true
+        && platformRuntime.crazyGamesLaunchStage !== 'full';
+    }
+
+    function getCrazyGamesBasicArenaLockedHint(arenaUnlockCost){
+      return formatText(
+        uiText.quickStartArenaLockedHint
+          || 'Championship Path is the fastest route to more SCRAP. Push deeper there, or earn {cost} SCRAP to buy this arena outright.',
+        { cost:Math.max(0, arenaUnlockCost || 0) }
+      );
+    }
 
     function createTrialUnlockContextId(arenaId){
       trialUnlockContextCounter += 1;
@@ -506,6 +535,54 @@
       return arenas[index] || { id:'unknown_arena', label:'ARENA', type:'circle', unlockCost:0 };
     }
 
+    function isArenaQuickSelectable(index){
+      const arena = getArenaConfig(index);
+      return !!arena && arena.hiddenFromQuick !== true && arena.challengeOnly !== true;
+    }
+
+    function getQuickArenaIndexes(){
+      const indexes = [];
+      arenas.forEach(function(arena, index){
+        if(isArenaQuickSelectable(index)){
+          indexes.push(index);
+        }
+      });
+      if(!indexes.length && arenas.length){
+        indexes.push(0);
+      }
+      return indexes;
+    }
+
+    function normalizeQuickArenaIndex(index){
+      if(!arenas.length) return 0;
+      const quickArenaIndexes = getQuickArenaIndexes();
+      const clampedIndex = Math.max(0, Math.min(arenas.length - 1, parseInt(index, 10) || 0));
+      if(quickArenaIndexes.includes(clampedIndex)){
+        return clampedIndex;
+      }
+      return quickArenaIndexes[0];
+    }
+
+    function getNextQuickArenaIndex(index, step){
+      const quickArenaIndexes = getQuickArenaIndexes();
+      if(!quickArenaIndexes.length){
+        return 0;
+      }
+      const normalizedIndex = normalizeQuickArenaIndex(index);
+      const currentPosition = Math.max(0, quickArenaIndexes.indexOf(normalizedIndex));
+      const direction = step < 0 ? -1 : 1;
+      const nextPosition = (currentPosition + direction + quickArenaIndexes.length) % quickArenaIndexes.length;
+      return quickArenaIndexes[nextPosition];
+    }
+
+    function commitQuickArenaSelection(index){
+      const normalizedIndex = normalizeQuickArenaIndex(index);
+      if(normalizedIndex !== getSelectedArenaIndex()){
+        setSelectedArenaIndex(normalizedIndex);
+      }
+      return normalizedIndex;
+    }
+
     function getTopConfig(index){
       return tops[index] || { id:'unknown_top', name:'TOP', unlockCost:0 };
     }
@@ -869,7 +946,7 @@
     }
 
     function getQuickStartState(){
-      const arenaIndex = Math.max(0, Math.min(arenas.length - 1, parseInt(getSelectedArenaIndex(), 10) || 0));
+      const arenaIndex = commitQuickArenaSelection(getSelectedArenaIndex());
       const topIndex = Math.max(0, Math.min(tops.length - 1, parseInt(getPlayerTopId(), 10) || 0));
       const arena = getArenaConfig(arenaIndex);
       const top = getTopConfig(topIndex);
@@ -879,7 +956,12 @@
       const save = getSave();
       const arenaUnlockCost = Math.max(0, arena && typeof arena.unlockCost === 'number' ? arena.unlockCost : 0);
       const canBuyArena = arenaLocked && save.currency >= arenaUnlockCost;
-      const shouldOfferTrial = arenaLocked && !canBuyArena;
+      const trialAvailability = isRewardPlacementAvailable('trial_unlock_arena');
+      const shouldOfferTrial = arenaLocked && !canBuyArena && trialAvailability.available === true;
+      const shouldRouteLockedArenaToPath = isCrazyGamesBasicChannel()
+        && arenaLocked
+        && !canBuyArena
+        && shouldOfferTrial !== true;
       let buttonVariant = 'ready';
       let buttonLabel = uiText.fightButton || 'START MATCH';
       let hint = uiText.quickStartReadyHint || 'Arena selected. Start when ready.';
@@ -898,6 +980,14 @@
         buttonVariant = 'arena-trial';
         buttonLabel = uiText.quickStartArenaTrialButton || 'WATCH AD TRIAL';
         hint = uiText.quickStartArenaTrialHint || 'SCRAP is short. Watch an ad to activate a temporary arena trial.';
+      }else if(arenaLocked){
+        buttonVariant = shouldRouteLockedArenaToPath ? 'arena-path' : 'arena-locked';
+        buttonLabel = shouldRouteLockedArenaToPath
+          ? (uiText.quickStartArenaLockedButton || uiText.challengeButton || 'GO TO PATH')
+          : (uiText.quickStartArenaLockedButton || uiText.lockedArena || 'ARENA LOCKED');
+        hint = shouldRouteLockedArenaToPath
+          ? getCrazyGamesBasicArenaLockedHint(arenaUnlockCost)
+          : (uiText.quickStartArenaLockedHint || 'This arena is still locked. Earn more SCRAP first.');
       }
       return {
         arenaIndex,
@@ -908,7 +998,9 @@
         arenaUnlocked,
         arenaLocked,
         canBuyArena,
+        trialAvailable:trialAvailability.available === true,
         shouldOfferTrial,
+        shouldRouteLockedArenaToPath,
         buttonVariant,
         buttonLabel,
         hint
@@ -1006,6 +1098,7 @@
         panel.classList.toggle('arena-locked', state.arenaLocked);
         panel.classList.toggle('arena-purchase-ready', state.buttonVariant === 'arena-unlock');
         panel.classList.toggle('arena-trial-ready', state.buttonVariant === 'arena-trial');
+        panel.classList.toggle('arena-path-ready', state.buttonVariant === 'arena-path');
       }
 
       setText('quick-arena-kicker', uiText.quickArenaTitle || 'SELECTED ARENA');
@@ -1030,14 +1123,16 @@
         topActionButton.classList.toggle('is-purchase', topActionState.kind === 'purchase');
       }
 
-      if(prevButton) prevButton.disabled = arenas.length <= 1;
-      if(nextButton) nextButton.disabled = arenas.length <= 1;
+      const quickArenaCount = getQuickArenaIndexes().length;
+      if(prevButton) prevButton.disabled = quickArenaCount <= 1;
+      if(nextButton) nextButton.disabled = quickArenaCount <= 1;
       if(fightButton){
         fightButton.disabled = state.topLocked;
         fightButton.classList.toggle('danger-disabled', state.topLocked);
         fightButton.classList.toggle('arena-locked', !state.topLocked && state.arenaLocked);
         fightButton.classList.toggle('cta-unlock', state.buttonVariant === 'arena-unlock');
         fightButton.classList.toggle('cta-trial', state.buttonVariant === 'arena-trial');
+        fightButton.classList.toggle('cta-path', state.buttonVariant === 'arena-path');
       }
       if(arenaStatus){
         arenaStatus.classList.toggle('locked', !state.arenaUnlocked);
@@ -1452,6 +1547,10 @@
 
     function attemptArenaAccess(index){
       const arena = getArenaConfig(index);
+      if(!isArenaQuickSelectable(index)){
+        refresh();
+        return Promise.resolve(false);
+      }
       if(isArenaUnlocked(index)){
         syncActiveArenaState(index);
         setCurrentArena(index);
@@ -1506,6 +1605,24 @@
         showMsg(arena.label+' '+uiText.unlockArena,1.2);
         refresh();
         return Promise.resolve(true);
+      }
+
+      const trialAvailability = isRewardPlacementAvailable('trial_unlock_arena');
+      if(trialAvailability.available !== true){
+        if(isCrazyGamesBasicChannel() && typeof goPathRoute === 'function'){
+          showMsg(getCrazyGamesBasicArenaLockedHint(arena.unlockCost), 2.4, 'major');
+          goPathRoute();
+          refresh();
+          return Promise.resolve(false);
+        }
+        showMsg(
+          uiText.quickStartArenaLockedHint
+            || 'This arena is still locked. Earn more SCRAP first.',
+          2.4,
+          'major'
+        );
+        refresh();
+        return Promise.resolve(false);
       }
 
       if(!rewardService || typeof rewardService.request !== 'function'){
@@ -1709,6 +1826,10 @@
       getCurrentChallengeNode,
       getArenaLabel,
       getArenaConfig,
+      isArenaQuickSelectable,
+      getQuickArenaIndexes,
+      normalizeQuickArenaIndex,
+      getNextQuickArenaIndex,
       getTopConfig,
       isArenaUnlocked,
       isTopUnlocked,

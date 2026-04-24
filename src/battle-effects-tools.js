@@ -369,6 +369,37 @@
       });
     }
 
+    function clearEffects(partPool, orbObjs){
+      if(Array.isArray(partPool)){
+        for(let i=partPool.length-1;i>=0;i--){
+          const particle = partPool[i];
+          if(particle && particle.mesh){
+            scene.remove(particle.mesh);
+            particle.mesh.visible = false;
+            inactiveParticles.push(particle);
+          }
+          partPool.splice(i,1);
+        }
+      }
+      for(let i=activeBursts.length-1;i>=0;i--){
+        const burst = activeBursts[i];
+        if(burst && burst.mesh){
+          scene.remove(burst.mesh);
+          burst.mesh.visible = false;
+          inactiveBursts.push(burst);
+        }
+        activeBursts.splice(i,1);
+      }
+      if(Array.isArray(orbObjs)){
+        orbObjs.forEach((orb)=>{
+          if(orb && orb.mesh){
+            scene.remove(orb.mesh);
+          }
+        });
+        orbObjs.length = 0;
+      }
+    }
+
     return {
       spawnParts,
       emitClashEffect,
@@ -376,7 +407,8 @@
       emitRingOutEffect,
       tickParts,
       spawnOrbs,
-      tickOrbs
+      tickOrbs,
+      clearEffects
     };
   };
 })();

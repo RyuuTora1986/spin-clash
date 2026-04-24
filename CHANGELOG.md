@@ -1,5 +1,27 @@
 # Changelog
 
+## 1.2.2 - 2026-04-24
+
+### Summary
+- Released the channel-ready build foundation and the latest gameplay polish to the self-hosted web channel.
+
+### User-visible changes
+- Championship Path early progression has been rebalanced to reduce unfair early failures while keeping a clearer challenge ramp.
+- Battle presentation is cleaner: battle music timing, floating commentary stacking, round-end effect cleanup, top hint readability, and home CTA guidance were refined.
+- The self-hosted package now uses a bundled/minified production runtime instead of exposing the full source script list directly in the deployed page.
+
+### Technical changes
+- Added reusable channel build rules for the core web build, direct web Google channel, and CrazyGames Basic package.
+- Added CrazyGames Basic package tooling, local preview/smoke checks, and channel-governance docs/checklists.
+- Added shared backend bridge scaffolding and production-safe provider/reward overrides behind channel rules.
+- Hardened static release validation to require hashed bundles and reject debug/source-script exposure in production output.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run verify:channels`
+- `npm run verify:release`
+- Live deployment verification against `https://play.hakurokudo.com/`
+
 ## 1.2.1 - 2026-04-23
 
 ### Summary

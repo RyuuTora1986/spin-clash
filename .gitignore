@@ -8,7 +8,12 @@ node_modules/
 .npm-cache/
 .playwright-browsers/
 dist-static/
+dist-core-web/
+dist-crazygames/
 output/
 tmp/
 .tmp/
 .superpowers/
+distribution/channel-env.local.json
+spin-clash-dist-crazygames-build.zip
+dist-crazygames-build.zip

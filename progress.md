@@ -2422,3 +2422,680 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
   - local Playwright load-only probe against `http://127.0.0.1:4174/`
 - Evidence:
   - no-interaction load now reports `currentKey=menu_home`, `currentMode=menu`, `usingExternal=true`
+
+2026-04-23 release 1.2.0 merged to main
+- Context:
+  - the dedicated battle-feel branch was accepted for merge after local user playtests and multiple targeted refinement rounds
+  - the repository needed an explicit release-governance baseline before pushing the player-visible update to `main`
+- Release outcomes:
+  - merged `codex/battle-feel-pass-20260423` into `main` as release `1.2.0`
+  - added `docs/release-governance.md` so future releases have one checked-in source for version alignment and release order
+  - synced release-facing asset query params and localized build labels to `1.2.0`
+  - pushed both `main` and the archived feature branch to GitHub
+- Main shipped surface:
+  - battle-feel runtime event layer
+  - stronger procedural drag guide
+  - ring-out cinematic timing and global flash
+  - floating live-commentary layer
+  - external homepage / battle mp3 BGM support
+  - first authored impact / ring-out FX resources
+- Verification:
+  - `npm run sync:staticversion`
+  - `npm run verify:release`
+  - GitHub push and branch sync completed successfully
+- Practical assessment:
+  - `1.2.0` was the first release where the combat presentation, authored FX, commentary, and external music all landed together as one coherent public build
+  - release packaging still had one hidden defect at this point: `dist-static` was not yet shipping `assets/fx` and `assets/audio`, so the deployed host could still show missing-resource runtime errors
+
+2026-04-23 production hotfix 1.2.1 closed the static packaging gap
+- Context:
+  - opening `https://play.hakurokudo.com/` after the `1.2.0` release surfaced a red runtime banner:
+    - `Failed to load FX texture: assets/fx/ringout-flash-v1.png`
+  - investigation showed the bug was not in the runtime loader or the files themselves
+  - root cause was the static package shape:
+    - `scripts/build-static-release.js` copied `assets/vendor` only
+    - `assets/fx` and `assets/audio` existed in the repo but were absent from `dist-static`
+- Main files changed:
+  - `scripts/build-static-release.js`
+  - `scripts/check-static-package.js`
+  - `package.json`
+  - `CHANGELOG.md`
+  - `index.html`
+  - `src/config-text.js`
+- Hotfix outcomes:
+  - static release packaging now includes:
+    - `assets/fx`
+    - `assets/audio`
+  - static package validation now fails if required FX textures or battle/menu mp3 files are missing from `dist-static`
+  - version was bumped from `1.2.0` to `1.2.1` as a real post-release hotfix instead of silently mutating the old version
+  - `main` was redeployed through GitHub Pages after the hotfix push
+- Verification:
+  - `npm run sync:staticversion`
+  - `npm run verify:release`
+  - local packaged-host probe:
+    - `http://127.0.0.1:4175/assets/fx/ringout-flash-v1.png` -> `200`
+  - deployed-host probes after Pages run `24815549699`:
+    - `https://play.hakurokudo.com/` -> `200`
+    - `https://play.hakurokudo.com/assets/fx/ringout-flash-v1.png` -> `200`
+    - `https://play.hakurokudo.com/assets/audio/music/home_neon_grind_01.mp3` -> `200`
+- Practical assessment:
+  - the live site is back to serving the intended authored combat FX and imported menu music without the red runtime banner
+  - future sessions should treat `scripts/build-static-release.js` and `scripts/check-static-package.js` as part of the release-critical surface, not as passive helper scripts
+
+2026-04-23 monetization execution moved from planning into asset production
+- Context:
+  - the next business push is no longer just "which ad provider should we use"
+  - the repo needed concrete outputs for:
+    - CrazyGames submission prep
+    - PostHog reward monitoring setup
+- Main files changed:
+  - `scripts/capture-marketing-assets.js`
+  - `package.json`
+  - `docs/monetization/2026-04-23-crazygames-submission-asset-plan.md`
+  - `docs/monetization/2026-04-23-posthog-dashboard-spec.md`
+  - `docs/monetization/2026-04-23-posthog-dashboard-manifest.json`
+  - `docs/docs-index.md`
+- Main outcomes:
+  - added a repeatable Playwright-based marketing capture script:
+    - `npm run capture:marketing`
+  - added a CrazyGames crop-preview board generator:
+    - `npm run render:cover-board`
+  - the script now:
+    - boots a local host
+    - switches to English
+    - captures clean home / quick / battle source images
+    - auto-advances through rounds until match result
+    - writes `manifest.json` and `report.md`
+    - preserves partial manifests even if a run fails midway
+  - first successful output landed at:
+    - `output/marketing-captures-2026-04-23T08-19-44`
+  - generated a first cover-preview board in the same output directory:
+    - `cover-board.html`
+    - `cover-board-preview.png`
+  - added a machine-readable PostHog dashboard manifest so the dashboard spec is no longer prose-only
+- Verification:
+  - `node --check scripts/capture-marketing-assets.js`
+  - `npm run capture:marketing`
+  - `npm run check:docs`
+- Practical assessment:
+  - current CrazyGames prep now has real source art instead of only old QA screenshots
+  - best current source images are:
+    - `01-home-hero-wide-en.png`
+    - `03-home-top-stage-en.png`
+    - `07-battle-action-clean.png`
+  - the next concrete monetization step should be either:
+    - generate the 3 storefront covers from these sources
+    - or build the first 5 PostHog reward-op tiles from the new manifest
+
+2026-04-23 cover-board source-image tuning pass
+- Context:
+  - user reviewed the generated `cover-board.html` directly and asked for three concrete source-image fixes:
+    - remove the residual scrollbar-like bar from image 1
+    - move the hero top upward in image 2
+    - make image 3 show clearer post-collision FX
+- Main files changed:
+  - `scripts/capture-marketing-assets.js`
+  - `scripts/render-crazygames-cover-board.js`
+- Main outcomes:
+  - `01-home-hero-wide-en.png` now hides the remaining home command area that was reading like a scrollbar
+  - `03-home-top-stage-en.png` now shifts the top upward inside the capture crop
+  - the cover board now uses the FX-visible action frame for the landscape/source reference slot:
+    - `06-battle-action-ui-02.png`
+  - current tuned output was written back into:
+    - `output/marketing-captures-2026-04-23T08-19-44`
+- Verification:
+  - `node --check scripts/capture-marketing-assets.js`
+  - reran `scripts/capture-marketing-assets.js --out-dir output/marketing-captures-2026-04-23T08-19-44`
+  - `node --check scripts/render-crazygames-cover-board.js`
+  - rerendered `cover-board.html` and `cover-board-preview.png`
+- Practical assessment:
+  - image 1 and image 2 are materially cleaner now
+  - image 3 now has visible impact FX, but the clean no-HUD FX frame is still not fully locked; if needed, the next pass should capture a dedicated FX-only arena frame instead of reusing the UI-on action frame
+
+2026-04-23 CrazyGames submission package assembled
+- Context:
+  - the cover direction was locked to the stronger AI poster route instead of the gameplay-first fallback
+  - the next practical need was no longer “which art direction should we choose” but “put everything needed for submission into one deterministic folder”
+- Main files changed:
+  - `scripts/prepare-crazygames-submission.js`
+  - `package.json`
+- Main outcomes:
+  - generated final AI-poster cover set and standardized exact submission sizes:
+    - `cover-submission-landscape-1920x1080.png`
+    - `cover-submission-portrait-800x1200.png`
+    - `cover-submission-square-800x800.png`
+  - added `npm run prepare:crazygames` to assemble a dedicated submission directory:
+    - `output/crazygames-submission-2026-04-23`
+  - the generated submission directory now includes:
+    - `covers/`
+    - `build/spin-clash-dist-static-build.zip`
+    - `references/ai-poster-refined-approved-board.png`
+    - `video/video-shot-list.md`
+    - `README.md`
+    - `submission-checklist.md`
+    - `submission-manifest.json`
+  - zipped the current `dist-static` snapshot into the submission folder so the build artifact is no longer implicit
+- Verification:
+  - `node --check scripts/prepare-crazygames-submission.js`
+  - `npm run prepare:crazygames`
+  - verified final cover dimensions:
+    - `1920x1080`
+    - `800x1200`
+    - `800x800`
+  - verified submission build zip exists in the generated package folder
+- Practical assessment:
+  - the project now has a single CrazyGames submission handoff directory instead of scattered marketing outputs
+  - the only major missing submission artifact is the preview video
+
+2026-04-23 CrazyGames preview video exported and submission package updated
+- Context:
+  - the remaining CrazyGames blocker was the mandatory preview video
+  - local Windows environment did not have `ffmpeg`, and the user explicitly asked to install it and remove the weak trailing tail from the video ending
+- Main files changed:
+  - `scripts/build-crazygames-preview-video.js`
+  - `scripts/prepare-crazygames-submission.js`
+  - `package.json`
+- Main outcomes:
+  - installed user-scope `ffmpeg` / `ffprobe` through `winget`
+  - added `npm run build:crazygamesvideo` as a repeatable export path for the preview video
+  - the export script now:
+    - records real gameplay segments through Playwright video capture
+    - trims each segment with `ffmpeg` instead of relying on raw recordings
+    - removes the weak end tail by ending on the final result beat
+    - writes frame checks and export metadata into `video/preview-video-report.md` and `.json`
+  - generated final submission video:
+    - `output/crazygames-submission-2026-04-23/video/spin-clash-preview-1080p.mp4`
+  - updated the submission package manifest / checklist / README so preview video status is now `ready`
+- Verification:
+  - `winget install --id Gyan.FFmpeg --source winget --scope user --accept-source-agreements --accept-package-agreements`
+  - `node --check scripts/build-crazygames-preview-video.js`
+  - `npm run build:crazygamesvideo`
+  - `npm run prepare:crazygames`
+  - final verified video facts:
+    - `16.267s`
+    - `1920x1080`
+    - `2.51 MB`
+- Practical assessment:
+  - CrazyGames submission package is no longer blocked by the preview video artifact
+  - remaining work is now operational rather than production-oriented: upload covers, upload video, upload build, submit form
+
+2026-04-23 CrazyGames preview video recut for stronger desktop viewing
+- Context:
+  - the first compliant preview video still looked weak on desktop because the shell opening was too empty and the combat subjects stayed too small for too long
+  - the user explicitly asked not to change gameplay interaction for this pass and to focus on re-selecting footage and editing
+- Main files changed:
+  - `scripts/recut-crazygames-preview-video.js`
+  - `scripts/build-crazygames-preview-video.js`
+  - `package.json`
+- Main outcomes:
+  - kept the compliant output path unchanged:
+    - `output/crazygames-submission-2026-04-23/video/spin-clash-preview-1080p.mp4`
+  - added a dedicated recut pipeline:
+    - clean intro swapped to the stronger top-stage hero still
+    - battle core rebuilt from tighter-cropped existing combat footage instead of the uglier full-frame one-take pacing
+    - ending rebuilt from a cleaner finish still instead of relying on unstable result recording alignment
+  - generated final recut facts:
+    - `15.933s`
+    - `1920x1080`
+    - `2.75 MB`
+  - updated the CrazyGames submission package again after the recut so the packaged preview video now points at the improved edit
+- Verification:
+  - `node --check scripts/recut-crazygames-preview-video.js`
+  - `npm run recut:crazygamesvideo`
+  - `npm run prepare:crazygames`
+  - review contact sheet:
+    - `output/crazygames-submission-2026-04-23/video/review-contact-sheet-v4.png`
+- Practical assessment:
+  - this recut is materially better for desktop-first storefront viewing because the opening establishes the hero cleanly and the fight beats stay larger on screen
+  - if a later pass wants even more polish, the next likely gain is adding one or two purpose-recorded clean HUD-off battle clips rather than continuing to squeeze more from the same raw takes
+
+2026-04-24 CrazyGames platform integration baseline landed
+- Context:
+  - the focus moved away from promo assets and toward actual platform onboarding
+  - the repo had submission media ready, but there was still no real CrazyGames runtime integration, no dedicated platform build, and Basic Launch would still expose external reward entry points
+- Main files changed:
+  - `src/platform-runtime-config.js`
+  - `src/crazygames-service.js`
+  - `src/runtime-audio-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/match-flow-tools.js`
+  - `src/main.js`
+  - `scripts/build-crazygames-release.js`
+  - `scripts/check-crazygames-package.js`
+  - `scripts/build-static-release.js`
+  - `scripts/prepare-crazygames-submission.js`
+  - `index.html`
+  - `package.json`
+- Main outcomes:
+  - added a dedicated CrazyGames runtime layer:
+    - reads platform mode from meta/query/host
+    - initializes CrazyGames SDK v3 when running as a CrazyGames build
+    - reports loading start/stop
+    - reports gameplay start/stop when the game enters/leaves playable battle states
+    - forwards CrazyGames mute-audio setting into the local audio runtime
+    - prevents embedded-page wheel / arrow / space scrolling for the CrazyGames build
+  - added a dedicated CrazyGames build pipeline:
+    - `npm run build:crazygames`
+    - outputs `dist-crazygames/`
+    - injects CrazyGames SDK v3 plus platform meta tags
+    - disables the current external reward provider overrides for Basic Launch
+    - exports `spin-clash-dist-crazygames-build.zip`
+  - closed the biggest Basic Launch UI risk:
+    - reward-based arena trial entry is no longer surfaced when reward placement is unavailable
+    - match result reward / continue buttons are no longer surfaced when reward placement is unavailable
+  - refreshed the submission package to point at the dedicated CrazyGames build zip instead of the generic static build
+- Verification:
+  - targeted syntax pass with `node --check` over the touched runtime/build files
+  - `npm run build:crazygames`
+  - `npm run check:crazygames`
+  - `npm run check:providers`
+  - `npm run check:sharedbackend`
+  - `npm run prepare:crazygames`
+  - final verified build facts:
+    - dedicated package directory: `dist-crazygames`
+    - dedicated package zip: `spin-clash-dist-crazygames-build.zip`
+    - file count: `68`
+    - total size: `13,906,554 bytes`
+- Practical assessment:
+  - the project now has a real CrazyGames-specific build and runtime baseline instead of only submission assets
+  - this is sufficient for a cleaner Basic Launch submission path
+  - Full Launch work is still separate and would later require actual CrazyGames ads/account/data integration rather than the current external reward system
+
+2026-04-24 channel-governed release baseline and local CrazyGames preview smoke closed the remaining packaging risk
+- Context:
+  - after the first CrazyGames integration pass, the remaining questions were no longer "can we build a platform zip at all" but:
+    - whether both `direct_web_google` and `crazygames_basic` now derive from one cleaner internal source instead of patching one another
+    - whether a local CrazyGames iframe preview and smoke test exist so package validation no longer depends on guesswork
+- Main files changed:
+  - `scripts/release-builder.js`
+  - `scripts/build-core-release.js`
+  - `scripts/build-static-release.js`
+  - `scripts/build-crazygames-release.js`
+  - `scripts/check-core-package.js`
+  - `scripts/check-crazygames-package.js`
+  - `scripts/serve-crazygames-preview.js`
+  - `scripts/smoke-crazygames-preview.js`
+  - `src/channel-runtime/analytics-service-local-only.js`
+  - `src/channel-runtime/reward-service-disabled.js`
+  - `src/channel-runtime/startup-tools-production.js`
+  - `src/channel-runtime/config-providers-channel-safe.js`
+  - `src/channel-runtime/provider-overrides-null.js`
+  - `src/channel-runtime/crazygames-basic-overrides.js`
+  - `src/loadout-ui-tools.js`
+  - `package.json`
+- Main outcomes:
+  - added a true internal base build:
+    - `npm run build:core`
+    - outputs `dist-core-web/`
+    - strips Google Ads, CrazyGames SDK, shared-backend runtime, provider runtime, and debug hooks from the packaged bundle
+  - rebuilt both external channels on top of the same release-builder path instead of nesting one channel build inside another:
+    - `direct_web_google` now remains the self-hosted Google distribution build
+    - `crazygames_basic` now derives directly from the same clean release path with its own channel replacements and head/meta injection
+  - tightened CrazyGames package checks so the dedicated build now fails if the bundle still carries:
+    - AdSense / GPT markers
+    - PostHog markers
+    - shared-backend markers
+    - provider runtime markers
+    - debug-hook markers
+  - added a real local CrazyGames preview harness:
+    - `npm run preview:crazygames`
+    - serves a local iframe shell plus a mocked `crazygames-sdk-v3.js`
+    - patches the packaged CrazyGames build on the fly so SDK calls resolve locally
+  - added a real smoke test for the packaged CrazyGames build:
+    - `npm run smoke:crazygames`
+    - loads the local iframe preview
+    - verifies `loadingStart / loadingStop`
+    - verifies locked-arena flow does not expose reward-trial copy under Basic Launch
+    - performs a real canvas drag launch from `prepare`
+    - waits for the first round to end and verifies `gameplayStart / gameplayStop`
+    - writes evidence under `output/crazygames-preview-smoke-*`
+  - fixed the last Basic Launch copy leak in the locked-arena flow:
+    - non-reward fallback no longer reuses reward-trial wording when rewards are disabled
+- Verification:
+  - `npm run build:core`
+  - `npm run check:core`
+  - `npm run build:channel -- --channel direct_web_google`
+  - `npm run build:channel -- --channel crazygames_basic`
+  - `npm run smoke:crazygames`
+  - latest smoke evidence:
+    - `output/crazygames-preview-smoke-2026-04-23T17-15-46/report.md`
+    - `output/crazygames-preview-smoke-2026-04-23T17-15-46/report.json`
+  - latest verified smoke facts:
+    - `loadingStop = true`
+    - `gameplayStart` observed
+    - `gameplayStop` observed
+    - locked arena CTA = `ARENA LOCKED`
+    - locked arena hint = `This arena is still locked. Earn more SCRAP first.`
+- Practical assessment:
+  - the project no longer depends on a "CrazyGames build derived from the Google build" mental model
+  - it now has a cleaner internal `core_web_vanilla` baseline plus two channel-facing builds derived from the same release infrastructure
+  - local CrazyGames package verification is now concrete: build -> local iframe preview -> smoke -> submit
+
+2026-04-24 channel automation and monetization policy research were folded back into the project rules
+- Context:
+  - the next bottleneck was operator reliability rather than raw build capability
+  - the user explicitly did not want to depend on remembering a handful of channel-specific commands or on chat memory for monetization rules
+- Main files changed:
+  - `distribution/channel-registry.json`
+  - `scripts/preview-channel-release.js`
+  - `scripts/verify-channel-release.js`
+  - `scripts/list-channel-rules.js`
+  - `package.json`
+  - `docs/channel-monetization-strategy-2026-04-24.md`
+  - `docs/docs-index.md`
+- Main outcomes:
+  - added one-command channel preview:
+    - `npm run preview:channel -- --channel <channel_id>`
+  - added one-command channel verification:
+    - `npm run verify:channel -- --channel <channel_id>`
+    - `npm run verify:channels`
+  - registry now also records:
+    - preview style per channel
+    - optional smoke script per channel
+    - economy policy per channel
+    - revenue/commercial policy per channel
+  - `channel:list` output now surfaces not only build/runtime policy but also:
+    - preview command
+    - verify command
+    - economy strategy
+    - revenue status
+  - added a dedicated monetization strategy document for:
+    - `direct_web_google`
+    - `crazygames_basic`
+    - `crazygames_full`
+    - later mobile-store hybrid monetization context
+- Verification:
+  - `npm run channel:list`
+  - `npm run verify:channels`
+  - `npm run check:docs`
+  - `node scripts/preview-channel-release.js --channel crazygames_basic --skip-build --port 4391`
+- Practical assessment:
+  - the project no longer requires the operator to memorize the old build/preview/smoke command graph
+  - CrazyGames Basic policy is now explicit in project artifacts: reward-trial / double-reward / continue are considered hidden in this channel, and the missing-value replacement design is tracked as a real pending design issue rather than an accidental behavior
+
+2026-04-24 CrazyGames Basic progression-risk analysis was turned into a concrete optimization plan
+- Context:
+  - after clarifying Basic vs Full, the next real risk was no longer packaging or compliance but promotion-stage game design fit
+  - the user explicitly wanted a detailed plan focused on the side effects of removing ad-driven reward surfaces during `crazygames_basic`
+- Main files changed:
+  - `docs/crazygames-basic-optimization-plan-2026-04-24.md`
+  - `docs/docs-index.md`
+- Main outcomes:
+  - documented why `crazygames_basic` should not be treated as "Google version minus ad buttons"
+  - mapped the removal of:
+    - arena ad trial
+    - double reward
+    - continue after loss
+    to likely damage across:
+    - gameplay conversion
+    - average playtime
+    - retention
+  - captured the key economy finding for this project:
+    - the first 3 `Championship Path` clears at `RANK I` yield `122 SCRAP`
+    - this already covers the first locked arena cost of `120 SCRAP`
+    - therefore the main issue is path discoverability and route bias, not lack of a progression route
+  - recommended a concrete `crazygames_basic` direction:
+    - make `Championship Path` the primary early-loop CTA
+    - replace locked quick-battle dead ends with path-routing guidance
+    - rewrite Basic result guidance around retry, checkpoint, and next unlock goals
+    - optionally add a small non-ad generosity layer rather than cloning Google rewarded surfaces
+- Practical assessment:
+  - the project now has a written, channel-specific hypothesis for improving Basic Launch progression metrics
+  - the next meaningful step is implementation of the `P0` items from the new CrazyGames Basic optimization plan, not more packaging work
+
+2026-04-24 implemented the first CrazyGames Basic progression fixes instead of leaving them as paper design
+- Context:
+  - after documenting the Basic-stage risks, the next ask was to directly implement the high-value changes instead of stopping at planning
+  - the focus stayed on `crazygames_basic` channel packaging, not on changing the Google channel economy
+- Main files changed:
+  - `src/loadout-ui-tools.js`
+  - `src/channel-runtime/crazygames-basic-overrides.js`
+- Main outcomes:
+  - `crazygames_basic` home copy is now explicitly `Path-first`
+    - the main progression note now tells players that rewards, checkpoints, and permanent unlocks live in `Championship Path`
+    - the quick-battle note now frames Quick as a short side duel rather than the main growth route
+  - locked quick-battle arenas no longer behave like a dead end in Basic
+    - when ads are disabled and the arena cannot be bought yet, the main CTA now becomes `GO TO PATH`
+    - the hint now explains that `Championship Path` is the fastest route to more `SCRAP`
+    - pressing that CTA routes the player into Path instead of failing in place
+  - quick-battle and result guidance copy for Basic was tightened so the channel now nudges players toward:
+    - Path for faster scrap
+    - Path for checkpoints
+    - Path for permanent unlocks
+- Verification:
+  - `npm run verify:channel -- --channel crazygames_basic`
+  - `npm run verify:channels`
+  - latest smoke evidence:
+    - `output/crazygames-preview-smoke-2026-04-23T18-55-25/report.md`
+  - latest verified facts:
+    - locked arena CTA = `GO TO PATH`
+    - locked arena hint now explicitly points players toward `Championship Path`
+    - both `direct_web_google` and `crazygames_basic` still build and verify cleanly
+- Practical assessment:
+  - the project now has the first real implementation pass of the Basic Launch progression strategy rather than only a design memo
+  - the next meaningful iteration, if needed after live data, would be channel-specific progression generosity such as a lightweight non-ad Path bonus or a limited retry cushion
+
+2026-04-24 channel differences stopped being "memory" and became explicit behavior contracts
+- Context:
+  - a key operational risk remained: if core gameplay evolves, a future channel rebuild could accidentally wipe older channel-specific changes such as CTA text, route bias, and fallback button behavior
+  - this risk exists even with a shared `core` build unless channel deltas are both declared and automatically verified
+- Main files changed:
+  - `distribution/channel-registry.json`
+  - `scripts/channel-registry.js`
+  - `scripts/check-channel-release.js`
+  - `scripts/verify-channel-release.js`
+  - `scripts/smoke-crazygames-preview.js`
+  - `scripts/list-channel-rules.js`
+- Main outcomes:
+  - added `behaviorContracts` to channel registry so important channel deltas are now part of the declared channel definition
+  - `crazygames_basic` now records:
+    - required bundle text markers
+    - smoke-time expectations for:
+      - home CTA hierarchy
+      - home route notes
+      - locked-arena CTA
+      - locked-arena path routing
+  - channel verification now forwards channel-specific smoke args instead of assuming one generic smoke behavior
+  - CrazyGames smoke now verifies not only "ads hidden" but also "channel progression packaging still intact"
+  - channel listing now surfaces whether a channel has behavior contracts
+- Practical assessment:
+  - channel-specific UX changes are no longer protected only by human memory or one old chat session
+  - if a future core update wipes the `crazygames_basic` path-first packaging, the channel verification path should now fail instead of silently shipping the regression
+
+2026-04-24 the remaining channel-governance process gaps were turned into first-class project docs
+- Context:
+  - after the technical protection layer was added, three workflow gaps still remained:
+    - no explicit feature-change classification rule
+    - no channel-specific release preflight checklist
+    - no reusable template for deciding whether a new feature impacts one or more channels
+- Main files changed:
+  - `docs/channel-change-classification-rules-2026-04-24.md`
+  - `docs/channel-release-preflight-checklist-2026-04-24.md`
+  - `docs/channel-feature-impact-template-2026-04-24.md`
+  - `docs/docs-index.md`
+  - `docs/release-checklist.md`
+- Main outcomes:
+  - added a formal classification model for new work:
+    - `core_gameplay`
+    - `shared_capability`
+    - `channel_wrapper`
+    - `platform_integration`
+    - `content_only`
+    - `ops_only`
+  - added a channel release preflight checklist that forces:
+    - target channel identification
+    - correct verify command usage
+    - channel-difference protection checks before upload/deploy
+ - added a reusable feature-impact template so future work must explicitly answer:
+    - which layers are touched
+    - which channels are impacted
+    - whether existing channel deltas could be wiped
+    - which verification commands are required
+- Practical assessment:
+  - the project now covers not only build/check mechanics but also the human workflow around deciding, documenting, and safely releasing cross-channel changes
+
+2026-04-24 Championship Path macro balance audit and reusable live probe landed
+- Context:
+  - after the first focused `node-2` investigation, the next risk was broader than one encounter:
+    - whether the whole `Championship Path` contains more narrow-solution traps
+    - whether difficulty / reward / novelty cadence actually forms a healthy flow curve
+  - the user explicitly asked for a scientific measurement method instead of one-off opinion
+- Main files changed:
+  - `scripts/probe-championship-path-balance.js`
+  - `package.json`
+  - `docs/championship-path-macro-balance-audit-2026-04-24.md`
+  - `docs/docs-index.md`
+- Main outcomes:
+  - added a repeatable live-site path balance probe:
+    - `npm run probe:roadbalance -- --baseline-samples 2 --sweep-samples 1`
+    - runs against `https://play.hakurokudo.com/`
+    - resets save to a clean early profile per match
+    - probes all 10 path nodes with a consistent reactive control bot
+    - flags nodes for opener sweep when baseline access is poor
+    - writes `report.md` / `report.json` under `output/championship-path-balance-probe-*`
+  - captured the current macro findings in a formal audit doc:
+    - `node-2` remains the clearest narrow-solution trap
+    - `node-4` is the strongest broad post-checkpoint spike
+    - `heart_bowl` content is over-represented among the harshest instant-ringout nodes
+    - `node-10` currently reads as overtuned final pressure
+    - raw economy pacing is healthier than the difficulty curve makes it feel
+  - locked a reusable measurement framework around:
+    - access win rate
+    - solution width score
+    - failure harshness
+    - chapter spike ratio
+    - reward reachability
+    - novelty cadence
+- Verification:
+  - `node --check scripts/probe-championship-path-balance.js`
+  - `npm run probe:roadbalance -- --baseline-samples 1 --sweep-samples 1`
+  - `npm run probe:roadbalance -- --baseline-samples 2 --sweep-samples 1`
+  - `npm run check:docs`
+- Practical assessment:
+  - the project now has a concrete way to retest `Championship Path` after each balance pass instead of relying on memory or anecdotal play
+  - future node tuning can now be judged as:
+    - enemy-preset issue
+    - node-order / chapter-pacing issue
+    - arena-family issue
+
+2026-04-24 first live Championship Path re-balance pass landed with reusable challenge-only arena variants
+- Context:
+  - after the macro audit, the highest-priority work was to stop `node-2` from acting like a narrow-solution onboarding trap and to test whether the same arena-variant mechanism could also calm `node-4`
+- Main files changed:
+  - `src/config-arenas.js`
+  - `src/config-challenge-road.js`
+  - `src/config-enemy-presets.js`
+  - `src/config-text.js`
+  - `src/loadout-ui-tools.js`
+  - `src/ui-entry-tools.js`
+  - `src/quick-battle-preview-tools.js`
+  - `src/round-flow-tools.js`
+  - `src/match-flow-tools.js`
+  - `src/main.js`
+  - `scripts/check-loadout-flow.js`
+  - `scripts/check-match-flow.js`
+- Main outcomes:
+  - added a formal hidden/challenge-only arena path so node-specific teaching arenas no longer leak into Quick Battle or permanent arena unlocks
+  - introduced `heart_bowl_intro` and moved `node-2` onto it
+  - introduced dedicated launch slots for the heart intro arena, which is what finally removed the structural early ringout trap
+  - introduced `hex_bowl_intro` for `node-4` and converted that node into a true hex unlock / teaching duel instead of a post-checkpoint burst spike
+  - tested multiple `node-4` configurations, including:
+    - arena-only intro conversion
+    - modifier reduction
+    - enemy preset softening
+    - dedicated `armor_hex_intro`
+  - updated the lightweight VM-based checks so their reward-availability mocks match the current runtime contract
+- Verification:
+  - syntax checks over all touched runtime files
+  - `npm run check:config`
+  - `npm run check:localization`
+  - `npm run check:roundflow`
+  - `npm run check:loadout`
+  - `npm run check:matchflow`
+  - `npm run check:routes`
+  - `npm run check:ui`
+  - local live probes:
+    - `output/championship-path-balance-probe-2026-04-23T21-31-19/report.md`
+    - `output/championship-path-balance-probe-2026-04-23T21-35-56/report.md`
+    - `output/championship-path-balance-probe-2026-04-23T21-40-28/report.md`
+    - `output/championship-path-balance-probe-2026-04-23T21-50-24/report.md`
+    - `output/championship-path-balance-probe-2026-04-23T21-55-45/report.md`
+- Practical assessment:
+  - `node-2` is now effectively solved for this pass and classifies as stable in the probe harness
+  - `node-4` improved from the original cliff but still remains the next required balance target
+  - the hidden arena mechanism is now proven useful and should remain the default tool for node-specific onboarding fixes instead of flattening shared arena families globally
+
+2026-04-24 Championship Path full local re-balance pass completed
+- Context:
+  - after the first pass, `node-4` still showed unstable ringout behavior and a broader full-path probe continued to expose early/mid path traps
+  - the goal was to remove Basic Launch retention blockers, not to maximize late-game difficulty yet
+- Main files changed:
+  - `src/config-challenge-road.js`
+  - `src/config-arenas.js`
+  - `src/config-enemy-presets.js`
+  - `src/config-modifiers.js`
+  - `src/config-text.js`
+  - `docs/championship-path-macro-balance-audit-2026-04-24.md`
+- Main outcomes:
+  - fixed a temporary miswire where node-specific enemy/arena values could be attached to the wrong node during iteration
+  - moved `node-3` onto a challenge-only `circle_boss_intro` arena and changed it to a first-boss teaching setup
+  - changed standard `hex_bowl` launch slots to slightly offset starts so center launch is no longer a direct head-on ringout quiz
+  - moved `node-4` to a safer hex teaching package: standard hex arena, `trick_hex_intro`, and `heavyFloor`
+  - added `impact_floor_press` so `node-6` no longer reuses final-stage `impact_blitz`
+  - softened `impact_reaper`, `launchSurge`, `grindCore`, and `heavyFloor` to remove center-opener ringout traps and long attrition locks
+  - final all-node local probe produced no flagged nodes:
+    - `output/championship-path-balance-probe-2026-04-24T07-00-27/report.md`
+- Verification:
+  - multiple targeted local probes for `node-1`, `node-3`, `node-4`, `node-6`, `node-7`, `node-9`
+  - final all-node local regression: `node scripts/probe-championship-path-balance.js --url http://127.0.0.1:4173/index.html --baseline-samples 2 --sweep-samples 1`
+  - `npm run check:config`
+  - `npm run check:localization`
+  - `npm run check:roundflow`
+  - `npm run check:loadout`
+  - `npm run check:matchflow`
+  - `npm run check:routes`
+  - `npm run check:ui`
+  - `npm run check:docs`
+  - `npm run check:syntax`
+  - `npm run verify:channels`
+- Practical assessment:
+  - early Basic Launch blockers are now addressed in the local workspace
+  - several nodes are intentionally easier than the earlier design; this is a deliberate retention-first choice and should be revisited after platform telemetry exists
+
+2026-04-24 battle UX polish pass completed
+- Context:
+  - the user reported battle music sometimes missing on launch and then incorrectly starting after returning to menus
+  - battle hint text, floating commentary readability, effect cleanup, and home CTA guidance needed a focused experience pass
+- Main files changed:
+  - `src/main.js`
+  - `src/match-flow-tools.js`
+  - `src/battle-effects-tools.js`
+  - `src/battle-commentary-tools.js`
+  - `css/game.css`
+  - `index.html`
+  - `scripts/check-dom-contract.js`
+  - `scripts/check-shell-presentation.js`
+- Main outcomes:
+  - battle music now starts only during real active battle / outro states, and launch primes audio before firing SFX/music
+  - returning to loadout/menu after match result now resets match state instead of letting the old battle state drive music selection
+  - battle effects now have an explicit cleanup path for particles, burst overlays, and orbs on new round, match result, and swap back
+  - battle hint text is slightly larger and more legible
+  - floating battle commentary now uses a stacked layout with reduced rise distance; latest automated visual pass reported zero commentary overlaps
+  - home CTA notes are now structurally attached under their own buttons instead of both living in a shared note row
+  - the Championship Path home CTA has a slow sheen treatment to bias players toward the path without adding a new modal
+- Verification:
+  - `npm run check:syntax`
+  - `npm run check:roundflow`
+  - `npm run check:matchflow`
+  - `npm run check:ui`
+  - `npm run check:dom`
+  - `npm run check:shellpresentation`
+  - `npm run check:loadout`
+  - `npm run check:routes`
+  - `npm run verify:channels`
+  - debug-grade visual screenshots:
+    - `output/ux-experience-pass-20260424-172242/01-home.png`
+    - `output/ux-experience-pass-20260424-172450/battle-commentary-check.png`
+- Practical assessment:
+  - this is a core gameplay/UI improvement and has already propagated through the channel build verification path
+  - automated screenshots here are useful debugging evidence, but final visual acceptance should still be based on the user-visible browser window if polish concerns remain

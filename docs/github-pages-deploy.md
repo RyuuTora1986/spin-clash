@@ -26,6 +26,8 @@ Published file set:
 - `css/`
 - `src/`
 - `assets/vendor/`
+- `assets/fx/`
+- `assets/audio/`
 
 This keeps docs, originals, helper scripts, and local workflow files out of the live site.
 
@@ -186,6 +188,8 @@ Then inspect:
 - `dist-static/css/game.css`
 - `dist-static/src/`
 - `dist-static/assets/vendor/three.min.js`
+- `dist-static/assets/fx/`
+- `dist-static/assets/audio/`
 
 ## Host Validation After Deploy
 Open:

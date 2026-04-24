@@ -2,6 +2,7 @@
   const root = window.SpinClash;
   const analytics = () => root.services.analytics;
   const providerRuntime = root.services.providerRuntime || null;
+  const sharedBackendBridge = root.services.sharedBackendBridge || null;
   const providerConfig = (root.config && root.config.providers && root.config.providers.reward) || {};
   const livePlacements = providerConfig.livePlacements || {};
   const adsenseConfig = providerConfig.adsense || {};
@@ -839,7 +840,53 @@
     };
   }
 
+  function createSharedBackendAdapter(){
+    return {
+      name:'shared_backend',
+      isAvailable(placement){
+        const bridgeState = sharedBackendBridge && typeof sharedBackendBridge.getState === 'function'
+          ? sharedBackendBridge.getState()
+          : null;
+        const allowedPlacements = bridgeState && Array.isArray(bridgeState.allowedPlacements)
+          ? bridgeState.allowedPlacements
+          : [];
+        if(!sharedBackendBridge || sharedBackendBridge.enabled !== true){
+          return { available:false, reason:'provider_disabled' };
+        }
+        if(allowedPlacements.length && allowedPlacements.indexOf(placement) === -1){
+          return { available:false, reason:'placement_not_enabled' };
+        }
+        if(bridgeState && bridgeState.loading){
+          return { available:false, reason:'provider_loading' };
+        }
+        return { available:true };
+      },
+      request(placement, payloadContext, resultValue, rewardAttemptId){
+        if(!sharedBackendBridge || typeof sharedBackendBridge.claimReward !== 'function'){
+          return Promise.reject(new Error('provider_unavailable'));
+        }
+        return sharedBackendBridge.claimReward(placement, payloadContext, resultValue, rewardAttemptId);
+      },
+      getState(){
+        return sharedBackendBridge && typeof sharedBackendBridge.getState === 'function'
+          ? sharedBackendBridge.getState()
+          : {
+            rewardEnabled:false,
+            ready:false,
+            loading:false,
+            lastAvailabilityReason:'provider_disabled',
+            lastRequestReason:null,
+            activePlacement:null,
+            allowedPlacements:[]
+          };
+      }
+    };
+  }
+
   function createAdapter(){
+    if(sharedBackendBridge && sharedBackendBridge.enabled === true){
+      return createSharedBackendAdapter();
+    }
     const adapterName = providerConfig.adapter || 'mock';
     if(adapterName === 'adsense_h5_rewarded'){
       return createAdsenseH5RewardedAdapter();

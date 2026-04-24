@@ -21,6 +21,18 @@
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
     const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
     const setSelectedArenaIndex = typeof options.setSelectedArenaIndex === 'function' ? options.setSelectedArenaIndex : function(){};
+    const normalizeQuickArenaIndex = typeof options.normalizeQuickArenaIndex === 'function'
+      ? options.normalizeQuickArenaIndex
+      : function(index){ return Math.max(0, Math.min(arenas.length - 1, parseInt(index, 10) || 0)); };
+    const getNextQuickArenaIndex = typeof options.getNextQuickArenaIndex === 'function'
+      ? options.getNextQuickArenaIndex
+      : function(index, step){
+        const clampedIndex = normalizeQuickArenaIndex(index);
+        if(arenas.length <= 1){
+          return clampedIndex;
+        }
+        return (clampedIndex + (step < 0 ? -1 : 1) + arenas.length) % arenas.length;
+      };
     const getPlayerTopId = typeof options.getPlayerTopId === 'function' ? options.getPlayerTopId : function(){ return 0; };
     const setPlayerTopId = typeof options.setPlayerTopId === 'function' ? options.setPlayerTopId : function(){};
     const getHomePreviewTopId = typeof options.getHomePreviewTopId === 'function' ? options.getHomePreviewTopId : function(){ return getPlayerTopId(); };
@@ -85,7 +97,7 @@
       if(currentMode === 'challenge'){
         setActiveChallengeIndex(getSave().challenge ? getSave().challenge.unlockedNodeIndex || 0 : 0);
       }else{
-        setSelectedArenaIndex(getCurrentArena());
+        setSelectedArenaIndex(normalizeQuickArenaIndex(getCurrentArena()));
       }
     }
 
@@ -313,10 +325,10 @@
       if(arenas.length <= 1){
         updateModeUI();
         syncDebugPanel();
-        return Math.max(0, Math.min(Math.max(0, arenas.length - 1), parseInt(getSelectedArenaIndex(), 10) || 0));
+        return normalizeQuickArenaIndex(getSelectedArenaIndex());
       }
-      const currentArenaIndex = Math.max(0, Math.min(arenas.length - 1, parseInt(getSelectedArenaIndex(), 10) || 0));
-      const nextArenaIndex = (currentArenaIndex + (step < 0 ? -1 : 1) + arenas.length) % arenas.length;
+      const currentArenaIndex = normalizeQuickArenaIndex(getSelectedArenaIndex());
+      const nextArenaIndex = getNextQuickArenaIndex(currentArenaIndex, step);
       setSelectedArenaIndex(nextArenaIndex);
       syncArenaSelectionUI();
       updateModeUI();
@@ -405,7 +417,7 @@
     function selectArenaByIndex(index){
       const targetArena = parseInt(index, 10);
       if(Number.isNaN(targetArena) || arenas.length <= 0) return;
-      setSelectedArenaIndex(Math.max(0, Math.min(arenas.length - 1, targetArena)));
+      setSelectedArenaIndex(normalizeQuickArenaIndex(targetArena));
       syncArenaSelectionUI();
       updateModeUI();
       syncDebugPanel();
@@ -451,8 +463,13 @@
       return enabled;
     }
 
+    function shouldExposeUiBindings(){
+      const buildRuntime = root.runtime && root.runtime.build ? root.runtime.build : {};
+      return buildRuntime.debugToolsEnabled !== false && buildRuntime.exposeUiBindings !== false;
+    }
+
     function installWindowBindings(){
-      window.__spinClashUI = {
+      const actionBindings = {
         goHome,
         goPath,
         goQuick,
@@ -490,6 +507,30 @@
         guard:doPlayerGuard,
         skill:doPlayerSkill
       };
+      const legacyUiBindingKey = ['__spinClash', 'UI'].join('');
+      window.__spinClashDispatch = function(action, args){
+        const handler = actionBindings[action];
+        if(typeof handler === 'function'){
+          return handler.apply(actionBindings, Array.isArray(args) ? args : []);
+        }
+        if(action === 'enterBattle' && typeof window.__spinClashEnterBattle === 'function'){
+          return window.__spinClashEnterBattle();
+        }
+        return false;
+      };
+      window.__spinClashInvoke = function(action){
+        const args = Array.prototype.slice.call(arguments, 1);
+        return window.__spinClashDispatch ? window.__spinClashDispatch(action, args) : false;
+      };
+      if(shouldExposeUiBindings()){
+        window[legacyUiBindingKey] = actionBindings;
+      }else{
+        try{
+          delete window[legacyUiBindingKey];
+        }catch(error){
+          window[legacyUiBindingKey] = undefined;
+        }
+      }
       window.__spinClashEnterBattle = handleEnterBattle;
     }
 

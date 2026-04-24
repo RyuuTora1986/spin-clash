@@ -9,6 +9,9 @@
     const arenaMathTools = options.arenaMathTools || null;
     const getUiRoute = typeof options.getUiRoute === 'function' ? options.getUiRoute : function(){ return 'home'; };
     const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
+    const normalizeArenaIndex = typeof options.normalizeArenaIndex === 'function'
+      ? options.normalizeArenaIndex
+      : function(index){ return Math.max(0, Math.min(arenas.length - 1, parseInt(index, 10) || 0)); };
     const isArenaUnlocked = typeof options.isArenaUnlocked === 'function' ? options.isArenaUnlocked : function(){ return true; };
     const getPlayerTopId = typeof options.getPlayerTopId === 'function' ? options.getPlayerTopId : function(){ return 0; };
     const isTopUnlocked = typeof options.isTopUnlocked === 'function' ? options.isTopUnlocked : function(){ return true; };
@@ -469,7 +472,7 @@
     }
 
     function getArenaConfig(){
-      const index = Math.max(0, Math.min(arenas.length - 1, parseInt(getSelectedArenaIndex(), 10) || 0));
+      const index = normalizeArenaIndex(getSelectedArenaIndex());
       return arenas[index] || null;
     }
 
@@ -499,7 +502,7 @@
       if(!force && arenaCurrentId === arena.id && arenaModel) return;
 
       clearArenaModel();
-      arenaLocked = !isArenaUnlocked(parseInt(getSelectedArenaIndex(), 10) || 0);
+      arenaLocked = !isArenaUnlocked(normalizeArenaIndex(getSelectedArenaIndex()));
       arenaModel = createArenaBody(arena, arenaLocked);
       arenaModel.position.y = -0.08;
       arenaModel.rotation.x = 0;

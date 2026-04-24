@@ -1,7 +1,8 @@
-﻿(function(){
+(function(){
   const root = window.SpinClash;
   const params = new URLSearchParams(window.location.search);
-  const enabled = params.get('debug') === '1';
+  const buildRuntime = root.runtime && root.runtime.build ? root.runtime.build : {};
+  const enabled = buildRuntime.debugToolsEnabled !== false && params.get('debug') === '1';
   root.debug.enabled = enabled;
 
   root.services.debug = {

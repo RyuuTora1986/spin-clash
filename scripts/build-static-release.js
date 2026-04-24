@@ -1,21 +1,20 @@
-const fs = require('fs');
 const path = require('path');
-const {
-  applyVersionToConfigText,
-  applyVersionToIndexHtml,
-  readPackageVersion
-} = require('./static-asset-versioning');
+const { buildRelease } = require('./release-builder');
 
 const repoRoot = path.resolve(__dirname, '..');
-const outputDir = path.join(repoRoot, 'dist-static');
-const includedPaths = [
-  'index.html',
-  'ads.txt',
-  'css',
-  'src',
-  path.join('assets', 'vendor'),
-  path.join('assets', 'fx'),
-  path.join('assets', 'audio')
+const outputDir = process.env.SPIN_CLASH_BUILD_OUTPUT_DIR
+  ? path.resolve(process.env.SPIN_CLASH_BUILD_OUTPUT_DIR)
+  : path.join(repoRoot, 'dist-static');
+const runtimeProfile = {
+  profile: 'production',
+  channelId: 'direct_web_google',
+  debugToolsEnabled: false,
+  exposeUiBindings: false
+};
+const extraOmittedBundleScripts = [
+  'src/platform-runtime-config.js',
+  'src/crazygames-service.js',
+  'src/shared-backend-status-ui.js'
 ];
 
 function parseBooleanEnv(name) {
@@ -124,20 +123,17 @@ function validateProviderOverrides(overrides) {
   }
 }
 
-function writeProviderOverrideFile(destRoot, overrides) {
-  const overrideFilePath = path.join(destRoot, 'src', 'config-providers-override.js');
+function buildProviderOverrideScript(overrides) {
   const hasOverrides = JSON.stringify(overrides) !== '{}';
   const body = hasOverrides
     ? JSON.stringify(overrides, null, 2)
     : 'null';
-  const content = [
+  return [
     '(function(){',
     `  window.__spinClashProviderOverrides = ${body};`,
     '})();',
     ''
   ].join('\n');
-
-  fs.writeFileSync(overrideFilePath, content, 'utf8');
 }
 
 function shouldInjectAdsenseH5HeadBootstrap(overrides) {
@@ -191,63 +187,43 @@ function injectAdsenseH5HeadBootstrap(indexHtml, overrides) {
   if (/pagead2\.googlesyndication\.com\/pagead\/js\/adsbygoogle\.js\?client=/.test(indexHtml)) {
     return indexHtml;
   }
-  const closingHead = '</head>';
-  if (!indexHtml.includes(closingHead)) {
+  if (!indexHtml.includes('</head>')) {
     throw new Error('Unable to inject AdSense H5 bootstrap because </head> is missing.');
   }
   const injection = `${buildAdsenseH5HeadBootstrap(overrides)}\n`;
-  return indexHtml.replace(closingHead, `${injection}${closingHead}`);
+  return indexHtml.replace('</head>', `${injection}</head>`);
 }
 
-function removeDir(targetPath) {
-  fs.rmSync(targetPath, { recursive: true, force: true });
-}
-
-function ensureDir(targetPath) {
-  fs.mkdirSync(targetPath, { recursive: true });
-}
-
-function copyPath(srcPath, destPath) {
-  const stats = fs.statSync(srcPath);
-  if (stats.isDirectory()) {
-    ensureDir(destPath);
-    for (const name of fs.readdirSync(srcPath)) {
-      copyPath(path.join(srcPath, name), path.join(destPath, name));
-    }
-    return;
-  }
-  ensureDir(path.dirname(destPath));
-  fs.copyFileSync(srcPath, destPath);
-}
-
-function main() {
-  const version = readPackageVersion(repoRoot);
+async function main() {
   const providerOverrides = buildProviderOverrides();
   validateProviderOverrides(providerOverrides);
 
-  removeDir(outputDir);
-  ensureDir(outputDir);
-
-  for (const relPath of includedPaths) {
-    const srcPath = path.join(repoRoot, relPath);
-    const destPath = path.join(outputDir, relPath);
-    if (!fs.existsSync(srcPath)) {
-      throw new Error(`Missing release path: ${relPath}`);
+  const result = await buildRelease({
+    repoRoot,
+    outputDir,
+    runtimeProfile,
+    omittedBundleScripts: extraOmittedBundleScripts,
+    scriptReplacements: {
+      'src/config-providers-override.js': {
+        kind: 'inline',
+        content: buildProviderOverrideScript(providerOverrides)
+      },
+      'src/startup-tools.js': {
+        kind: 'file',
+        path: path.join('src', 'channel-runtime', 'startup-tools-production.js')
+      }
+    },
+    transformOutputIndexHtml(indexHtml) {
+      return injectAdsenseH5HeadBootstrap(indexHtml, providerOverrides);
     }
-    copyPath(srcPath, destPath);
-  }
+  });
 
-  const outputIndexHtmlPath = path.join(outputDir, 'index.html');
-  const outputIndexHtml = fs.readFileSync(outputIndexHtmlPath, 'utf8');
-  const versionedIndexHtml = applyVersionToIndexHtml(outputIndexHtml, version);
-  fs.writeFileSync(outputIndexHtmlPath, injectAdsenseH5HeadBootstrap(versionedIndexHtml, providerOverrides), 'utf8');
-  const outputConfigTextPath = path.join(outputDir, 'src', 'config-text.js');
-  const outputConfigText = fs.readFileSync(outputConfigTextPath, 'utf8');
-  fs.writeFileSync(outputConfigTextPath, applyVersionToConfigText(outputConfigText, version), 'utf8');
-
-  writeProviderOverrideFile(outputDir, providerOverrides);
-
-  console.log(`Static release package created at ${outputDir}`);
+  console.log(`Static release package created at ${result.outputDir} with bundles ${result.vendorBundleRelPath} and ${result.bundleRelPath}`);
 }
 
-main();
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error && error.message ? error.message : error);
+    process.exit(1);
+  });
+}

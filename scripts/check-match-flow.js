@@ -155,6 +155,12 @@ async function testChallengeResultSnapshotAndShareMoment() {
       runtime: { defaultRoundTimer: 30, challengeContinueEnabled: true, challengeContinueLimit: 1 }
     },
     rewardService: {
+      isRewardAvailable(placement) {
+        if (placement === 'double_reward' || placement === 'continue_once') {
+          return { available: true };
+        }
+        return { available: false, reason: 'unsupported_placement' };
+      },
       request(placement, payload) {
         rewardRequests.push({ placement, payload });
         return Promise.resolve({ granted: true });
@@ -330,6 +336,12 @@ async function testDoubleRewardFailureFeedbackUsesMajorMessageBeat() {
       runtime: { defaultRoundTimer: 30, challengeContinueEnabled: true, challengeContinueLimit: 1 }
     },
     rewardService: {
+      isRewardAvailable(placement) {
+        if (placement === 'double_reward' || placement === 'continue_once') {
+          return { available: true };
+        }
+        return { available: false, reason: 'unsupported_placement' };
+      },
       request() {
         return Promise.resolve({ granted: false, reason: 'slot_closed' });
       },

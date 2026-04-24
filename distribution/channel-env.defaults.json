@@ -1,0 +1,14 @@
+{
+  "common": {},
+  "channels": {
+    "direct_web_google": {
+      "SPIN_CLASH_REWARD_ADAPTER": "adsense_h5_rewarded",
+      "SPIN_CLASH_ADSENSE_ENABLED": "true",
+      "SPIN_CLASH_ADSENSE_H5_ENABLED": "true",
+      "SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT": "ca-pub-4799303992679484",
+      "SPIN_CLASH_ADSENSE_H5_TEST_MODE": "false",
+      "SPIN_CLASH_ADSENSE_H5_PRELOAD": "on",
+      "SPIN_CLASH_ADSENSE_H5_SOUND": "off"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "common": {},
+  "channels": {
+    "direct_web_google": {
+      "SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT": "ca-pub-example"
+    },
+    "crazygames_basic": {},
+    "crazygames_full": {}
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-23",
+  "sourceSpec": "docs/monetization/2026-04-23-posthog-dashboard-spec.md",
+  "dashboards": [
+    {
+      "name": "Spin Clash - Reward Ops",
+      "purpose": "Track rewarded offer volume, request rate, completion health, and failure reasons.",
+      "tiles": [
+        {
+          "title": "Reward Offers by Placement",
+          "insight": "trends",
+          "events": ["reward_offer_show"],
+          "breakdowns": ["placement"],
+          "interval": "day"
+        },
+        {
+          "title": "Reward Requests by Placement",
+          "insight": "trends",
+          "events": ["reward_request_start"],
+          "breakdowns": ["placement"],
+          "interval": "day"
+        },
+        {
+          "title": "Reward Completions by Placement",
+          "insight": "trends",
+          "events": ["reward_complete"],
+          "breakdowns": ["placement"],
+          "interval": "day"
+        },
+        {
+          "title": "Reward Declines by Reason",
+          "insight": "trends",
+          "events": ["reward_decline"],
+          "breakdowns": ["reason"],
+          "interval": "day"
+        },
+        {
+          "title": "Reward Offer Request Complete Funnel",
+          "insight": "funnel",
+          "steps": [
+            { "event": "reward_offer_show" },
+            { "event": "reward_request_start" },
+            { "event": "reward_complete" }
+          ],
+          "breakdowns": ["placement"]
+        },
+        {
+          "title": "Continue Once Reward Funnel",
+          "insight": "funnel",
+          "steps": [
+            { "event": "challenge_fail" },
+            { "event": "reward_offer_show", "filters": { "placement": "continue_once" } },
+            { "event": "reward_request_start", "filters": { "placement": "continue_once" } },
+            { "event": "reward_complete", "filters": { "placement": "continue_once" } },
+            { "event": "continue_used" }
+          ]
+        },
+        {
+          "title": "Trial Unlock Reward Funnel",
+          "insight": "funnel",
+          "steps": [
+            { "event": "locked_arena_shortfall" },
+            { "event": "reward_offer_show", "filters": { "placement": "trial_unlock_arena" } },
+            { "event": "reward_request_start", "filters": { "placement": "trial_unlock_arena" } },
+            { "event": "reward_complete", "filters": { "placement": "trial_unlock_arena" } },
+            { "event": "trial_unlock_complete" }
+          ]
+        },
+        {
+          "title": "Reward Completes by Placement and Mode",
+          "insight": "table",
+          "events": ["reward_complete"],
+          "breakdowns": ["placement", "mode"],
+          "fallbackNote": "If reward_complete.mode is not queryable, pivot to reward_offer_show.mode for mode-level reads."
+        }
+      ]
+    },
+    {
+      "name": "Spin Clash - Core Loop",
+      "purpose": "Track whether players reach the result surfaces that power rewarded monetization.",
+      "tiles": [
+        {
+          "title": "Session Starts and Returns",
+          "insight": "trends",
+          "events": ["session_start", "return_session"],
+          "interval": "day"
+        },
+        {
+          "title": "Match Starts vs Match Ends",
+          "insight": "trends",
+          "events": ["match_start", "match_end"],
+          "breakdowns": ["mode"],
+          "interval": "day"
+        },
+        {
+          "title": "Challenge Fail vs Clear",
+          "insight": "trends",
+          "events": ["challenge_fail", "challenge_clear"],
+          "interval": "day"
+        },
+        {
+          "title": "Match End Segmentation",
+          "insight": "table",
+          "events": ["match_end"],
+          "breakdowns": ["mode", "arenaId", "playerTop", "roadRankId"]
+        },
+        {
+          "title": "Progression Checkpoints and Purchases",
+          "insight": "trends",
+          "events": ["championship_checkpoint", "unlock_purchase", "research_purchase"],
+          "interval": "day"
+        }
+      ]
+    }
+  ]
+}

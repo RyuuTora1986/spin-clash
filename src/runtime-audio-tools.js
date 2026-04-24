@@ -35,6 +35,8 @@
     let _currentMusicMode='none';
     let _currentMusicTargetVolume=0;
     let _currentMusicEl=null;
+    let _lastMusicContext=null;
+    let _externalMute=false;
     const _musicEntries={};
     const BPM=174;
     const S16=60/BPM/4;
@@ -57,11 +59,11 @@
     }
 
     function isMusicEnabled(){
-      return getAudioSettings().musicEnabled;
+      return getAudioSettings().musicEnabled && _externalMute !== true;
     }
 
     function isSfxEnabled(){
-      return getAudioSettings().sfxEnabled;
+      return getAudioSettings().sfxEnabled && _externalMute !== true;
     }
 
     function resolveSignatureAudioStyle(skillId){
@@ -291,6 +293,15 @@
       fadeMusicVolume(audio, 0, fadeMs, finalize);
     }
 
+    function restoreMusicFromLastContext(){
+      if(!_lastMusicContext) return;
+      const resumeContext = Object.assign({}, _lastMusicContext, {
+        restart:false,
+        fadeMs:180
+      });
+      startMusic(resumeContext);
+    }
+
     function activateExternalMusic(track, options){
       const entry = ensureMusicEntry(track);
       if(!entry || entry.failed){
@@ -334,8 +345,26 @@
         targetVolume:_currentMusicTargetVolume,
         usingExternal:!!_currentMusicEl,
         proceduralActive:!!_beatTimer,
-        musicEnabled:isMusicEnabled()
+        musicEnabled:isMusicEnabled(),
+        externallyMuted:_externalMute === true
       };
+    }
+
+    function setExternalMute(nextMuted){
+      const shouldMute = nextMuted === true;
+      if(_externalMute === shouldMute){
+        return _externalMute;
+      }
+      _externalMute = shouldMute;
+      if(shouldMute){
+        stopProceduralMusic();
+        if(_currentMusicEl){
+          fadeMusicVolume(_currentMusicEl, 0, 140);
+        }
+        return _externalMute;
+      }
+      restoreMusicFromLastContext();
+      return _externalMute;
     }
 
     function initAudioSafely(){
@@ -555,11 +584,12 @@
     }
 
     function startMusic(context){
+      const settings = context || { scene:'battle' };
+      _lastMusicContext = Object.assign({}, settings);
       if(!isMusicEnabled()){
-        stopMusic({ immediate:true });
+        stopMusic({ immediate:true, preserveContext:true });
         return;
       }
-      const settings = context || { scene:'battle' };
       const externalTrack = resolveExternalTrack(settings);
       if(externalTrack){
         const activated = activateExternalMusic(externalTrack, {
@@ -577,8 +607,12 @@
     }
 
     function stopMusic(options){
+      const stopOptions = options || {};
       stopProceduralMusic();
-      clearExternalMusic(options || {});
+      clearExternalMusic(stopOptions);
+      if(stopOptions.preserveContext !== true){
+        _lastMusicContext = null;
+      }
     }
 
     function sfxCollide(force){
@@ -797,6 +831,7 @@
       initAudioSafely,
       isMusicEnabled,
       isSfxEnabled,
+      setExternalMute,
       getMusicDebugState,
       resolveSignatureAudioStyle,
       startMusic,

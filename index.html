@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="google-adsense-account" content="ca-pub-4799303992679484">
 <title>Spin Clash</title>
-<link rel="stylesheet" href="./css/game.css?v=1.2.1">
+<link rel="stylesheet" href="./css/game.css?v=1.2.2">
 </head>
 <body>
 <div id="gc"></div>
@@ -152,12 +152,14 @@
       <div class="deco-line"></div>
       <div class="title-actions">
         <div class="title-actions-primary">
-          <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('goPath')"></button>
-          <button class="title-primary-btn" id="btn-enter-quick" onclick="return window.__spinClashInvoke('goQuick')"></button>
-        </div>
-        <div class="title-action-notes">
-          <div class="title-action-note" id="title-note-path"></div>
-          <div class="title-action-note" id="title-note-quick"></div>
+          <div class="title-action-block title-action-block-path">
+            <button class="big-btn" id="btn-enter" onclick="return window.__spinClashInvoke('goPath')"></button>
+            <div class="title-action-note" id="title-note-path"></div>
+          </div>
+          <div class="title-action-block title-action-block-quick">
+            <button class="title-primary-btn" id="btn-enter-quick" onclick="return window.__spinClashInvoke('goQuick')"></button>
+            <div class="title-action-note" id="title-note-quick"></div>
+          </div>
         </div>
         <div class="title-actions-utility">
           <button class="title-alt-btn" id="btn-enter-workshop" onclick="return window.__spinClashInvoke('goWorkshop')"></button>
@@ -421,73 +423,59 @@
     </div>
   </div>
 </div>
-<script src="./src/bootstrap-app-globals.js?v=1.2.1"></script>
-<script src="./src/config-text.js?v=1.2.1"></script>
-<script src="./src/config-tops.js?v=1.2.1"></script>
-<script src="./src/config-signature-skills.js?v=1.2.1"></script>
-<script src="./src/config-arenas.js?v=1.2.1"></script>
-<script src="./src/config-modifiers.js?v=1.2.1"></script>
-<script src="./src/config-enemy-presets.js?v=1.2.1"></script>
-<script src="./src/config-economy.js?v=1.2.1"></script>
-<script src="./src/config-research.js?v=1.2.1"></script>
-<script src="./src/config-road-ranks.js?v=1.2.1"></script>
-<script src="./src/config-challenge-road.js?v=1.2.1"></script>
-<script src="./src/localization-tools.js?v=1.2.1"></script>
-<script src="./src/config-providers.js?v=1.2.1"></script>
-<script src="./src/config-providers-override.js?v=1.2.1"></script>
-<script src="./src/config-providers-runtime.js?v=1.2.1"></script>
-<script src="./src/debug-service.js?v=1.2.1"></script>
-<script src="./src/provider-runtime-tools.js?v=1.2.1"></script>
-<script src="./src/storage-service.js?v=1.2.1"></script>
-<script src="./src/analytics-service.js?v=1.2.1"></script>
-<script src="./src/reward-service.js?v=1.2.1"></script>
-<script src="./src/share-card-tools.js?v=1.2.1"></script>
-<script src="./src/share-service.js?v=1.2.1"></script>
-<script src="./src/progression-tools.js?v=1.2.1"></script>
-<script src="./src/loadout-ui-tools.js?v=1.2.1"></script>
-<script src="./src/match-flow-tools.js?v=1.2.1"></script>
-<script src="./src/debug-runtime-tools.js?v=1.2.1"></script>
-<script src="./src/ui-entry-tools.js?v=1.2.1"></script>
-<script src="./src/startup-tools.js?v=1.2.1"></script>
-<script src="./src/ui-shell-tools.js?v=1.2.1"></script>
-<script src="./src/combat-action-tools.js?v=1.2.1"></script>
-<script src="./src/round-flow-tools.js?v=1.2.1"></script>
-<script src="./src/battle-effects-tools.js?v=1.2.1"></script>
-<script src="./src/runtime-audio-tools.js?v=1.2.1"></script>
-<script src="./src/arena-math-tools.js?v=1.2.1"></script>
-<script src="./src/arena-render-tools.js?v=1.2.1"></script>
-<script src="./src/trail-render-tools.js?v=1.2.1"></script>
-<script src="./src/scratch-layer-tools.js?v=1.2.1"></script>
-<script src="./src/top-render-tools.js?v=1.2.1"></script>
-<script src="./src/home-top-showcase-tools.js?v=1.2.1"></script>
-<script src="./src/quick-battle-preview-tools.js?v=1.2.1"></script>
-<script src="./src/aim-line-tools.js?v=1.2.1"></script>
-<script src="./src/scene-shell-tools.js?v=1.2.1"></script>
-<script src="./src/battle-commentary-tools.js?v=1.2.1"></script>
-<script src="./src/message-ui-tools.js?v=1.2.1"></script>
-<script src="./src/battle-view-tools.js?v=1.2.1"></script>
-<script src="./src/battle-sim-tools.js?v=1.2.1"></script>
+<script src="./src/bootstrap-app-globals.js?v=1.2.2"></script>
+<script src="./src/config-text.js?v=1.2.2"></script>
+<script src="./src/config-tops.js?v=1.2.2"></script>
+<script src="./src/config-signature-skills.js?v=1.2.2"></script>
+<script src="./src/config-arenas.js?v=1.2.2"></script>
+<script src="./src/config-modifiers.js?v=1.2.2"></script>
+<script src="./src/config-enemy-presets.js?v=1.2.2"></script>
+<script src="./src/config-economy.js?v=1.2.2"></script>
+<script src="./src/config-research.js?v=1.2.2"></script>
+<script src="./src/config-road-ranks.js?v=1.2.2"></script>
+<script src="./src/config-challenge-road.js?v=1.2.2"></script>
+<script src="./src/localization-tools.js?v=1.2.2"></script>
+<script src="./src/config-providers.js?v=1.2.2"></script>
+<script src="./src/config-providers-override.js?v=1.2.2"></script>
+<script src="./src/config-providers-runtime.js?v=1.2.2"></script>
+<script src="./src/debug-service.js?v=1.2.2"></script>
+<script src="./src/provider-runtime-tools.js?v=1.2.2"></script>
+<script src="./src/storage-service.js?v=1.2.2"></script>
+<script src="./src/platform-runtime-config.js?v=1.2.2"></script>
+<script src="./src/crazygames-service.js?v=1.2.2"></script>
+<script src="./src/shared-backend-config.js?v=1.2.2"></script>
+<script src="./src/shared-backend-bridge.js?v=1.2.2"></script>
+<script src="./src/shared-backend-status-ui.js?v=1.2.2"></script>
+<script src="./src/analytics-service.js?v=1.2.2"></script>
+<script src="./src/reward-service.js?v=1.2.2"></script>
+<script src="./src/share-card-tools.js?v=1.2.2"></script>
+<script src="./src/share-service.js?v=1.2.2"></script>
+<script src="./src/progression-tools.js?v=1.2.2"></script>
+<script src="./src/loadout-ui-tools.js?v=1.2.2"></script>
+<script src="./src/match-flow-tools.js?v=1.2.2"></script>
+<script src="./src/debug-runtime-tools.js?v=1.2.2"></script>
+<script src="./src/ui-entry-tools.js?v=1.2.2"></script>
+<script src="./src/startup-tools.js?v=1.2.2"></script>
+<script src="./src/ui-shell-tools.js?v=1.2.2"></script>
+<script src="./src/combat-action-tools.js?v=1.2.2"></script>
+<script src="./src/round-flow-tools.js?v=1.2.2"></script>
+<script src="./src/battle-effects-tools.js?v=1.2.2"></script>
+<script src="./src/runtime-audio-tools.js?v=1.2.2"></script>
+<script src="./src/arena-math-tools.js?v=1.2.2"></script>
+<script src="./src/arena-render-tools.js?v=1.2.2"></script>
+<script src="./src/trail-render-tools.js?v=1.2.2"></script>
+<script src="./src/scratch-layer-tools.js?v=1.2.2"></script>
+<script src="./src/top-render-tools.js?v=1.2.2"></script>
+<script src="./src/home-top-showcase-tools.js?v=1.2.2"></script>
+<script src="./src/quick-battle-preview-tools.js?v=1.2.2"></script>
+<script src="./src/aim-line-tools.js?v=1.2.2"></script>
+<script src="./src/scene-shell-tools.js?v=1.2.2"></script>
+<script src="./src/battle-commentary-tools.js?v=1.2.2"></script>
+<script src="./src/message-ui-tools.js?v=1.2.2"></script>
+<script src="./src/battle-view-tools.js?v=1.2.2"></script>
+<script src="./src/battle-sim-tools.js?v=1.2.2"></script>
 <script src="./assets/vendor/three.min.js"></script>
-<script>
-window.__spinClashInvoke=function(action){
-  var args=Array.prototype.slice.call(arguments,1);
-  var ui=window.__spinClashUI;
-  if(ui && typeof ui[action] === 'function'){
-    return ui[action].apply(ui,args);
-  }
-  if(action === 'enterBattle' && typeof window.__spinClashEnterBattle === 'function'){
-    return window.__spinClashEnterBattle();
-  }
-  return false;
-};
-window.__spinClashEnterBattle=function(){
-  var title=document.getElementById('ov-title');
-  var loadout=document.getElementById('ov-loadout');
-  if(title) title.classList.add('hide');
-  if(loadout) loadout.classList.remove('hide');
-};
-</script>
-<script defer src="./src/main.js?v=1.2.1"></script>
+<script defer src="./src/main.js?v=1.2.2"></script>
 </body>
 </html>
 

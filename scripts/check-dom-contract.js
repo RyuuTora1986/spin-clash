@@ -16,6 +16,7 @@ const dynamicIds = new Set([
   'debug-panel-wrap',
   'debug-panel',
   'debug-panel-status',
+  'shared-backend-status-style',
   'storage-notice',
   'runtime-error-box'
 ]);

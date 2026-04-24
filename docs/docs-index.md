@@ -3,6 +3,7 @@
 Use this file as the shortest path to the right document for the current stage of work.
 
 ## If You Need Current Project State
+- `docs/project-status-2026-04-23.md`
 - `docs/project-status-2026-04-17.md`
 - `docs/balance-pass-2026-04-17.md`
 - `docs/balance-pass-2026-04-20.md`
@@ -13,17 +14,24 @@ Use this file as the shortest path to the right document for the current stage o
 - `docs/top-balance-validation-report-2026-04-20-phase-1a.md`
 - `docs/unlock-source-ui-design-2026-04-20.md`
 - `docs/unlock-source-ui-pass-2026-04-20.md`
+- `docs/championship-path-macro-balance-audit-2026-04-24.md`
 - `docs/session-handoff-2026-04-17.md`
 - `docs/session-handoff-2026-04-21.md`
+- `docs/session-handoff-2026-04-23.md`
 - `docs/launch-blockers.md`
 
 ## If You Need Local Run And Regression
 - `docs/local-operations.md`
 - `docs/manual-test-batches.md`
+- `docs/championship-path-early-balance-probe-2026-04-24.md`
+- `docs/championship-path-macro-balance-audit-2026-04-24.md`
+- `docs/shared-backend-optional-bridge-2026-04-23.md`
 - `docs/focused-human-playtest-2026-04-20.md`
 - `docs/visual-validation-protocol-2026-04-20.md`
 - `docs/release-checklist.md`
+- `docs/release-governance.md`
 - `docs/analytics-events.md`
+- `docs/suno-audio-pack-20260423.md`
 
 ## If You Need Host Validation
 - `docs/deployment-preflight.md`
@@ -35,8 +43,18 @@ Use this file as the shortest path to the right document for the current stage o
 - `docs/deployment-notes.md`
 
 ## If You Need Provider Integration
+- `docs/channel-change-classification-rules-2026-04-24.md`
+- `docs/channel-release-preflight-checklist-2026-04-24.md`
+- `docs/channel-feature-impact-template-2026-04-24.md`
+- `docs/channel-monetization-strategy-2026-04-24.md`
+- `docs/crazygames-basic-optimization-plan-2026-04-24.md`
+- `docs/channel-distribution-governance.md`
 - `docs/provider-recommendation-2026-04-17.md`
 - `docs/adinplay-priority-switch-plan-2026-04-20.md`
+- `docs/monetization/2026-04-23-ad-revenue-execution-plan.md`
+- `docs/monetization/2026-04-23-crazygames-submission-asset-plan.md`
+- `docs/monetization/2026-04-23-posthog-dashboard-spec.md`
+- `docs/monetization/2026-04-23-posthog-dashboard-manifest.json`
 - `docs/provider-integration-notes.md`
 - `docs/posthog-setup.md`
 - `docs/reward-live-adapter-status.md`
@@ -78,3 +96,5 @@ Use this file as the shortest path to the right document for the current stage o
 - `docs/balance-pass-2026-04-17.md`
 - `docs/balance-pass-2026-04-20.md`
 - `docs/balance-pass-2026-04-20-phase-1b.md`
+- `docs/championship-path-early-balance-probe-2026-04-24.md`
+- `docs/championship-path-macro-balance-audit-2026-04-24.md`

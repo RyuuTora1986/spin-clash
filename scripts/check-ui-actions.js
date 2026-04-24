@@ -21,9 +21,9 @@ function collectInvokedActions() {
 function collectExposedActions() {
   const text = fs.readFileSync(uiEntryToolsPath, 'utf8');
   const actions = new Set();
-  const bindingBlockMatch = text.match(/window\.__spinClashUI\s*=\s*\{([\s\S]*?)\n\s*\};/);
+  const bindingBlockMatch = text.match(/const actionBindings = \{([\s\S]*?)\n\s*\};/);
   if (!bindingBlockMatch) {
-    failures.push('Could not find window.__spinClashUI binding block in src/ui-entry-tools.js');
+    failures.push('Could not find actionBindings block in src/ui-entry-tools.js');
     return actions;
   }
 

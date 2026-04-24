@@ -102,7 +102,7 @@
 
     function spawnMessage(entry){
       if(!host) return false;
-      if(activeItems.length >= 4){
+      if(activeItems.length >= 3){
         removeItem(activeItems[0]);
       }
       const now = (window.performance && typeof window.performance.now === 'function')
@@ -112,7 +112,7 @@
       const item = document.createElement('div');
       const durationMs = Math.max(1600, Math.round((entry.duration || 2.5) * 1000));
       const accentDrift = Math.round((Math.random() * 28) - 14);
-      const finalRise = entry.tone === 'finish' ? -92 : entry.tone === 'alert' ? -84 : -76;
+      const finalRise = entry.tone === 'finish' ? -58 : entry.tone === 'alert' ? -52 : -48;
       item.className = 'battle-commentary-item tone-' + (entry.tone || 'normal');
       item.style.left = Math.round(lane.fraction * 1000) / 10 + '%';
       item.style.setProperty('--commentary-drift', accentDrift + 'px');
@@ -120,7 +120,7 @@
       item.style.setProperty('--commentary-duration', (durationMs / 1000).toFixed(2) + 's');
       item.appendChild(createBadge(uiText.battleCommentaryLabel || 'LIVE'));
       item.appendChild(createLine(entry.line));
-      host.appendChild(item);
+      host.insertBefore(item, host.firstChild);
       host.classList.remove('hide');
       activeItems.push(item);
       item.__removeTimer = setTimeout(function(){
@@ -145,7 +145,7 @@
         if(b.priority !== a.priority) return b.priority - a.priority;
         return a.queuedAt - b.queuedAt;
       });
-      while(queue.length > 6) queue.pop();
+      while(queue.length > 4) queue.pop();
       if(!drainTimer){
         drainQueue();
       }
@@ -155,7 +155,7 @@
       if(!host) return false;
       const settings = options || {};
       const priority = typeof settings.priority === 'number' ? settings.priority : 1;
-      const minGapMs = typeof settings.minGapMs === 'number' ? settings.minGapMs : 780;
+      const minGapMs = typeof settings.minGapMs === 'number' ? settings.minGapMs : 860;
       const duration = typeof settings.duration === 'number' ? settings.duration : 2.45;
       const tone = settings.tone || 'normal';
       const now = (window.performance && typeof window.performance.now === 'function')

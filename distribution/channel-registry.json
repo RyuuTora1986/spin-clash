@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "projectId": "spin-clash",
+  "defaultChannelId": "direct_web_google",
+  "environmentSources": [
+    "distribution/channel-env.defaults.json",
+    "distribution/channel-env.local.json",
+    "process.env"
+  ],
+  "channels": [
+    {
+      "id": "direct_web_google",
+      "status": "active",
+      "label": "Direct Web + Google H5",
+      "distributionKind": "self_hosted",
+      "buildTarget": {
+        "script": "build:static",
+        "checkScript": "check:static",
+        "outputDir": "dist-static"
+      },
+      "runtime": {
+        "platformId": "web",
+        "launchStage": null
+      },
+      "previewTarget": {
+        "kind": "static_server",
+        "defaultPort": 4173
+      },
+      "verification": {
+        "smokeScript": null,
+        "smokeArgs": []
+      },
+      "adsPolicy": {
+        "externalAdsAllowed": true,
+        "googleH5Allowed": true,
+        "crazyGamesSdkAdsAllowed": false
+      },
+      "economyPolicy": {
+        "rewardedArenaTrial": "enabled",
+        "doubleReward": "enabled",
+        "continueAfterLoss": "enabled",
+        "channelDesignStatus": "active"
+      },
+      "commercialPolicy": {
+        "revenueEnabled": true,
+        "revenueSource": "google_h5_rewarded_on_self_hosted_traffic",
+        "notes": [
+          "This channel monetizes through the self-hosted Google H5 rewarded setup.",
+          "Traffic acquisition and retention are the operator's responsibility."
+        ]
+      },
+      "accountPolicy": {
+        "externalLoginAllowed": true,
+        "recommendedIdentityMode": "anonymous_or_local_then_upgrade"
+      },
+      "backendPolicy": {
+        "sharedBackendAllowed": true,
+        "sharedBackendRecommended": true,
+        "sharedBackendHardRequiredAtBoot": false
+      },
+      "operatorRequirements": {
+        "requiredEnv": [
+          {
+            "name": "SPIN_CLASH_REWARD_ADAPTER",
+            "equals": "adsense_h5_rewarded"
+          },
+          {
+            "name": "SPIN_CLASH_ADSENSE_ENABLED",
+            "equals": "true"
+          },
+          {
+            "name": "SPIN_CLASH_ADSENSE_H5_ENABLED",
+            "equals": "true"
+          },
+          {
+            "oneOf": [
+              "SPIN_CLASH_ADSENSE_H5_DATA_AD_CLIENT",
+              "SPIN_CLASH_ADSENSE_H5_PUBLISHER_ID"
+            ]
+          }
+        ]
+      },
+      "buildChecks": {
+        "mustNotContainCrazyGamesSdk": true,
+        "mustNotContainCrazyGamesMeta": true,
+        "mustContainAdsenseH5Bootstrap": true,
+        "mustContainSharedBackendBridgeMarkers": true
+      },
+      "officialDocs": [
+        "https://support.google.com/publisherpolicies/answer/11975916?hl=en",
+        "https://support.google.com/adsense/answer/13292016?hl=en"
+      ]
+    },
+    {
+      "id": "crazygames_basic",
+      "status": "active",
+      "label": "CrazyGames Basic Launch",
+      "distributionKind": "platform_submission",
+      "buildTarget": {
+        "script": "build:crazygames",
+        "checkScript": "check:crazygames",
+        "outputDir": "dist-crazygames",
+        "zipFile": "spin-clash-dist-crazygames-build.zip",
+        "env": {
+          "SPIN_CLASH_CRAZYGAMES_LAUNCH_STAGE": "basic"
+        }
+      },
+      "runtime": {
+        "platformId": "crazygames",
+        "launchStage": "basic"
+      },
+      "previewTarget": {
+        "kind": "crazygames_harness",
+        "defaultPort": 4383
+      },
+      "verification": {
+        "smokeScript": "smoke:crazygames",
+        "smokeArgs": [
+          "--channel",
+          "crazygames_basic"
+        ]
+      },
+      "adsPolicy": {
+        "externalAdsAllowed": false,
+        "googleH5Allowed": false,
+        "crazyGamesSdkAdsAllowed": false,
+        "rewardButtonsMustHideWhenAdsDisabled": true
+      },
+      "economyPolicy": {
+        "rewardedArenaTrial": "hidden",
+        "doubleReward": "hidden",
+        "continueAfterLoss": "hidden",
+        "channelDesignStatus": "needs_channel_specific_replacement_design"
+      },
+      "commercialPolicy": {
+        "revenueEnabled": false,
+        "revenueSource": "none_during_basic_launch",
+        "notes": [
+          "Basic Launch is a limited-audience validation phase on CrazyGames.",
+          "Ads are disabled and no revenue is shared until the game is selected for Full Launch."
+        ]
+      },
+      "accountPolicy": {
+        "externalLoginAllowed": false,
+        "platformAccountRequired": false
+      },
+      "backendPolicy": {
+        "sharedBackendAllowed": true,
+        "sharedBackendRecommended": false,
+        "sharedBackendHardRequiredAtBoot": false
+      },
+      "operatorRequirements": {
+        "requiredEnv": []
+      },
+      "buildChecks": {
+        "mustContainCrazyGamesSdk": true,
+        "mustContainCrazyGamesMeta": true,
+        "mustSetLaunchStage": "basic",
+        "mustDisableExternalAds": true
+      },
+      "behaviorContracts": {
+        "requiredBundleMarkers": [
+          "Primary progression route: node rewards, checkpoints, and permanent unlocks all live here.",
+          "Short duel only. Championship Path is the faster route for SCRAP and new arenas.",
+          "GO TO PATH",
+          "Championship Path is the fastest route to more SCRAP."
+        ],
+        "smokeExpectations": {
+          "homePrimaryCta": "CONTINUE PATH",
+          "homeSecondaryCta": "QUICK BATTLE",
+          "homePathNoteIncludes": [
+            "Primary progression route",
+            "checkpoints",
+            "permanent unlocks"
+          ],
+          "homeQuickNoteIncludes": [
+            "Short duel only",
+            "Championship Path",
+            "faster route"
+          ],
+          "lockedArenaCta": "GO TO PATH",
+          "lockedArenaHintIncludes": [
+            "Championship Path",
+            "120 SCRAP"
+          ],
+          "lockedArenaAction": "route_to_path"
+        }
+      },
+      "officialDocs": [
+        "https://docs.crazygames.com/requirements/intro",
+        "https://docs.crazygames.com/requirements/technical/",
+        "https://docs.crazygames.com/requirements/ads/",
+        "https://docs.crazygames.com/requirements/game-covers/"
+      ]
+    },
+    {
+      "id": "crazygames_full",
+      "status": "planned",
+      "label": "CrazyGames Full Launch",
+      "distributionKind": "platform_submission",
+      "buildTarget": {
+        "script": "build:crazygames",
+        "checkScript": "check:crazygames",
+        "outputDir": "dist-crazygames",
+        "zipFile": "spin-clash-dist-crazygames-build.zip",
+        "env": {
+          "SPIN_CLASH_CRAZYGAMES_LAUNCH_STAGE": "full"
+        }
+      },
+      "runtime": {
+        "platformId": "crazygames",
+        "launchStage": "full"
+      },
+      "previewTarget": {
+        "kind": "crazygames_harness",
+        "defaultPort": 4383
+      },
+      "verification": {
+        "smokeScript": "smoke:crazygames",
+        "smokeArgs": [
+          "--channel",
+          "crazygames_full"
+        ]
+      },
+      "adsPolicy": {
+        "externalAdsAllowed": false,
+        "googleH5Allowed": false,
+        "crazyGamesSdkAdsAllowed": true
+      },
+      "economyPolicy": {
+        "rewardedArenaTrial": "enabled_via_crazygames_sdk",
+        "doubleReward": "enabled_via_crazygames_sdk",
+        "continueAfterLoss": "enabled_via_crazygames_sdk",
+        "channelDesignStatus": "planned_after_full_launch_acceptance"
+      },
+      "commercialPolicy": {
+        "revenueEnabled": true,
+        "revenueSource": "crazygames_sdk_ads_and_optional_invite_only_iap",
+        "notes": [
+          "Monetization starts only after Full Launch approval.",
+          "Revenue share is not published as a fixed public percentage; compensation depends on traffic and ad performance."
+        ]
+      },
+      "accountPolicy": {
+        "externalLoginAllowed": false,
+        "platformAccountRequired": true
+      },
+      "backendPolicy": {
+        "sharedBackendAllowed": true,
+        "sharedBackendRecommended": false,
+        "sharedBackendHardRequiredAtBoot": false
+      },
+      "operatorRequirements": {
+        "requiredEnv": [],
+        "manualGate": "Only enable after CrazyGames selects the game for Full Launch."
+      },
+      "buildChecks": {
+        "mustContainCrazyGamesSdk": true,
+        "mustContainCrazyGamesMeta": true,
+        "mustSetLaunchStage": "full",
+        "mustDisableExternalAds": true
+      },
+      "officialDocs": [
+        "https://docs.crazygames.com/requirements/intro",
+        "https://docs.crazygames.com/requirements/technical/",
+        "https://docs.crazygames.com/requirements/ads/"
+      ]
+    }
+  ]
+}

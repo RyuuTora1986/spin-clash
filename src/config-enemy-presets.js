@@ -33,20 +33,52 @@
         useSkillOnBurstReady:true
       }
     },
+    trick_intro:{
+      id:'trick_intro',
+      label:'TRICK SCOUT',
+      topId:'trick',
+      ai:{
+        seekForce:5.1,
+        speedCapScale:0.82,
+        inwardBiasRadius:5.0,
+        inwardBiasForce:3.8,
+        dashRange:3.4,
+        dashScale:1.58,
+        dashCooldownScaleMin:1.05,
+        dashCooldownScaleMax:1.35,
+        useSkillOnBurstReady:true
+      }
+    },
     impact_standard:{
       id:'impact_standard',
       label:'IMPACT BRUISER',
       topId:'impact',
       ai:{
-        seekForce:6.9,
-        speedCapScale:0.94,
-        inwardBiasRadius:5.7,
-        inwardBiasForce:6.7,
-        dashRange:4.0,
-        dashScale:2.7,
-        dashCooldownScaleMin:0.9,
-        dashCooldownScaleMax:1.2,
-        useSkillOnBurstReady:true
+        seekForce:5.3,
+        speedCapScale:0.82,
+        inwardBiasRadius:5.2,
+        inwardBiasForce:5.8,
+        dashRange:3.2,
+        dashScale:1.65,
+        dashCooldownScaleMin:1.24,
+        dashCooldownScaleMax:1.72,
+        useSkillOnBurstReady:false
+      }
+    },
+    impact_hex_intro:{
+      id:'impact_hex_intro',
+      label:'IMPACT HEX GUIDE',
+      topId:'impact',
+      ai:{
+        seekForce:4.4,
+        speedCapScale:0.72,
+        inwardBiasRadius:5.0,
+        inwardBiasForce:5.6,
+        dashRange:2.6,
+        dashScale:1.18,
+        dashCooldownScaleMin:1.34,
+        dashCooldownScaleMax:1.88,
+        useSkillOnBurstReady:false
       }
     },
     armor_ram:{
@@ -63,6 +95,54 @@
         dashCooldownScaleMin:0.98,
         dashCooldownScaleMax:1.3,
         useSkillOnBurstReady:true
+      }
+    },
+    armor_unlock_intro:{
+      id:'armor_unlock_intro',
+      label:'ARMOR GUIDE',
+      topId:'armor',
+      ai:{
+        seekForce:5.3,
+        speedCapScale:0.8,
+        inwardBiasRadius:5.1,
+        inwardBiasForce:7.6,
+        dashRange:3.2,
+        dashScale:1.7,
+        dashCooldownScaleMin:1.05,
+        dashCooldownScaleMax:1.36,
+        useSkillOnBurstReady:true
+      }
+    },
+    armor_hex_intro:{
+      id:'armor_hex_intro',
+      label:'ARMOR HEX GUIDE',
+      topId:'armor',
+      ai:{
+        seekForce:3.9,
+        speedCapScale:0.66,
+        inwardBiasRadius:5.0,
+        inwardBiasForce:5.8,
+        dashRange:2.4,
+        dashScale:1.05,
+        dashCooldownScaleMin:1.38,
+        dashCooldownScaleMax:1.92,
+        useSkillOnBurstReady:false
+      }
+    },
+    trick_hex_intro:{
+      id:'trick_hex_intro',
+      label:'TRICK HEX GUIDE',
+      topId:'trick',
+      ai:{
+        seekForce:3.8,
+        speedCapScale:0.64,
+        inwardBiasRadius:5.1,
+        inwardBiasForce:5.4,
+        dashRange:2.4,
+        dashScale:0.96,
+        dashCooldownScaleMin:1.45,
+        dashCooldownScaleMax:2.05,
+        useSkillOnBurstReady:false
       }
     },
     trick_drifter:{
@@ -97,19 +177,35 @@
         useSkillOnBurstReady:true
       }
     },
+    impact_floor_press:{
+      id:'impact_floor_press',
+      label:'IMPACT FLOOR PRESS',
+      topId:'impact',
+      ai:{
+        seekForce:6.2,
+        speedCapScale:0.88,
+        inwardBiasRadius:5.2,
+        inwardBiasForce:6.1,
+        dashRange:3.5,
+        dashScale:1.75,
+        dashCooldownScaleMin:1.12,
+        dashCooldownScaleMax:1.52,
+        useSkillOnBurstReady:true
+      }
+    },
     armor_bastion:{
       id:'armor_bastion',
       label:'ARMOR BASTION',
       topId:'armor',
       ai:{
-        seekForce:5.7,
-        speedCapScale:0.85,
+        seekForce:5.0,
+        speedCapScale:0.78,
         inwardBiasRadius:4.8,
-        inwardBiasForce:9.1,
-        dashRange:3.2,
-        dashScale:1.82,
-        dashCooldownScaleMin:0.94,
-        dashCooldownScaleMax:1.18,
+        inwardBiasForce:7.4,
+        dashRange:2.9,
+        dashScale:1.48,
+        dashCooldownScaleMin:1.16,
+        dashCooldownScaleMax:1.56,
         useSkillOnBurstReady:true
       }
     },
@@ -134,14 +230,14 @@
       label:'IMPACT REAPER',
       topId:'impact',
       ai:{
-        seekForce:7.5,
-        speedCapScale:1.02,
+        seekForce:6.2,
+        speedCapScale:0.9,
         inwardBiasRadius:5.1,
-        inwardBiasForce:7.2,
-        dashRange:4.8,
-        dashScale:2.92,
-        dashCooldownScaleMin:0.76,
-        dashCooldownScaleMax:1.0,
+        inwardBiasForce:6.1,
+        dashRange:3.8,
+        dashScale:1.85,
+        dashCooldownScaleMin:1.05,
+        dashCooldownScaleMax:1.4,
         useSkillOnBurstReady:true
       }
     }

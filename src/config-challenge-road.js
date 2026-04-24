@@ -22,14 +22,14 @@
       chapterId:'qualifier',
       chapterLabel:'QUALIFIER',
       tier:'normal',
-      arenaIndex:1,
-      enemyPresetId:'trick_standard',
-      modifierId:'burstRush',
+      arenaIndex:6,
+      enemyPresetId:'armor_standard',
+      modifierId:'standard',
       reward:18,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'HEART CUT',
-      previewDesc:'Angle pressure on the heart bowl punishes careless launches.'
+      previewLabel:'HEART ENTRY',
+      previewDesc:'A protected heart-entry arena teaches the lane first, while a steadier armor rival keeps the lesson readable.'
     },
     {
       id:'node-3',
@@ -37,29 +37,29 @@
       chapterId:'qualifier',
       chapterLabel:'QUALIFIER',
       tier:'boss',
-      arenaIndex:0,
+      arenaIndex:8,
       enemyPresetId:'impact_standard',
-      modifierId:'overclock',
+      modifierId:'burstRush',
       reward:24,
       firstClearBonus:6,
       checkpointOnClear:true,
       previewLabel:'CHAPTER BOSS',
-      previewDesc:'First checkpoint duel. Strong burst tempo and direct collision pressure.'
+      previewDesc:'First checkpoint duel. The player starts closer to signature tempo while the rival still applies direct collision pressure.'
     },
     {
       id:'node-4',
-      name:'Guard Break',
+      name:'Hex Gate',
       chapterId:'arena_circuit',
       chapterLabel:'ARENA CIRCUIT',
       tier:'normal',
-      arenaIndex:1,
-      enemyPresetId:'armor_ram',
-      modifierId:'ironwall',
+      arenaIndex:2,
+      enemyPresetId:'trick_hex_intro',
+      modifierId:'heavyFloor',
       reward:28,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'UNLOCK MATCH',
-      previewDesc:'A harder armor variant uses the heart bowl to force heavier line commitment.'
+      previewLabel:'HEX UNLOCK',
+      previewDesc:'A protected hex-entry duel introduces the new wall rhythm before later nodes ask for speed or burst routing.'
     },
     {
       id:'node-5',
@@ -83,7 +83,7 @@
       chapterLabel:'ARENA CIRCUIT',
       tier:'boss',
       arenaIndex:2,
-      enemyPresetId:'impact_blitz',
+      enemyPresetId:'impact_floor_press',
       modifierId:'launchSurge',
       reward:38,
       firstClearBonus:8,
@@ -98,13 +98,13 @@
       chapterLabel:'RIVAL SERIES',
       tier:'normal',
       arenaIndex:0,
-      enemyPresetId:'armor_bastion',
+      enemyPresetId:'armor_ram',
       modifierId:'heavyFloor',
       reward:42,
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'CENTER LOCK',
-      previewDesc:'A bastion armor preset and heavier footing force you to win the circle before the duel slows down.'
+      previewDesc:'A heavier armor ram finally asks for committed center control after the player has cleared two checkpoints.'
     },
     {
       id:'node-8',

@@ -8,6 +8,14 @@
     const roadRanks = options.roadRanks || [];
     const economy = options.economy || {};
     const rewardService = options.rewardService || null;
+    const isRewardPlacementAvailable = typeof options.isRewardPlacementAvailable === 'function'
+      ? options.isRewardPlacementAvailable
+      : function(placement){
+        if(!rewardService || typeof rewardService.isRewardAvailable !== 'function'){
+          return { available:false, reason:'provider_disabled' };
+        }
+        return rewardService.isRewardAvailable(placement) || { available:false, reason:'provider_unavailable' };
+      };
     const shareService = options.shareService || null;
     const analyticsService = options.analyticsService || null;
     const getScore = typeof options.getScore === 'function' ? options.getScore : function(){ return [0,0]; };
@@ -38,6 +46,7 @@
     const updateModeUI = typeof options.updateModeUI === 'function' ? options.updateModeUI : function(){};
     const syncDebugPanel = typeof options.syncDebugPanel === 'function' ? options.syncDebugPanel : function(){};
     const initRound = typeof options.initRound === 'function' ? options.initRound : function(){};
+    const setGameState = typeof options.setGameState === 'function' ? options.setGameState : function(){};
     const getChallengeContinueUsed = typeof options.getChallengeContinueUsed === 'function' ? options.getChallengeContinueUsed : function(){ return false; };
     const setChallengeContinueUsed = typeof options.setChallengeContinueUsed === 'function' ? options.setChallengeContinueUsed : function(){};
     const getRoundRewardGranted = typeof options.getRoundRewardGranted === 'function' ? options.getRoundRewardGranted : function(){ return false; };
@@ -139,6 +148,15 @@
 
     function getBaseReward(){
       return getRewardParts().total;
+    }
+
+    function shouldGrantArenaUnlock(arena){
+      return !!(
+        arena
+        && arena.id
+        && arena.hiddenFromQuick !== true
+        && arena.challengeOnly !== true
+      );
     }
 
     function createResultContextId(mode){
@@ -384,7 +402,7 @@
       }
     }
 
-    function updateResultActionHierarchy(context, continueVisible){
+    function updateResultActionHierarchy(context, continueVisible, doubleRewardVisible){
       const replayButton = document.getElementById('btn-replay');
       const swapButton = document.getElementById('btn-swap-rematch');
       const rewardButton = document.getElementById('btn-double-reward');
@@ -403,7 +421,7 @@
       if(context.mode === 'challenge' && context.result === 'loss' && continueVisible){
         setResultActionPriority(continueButton, 'primary', 1, true);
         setResultActionPriority(swapButton, 'recovery', 2, true);
-        setResultActionPriority(rewardButton, 'optional', 3, true);
+        setResultActionPriority(rewardButton, 'optional', 3, doubleRewardVisible);
         setResultActionPriority(replayButton, 'utility', 4, true);
         setResultActionPriority(shareButton, 'utility', 5, true);
         return;
@@ -412,13 +430,13 @@
         setResultActionPriority(continueButton, 'primary', 1, false);
         setResultActionPriority(swapButton, 'primary', 1, true);
         setResultActionPriority(replayButton, 'support', 2, true);
-        setResultActionPriority(rewardButton, 'optional', 3, true);
+        setResultActionPriority(rewardButton, 'optional', 3, doubleRewardVisible);
         setResultActionPriority(shareButton, 'utility', 4, true);
         return;
       }
       setResultActionPriority(continueButton, 'primary', 1, false);
       setResultActionPriority(replayButton, 'primary', 1, true);
-      setResultActionPriority(rewardButton, 'optional', 2, true);
+      setResultActionPriority(rewardButton, 'optional', 2, doubleRewardVisible);
       setResultActionPriority(swapButton, 'support', 3, true);
       setResultActionPriority(shareButton, 'utility', 4, true);
     }
@@ -475,7 +493,7 @@
       const shouldTrackArenaUnlock = getCurrentMode()==='challenge'
         && score[0] >= 2
         && currentArena
-        && currentArena.id
+        && shouldGrantArenaUnlock(currentArena)
         && !unlockedArenaIdsBefore.includes(currentArena.id);
       const shouldTrackTopUnlock = getCurrentMode()==='challenge'
         && score[0] >= 2
@@ -523,8 +541,9 @@
           draft.unlocks = draft.unlocks || { arenas:[], tops:[] };
           draft.unlocks.arenas = Array.isArray(draft.unlocks.arenas) ? draft.unlocks.arenas : [];
           draft.unlocks.tops = Array.isArray(draft.unlocks.tops) ? draft.unlocks.tops : [];
-          const currentArenaId = getArenaConfig(getCurrentArena()).id;
-          if(!draft.unlocks.arenas.includes(currentArenaId)){
+          const currentArenaConfig = getArenaConfig(getCurrentArena());
+          const currentArenaId = currentArenaConfig.id;
+          if(shouldGrantArenaUnlock(currentArenaConfig) && !draft.unlocks.arenas.includes(currentArenaId)){
             draft.unlocks.arenas.push(currentArenaId);
           }
           if(unlockTop && !draft.unlocks.tops.includes(unlockTop.id)){
@@ -660,7 +679,12 @@
         +' - '+(uiText.resultReasonLabel || 'Finish')+' '+getEndReasonLabel(resultContext.endReason);
       document.getElementById('mt-breakdown').textContent = buildBreakdownText(resultContext)+' - '+(uiText.resultRewardLabel || 'Reward')+' '+reward+' '+uiText.currencyLabel;
       document.getElementById('mt-next').textContent = buildNextText(resultContext);
-      const continueVisible = currentMode==='challenge' && !won && isChallengeContinueEnabled() && !getChallengeContinueUsed();
+      const doubleRewardVisible = !getDoubleRewardUsed() && isRewardPlacementAvailable('double_reward').available === true;
+      const continueVisible = currentMode==='challenge'
+        && !won
+        && isChallengeContinueEnabled()
+        && !getChallengeContinueUsed()
+        && isRewardPlacementAvailable('continue_once').available === true;
       const guidance = document.getElementById('mt-guidance');
       if(guidance){
         guidance.textContent = getMatchGuidance(resultContext, continueVisible);
@@ -670,7 +694,7 @@
         msgTxt.style.opacity = '0';
         msgTxt.textContent = '';
       }
-      updateResultActionHierarchy(resultContext, continueVisible);
+      updateResultActionHierarchy(resultContext, continueVisible, doubleRewardVisible);
       document.getElementById('ov-match').classList.remove('hide');
       updateCurrencyUI();
 
@@ -729,7 +753,7 @@
             rewardRankBonus:resultContext.rewardParts.rankBonusAmount
           });
         }
-        if(!getDoubleRewardUsed()){
+        if(doubleRewardVisible){
           analyticsService.track('reward_offer_show',{
             placement:'double_reward',
             source:'match_result',
@@ -783,11 +807,18 @@
       document.getElementById('btn-continue').style.display = 'none';
       if(resetOptions.skipInitRound !== true){
         initRound();
+      }else{
+        setGameState('title');
       }
     }
 
     function handleDoubleReward(){
-      if(getDoubleRewardUsed() || !rewardService || typeof rewardService.request !== 'function') return;
+      if(
+        getDoubleRewardUsed()
+        || isRewardPlacementAvailable('double_reward').available !== true
+        || !rewardService
+        || typeof rewardService.request !== 'function'
+      ) return;
       const resultContext = getResultContext();
       rewardService.request('double_reward',{
         mode:resultContext.mode,
@@ -815,7 +846,15 @@
 
     function handleContinueReward(){
       const score = getScore();
-      if(getCurrentMode()!=='challenge' || !isChallengeContinueEnabled() || getChallengeContinueUsed() || score[0] >= 2 || !rewardService || typeof rewardService.request !== 'function') return;
+      if(
+        getCurrentMode()!=='challenge'
+        || !isChallengeContinueEnabled()
+        || getChallengeContinueUsed()
+        || score[0] >= 2
+        || isRewardPlacementAvailable('continue_once').available !== true
+        || !rewardService
+        || typeof rewardService.request !== 'function'
+      ) return;
       const resultContext = getResultContext();
       rewardService.request('continue_once',{
         nodeIndex:getActiveChallengeIndex(),

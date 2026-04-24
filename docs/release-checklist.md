@@ -5,6 +5,7 @@ Use this before treating the current static build as a deployable iteration.
 Companion reference:
 - `docs/manual-test-batches.md`
 - `docs/host-validation-plan.md`
+- `docs/channel-release-preflight-checklist-2026-04-24.md`
 
 ## Current Release Interpretation
 - The repository is currently suitable for:
