@@ -503,6 +503,10 @@ messageUiTools = createMessageUiTools ? createMessageUiTools() : null;
 battleCommentaryTools = createBattleCommentaryTools ? createBattleCommentaryTools({
   uiText:UI_TEXT
 }) : null;
+if(battleCommentaryTools && debugService && debugService.enabled){
+  root.debug = root.debug || {};
+  root.debug.battleCommentaryTools = battleCommentaryTools;
+}
 
 function mkSpotTex(bgCol,dotCol,patId){
   return topRenderTools ? topRenderTools.mkSpotTex(bgCol,dotCol,patId) : null;

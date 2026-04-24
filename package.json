@@ -1,6 +1,6 @@
 {
   "name": "spin-clash",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Static single-player spinning-top arena battle prototype refactor.",
   "scripts": {
     "serve": "node scripts/serve-local.js",
@@ -46,6 +46,7 @@
     "check:naming": "node scripts/check-content-naming.js",
     "check:ja-ruby": "node scripts/check-ja-ruby-rendering.js",
     "check:battleperf": "node scripts/check-battle-performance.js",
+    "check:battleui": "node scripts/check-battle-ui-overlap.js",
     "check:roster": "node scripts/check-roster-shell.js",
     "check:encounter": "node scripts/check-encounter-pack.js",
     "check:workshop": "node scripts/check-workshop-flow.js",

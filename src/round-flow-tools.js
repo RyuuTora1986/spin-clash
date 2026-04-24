@@ -374,6 +374,8 @@
       timerEl.textContent=String(Math.ceil(getCurrentRoundTimer()));
       timerEl.classList.remove('urgent');
       document.getElementById('hint-bar').textContent=uiText.hintAim || 'Drag to aim, then release to launch.';
+      const actSwap = document.getElementById('act-swap');
+      if(actSwap) actSwap.classList.add('visible');
       updateHUD();
       refreshPips();
       showMsg((uiText.roundLabel || 'ROUND')+' '+getRound(),1.5,'round');
@@ -413,6 +415,10 @@
         restart:true,
         fadeMs:getRound() > 1 ? 180 : 240
       });
+      const actSwap = document.getElementById('act-swap');
+      if(actSwap) actSwap.classList.remove('visible');
+      const battleIntro = document.getElementById('battle-intro');
+      if(battleIntro) battleIntro.classList.add('hide');
       document.getElementById('hint-bar').textContent=uiText.hintActive || 'SPACE to dash | Q to use your burst skill.';
       const tp = getTp();
       const te = getTe();

@@ -347,22 +347,22 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 #msg-txt.tone-impact{font-size:26px;letter-spacing:5px;text-shadow:0 0 30px rgba(255,110,40,.58)}
 .battle-commentary{
   position:fixed;
-  top:128px;
+  top:112px;
   left:50%;
   transform:translateX(-50%);
   width:min(760px,calc(100vw - 34px));
-  height:164px;
+  height:116px;
   display:flex;
-  flex-direction:column-reverse;
+  flex-direction:column;
   align-items:center;
   justify-content:flex-start;
-  gap:14px;
+  gap:10px;
   opacity:1;
   visibility:visible;
   transition:opacity .18s ease, transform .18s ease;
   z-index:141;
   pointer-events:none;
-  overflow:visible;
+  overflow:hidden;
 }
 .battle-commentary.hide{
   opacity:0;
@@ -373,6 +373,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   position:relative;
   bottom:auto;
   left:auto!important;
+  flex:0 0 auto;
   display:inline-flex;
   align-items:center;
   gap:10px;
@@ -389,7 +390,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   text-shadow:0 0 12px rgba(0,0,0,.22);
   white-space:nowrap;
   opacity:0;
-  transform:translate3d(var(--commentary-drift,0px),18px,0) scale(.94);
+  transform:translate3d(var(--commentary-drift,0px),8px,0) scale(.96);
   animation:commentaryFloat var(--commentary-duration,2.45s) cubic-bezier(.2,.78,.2,1) forwards;
 }
 .battle-commentary-badge{
@@ -439,7 +440,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 @keyframes commentaryFloat{
   0%{
     opacity:0;
-    transform:translate3d(var(--commentary-drift,0px),18px,0) scale(.94);
+    transform:translate3d(var(--commentary-drift,0px),8px,0) scale(.96);
   }
   12%{
     opacity:1;
@@ -447,16 +448,17 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
   }
   72%{
     opacity:1;
-    transform:translate3d(var(--commentary-drift,0px),-18px,0) scale(1);
+    transform:translate3d(var(--commentary-drift,0px),0,0) scale(1);
   }
   100%{
     opacity:0;
-    transform:translate3d(var(--commentary-drift,0px),var(--commentary-rise,-48px),0) scale(.98);
+    transform:translate3d(var(--commentary-drift,0px),var(--commentary-rise,-14px),0) scale(.98);
   }
 }
 #hint-bar{
   position:absolute;
-  bottom:max(102px,calc(env(safe-area-inset-bottom,16px)+88px));
+  top:auto;
+  bottom:max(102px,calc(env(safe-area-inset-bottom,16px) + 88px));
   left:50%;transform:translateX(-50%);
   width:min(420px,88vw);
   padding:10px 14px;
@@ -1973,7 +1975,7 @@ body{background:#000;overflow:hidden;font-family:var(--font-body);
 
 .battle-intro{
   position:fixed;
-  bottom:max(142px,calc(env(safe-area-inset-bottom,16px) + 126px));
+  bottom:max(204px,calc(env(safe-area-inset-bottom,16px) + 188px));
   left:50%;
   transform:translateX(-50%);
   z-index:55;
@@ -2606,16 +2608,17 @@ body.round-result-takeover #msg-txt{
   .sk-btn .sk-key{display:none}
   .sk-btn .sk-state{grid-column:2 / 4;font-size:6.5px;letter-spacing:.9px}
   #hint-bar{
-    bottom:max(78px,calc(env(safe-area-inset-bottom,12px)+64px));
+    top:auto;
+    bottom:max(78px,calc(env(safe-area-inset-bottom,12px) + 64px));
     width:min(88vw,320px);
     font-size:8.7px;
     line-height:1.35;
   }
   .battle-commentary{
-    top:max(126px,calc(env(safe-area-inset-top,0px) + 116px));
+    top:max(188px,calc(env(safe-area-inset-top,0px) + 178px));
     width:min(calc(100vw - 20px),560px);
-    height:154px;
-    gap:10px;
+    height:92px;
+    gap:8px;
   }
   .battle-commentary-item{
     max-width:min(82vw,328px);
@@ -2767,7 +2770,7 @@ body.round-result-takeover #msg-txt{
     border-radius:999px;
   }
   .battle-intro{
-    bottom:max(132px,calc(env(safe-area-inset-bottom,16px) + 118px));
+    bottom:max(208px,calc(env(safe-area-inset-bottom,16px) + 194px));
   }
   .locale-switcher{width:100%}
   .locale-btn{flex:1 1 0;min-width:0}
@@ -2849,7 +2852,7 @@ body.round-result-takeover #msg-txt{
   }
 
   #msg-txt{
-    top:34%;
+    top:42%;
     max-width:min(92vw,420px);
   }
 
@@ -2905,7 +2908,7 @@ body.round-result-takeover #msg-txt{
     font-size:13px;
     line-height:1.65;
   }
-  .battle-intro{bottom:max(124px,calc(env(safe-area-inset-bottom,12px) + 110px))}
+  .battle-intro{bottom:max(208px,calc(env(safe-area-inset-bottom,12px) + 194px))}
 }
 
 
@@ -2938,15 +2941,22 @@ body.round-result-takeover #msg-txt{
     font-size:6.5px;
     letter-spacing:.8px;
   }
-  #hint-bar{bottom:max(64px,calc(env(safe-area-inset-bottom,6px)+54px));font-size:9px}
+  #hint-bar{top:auto;bottom:max(64px,calc(env(safe-area-inset-bottom,6px) + 54px));font-size:9px}
   .battle-commentary{
-    top:max(58px,calc(env(safe-area-inset-top,0px) + 52px));
-    width:min(calc(100vw - 16px),420px);
-    height:106px;
-    gap:8px;
+    top:max(78px,calc(env(safe-area-inset-top,0px) + 68px));
+    left:auto;
+    right:max(10px,env(safe-area-inset-right,10px));
+    transform:none;
+    width:min(238px,32vw);
+    height:84px;
+    align-items:flex-end;
+    gap:6px;
+  }
+  .battle-commentary.hide{
+    transform:translateY(-6px);
   }
   .battle-commentary-item{
-    max-width:min(68vw,250px);
+    max-width:100%;
     min-height:34px;
     padding:6px 10px 6px 8px;
     gap:6px;
@@ -2963,6 +2973,11 @@ body.round-result-takeover #msg-txt{
   .hud-hp-track{height:9px}
   #score-area{top:4px}
   #timer-txt{top:40px;font-size:19px}
+  #msg-txt{
+    top:43%;
+    max-width:min(320px,54vw);
+  }
+  .battle-intro{display:none!important}
 
   .ov{
     flex-direction:row;flex-wrap:wrap;gap:6px;

@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.3 - 2026-04-24
+
+### Summary
+- Shipped a battle UI overlap hotfix for the self-hosted web channel.
+
+### User-visible changes
+- Battle hint text now stays in the lower safe area instead of colliding with the round score or timer.
+- Floating battle commentary is capped and stacked more predictably so live callouts no longer cover each other.
+- Mobile portrait and low-height landscape battle layouts reserve clearer safe zones for HUD, commentary, messages, and skill controls.
+- The swap/loadout button now disappears after launch, and the opening plan card is hidden once combat starts to avoid covering active battle prompts.
+
+### Technical changes
+- Added a Playwright-based battle UI overlap audit that enters combat in desktop, portrait, and landscape viewports and fails on real UI rectangle collisions.
+- Exposed the battle commentary controller only in debug mode so the overlap audit can stress the production commentary path without shipping test-only controls.
+- Synced release-facing asset query params and build-version labels to `1.2.3`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run check:battleui`
+- `npm run verify:release`
+
 ## 1.2.2 - 2026-04-24
 
 ### Summary

@@ -39,6 +39,10 @@
       return [0.18, 0.5, 0.82];
     }
 
+    function getMaxActiveItems(){
+      return 2;
+    }
+
     function removeItem(node){
       if(!node) return;
       if(node.__removeTimer){
@@ -102,7 +106,7 @@
 
     function spawnMessage(entry){
       if(!host) return false;
-      if(activeItems.length >= 3){
+      while(activeItems.length >= getMaxActiveItems()){
         removeItem(activeItems[0]);
       }
       const now = (window.performance && typeof window.performance.now === 'function')
@@ -111,10 +115,10 @@
       const lane = pickLane(now);
       const item = document.createElement('div');
       const durationMs = Math.max(1600, Math.round((entry.duration || 2.5) * 1000));
-      const accentDrift = Math.round((Math.random() * 28) - 14);
-      const finalRise = entry.tone === 'finish' ? -58 : entry.tone === 'alert' ? -52 : -48;
+      const laneDrift = Math.round((lane.fraction - 0.5) * 22);
+      const accentDrift = laneDrift + Math.round((Math.random() * 8) - 4);
+      const finalRise = entry.tone === 'finish' ? -18 : entry.tone === 'alert' ? -16 : -14;
       item.className = 'battle-commentary-item tone-' + (entry.tone || 'normal');
-      item.style.left = Math.round(lane.fraction * 1000) / 10 + '%';
       item.style.setProperty('--commentary-drift', accentDrift + 'px');
       item.style.setProperty('--commentary-rise', finalRise + 'px');
       item.style.setProperty('--commentary-duration', (durationMs / 1000).toFixed(2) + 's');
