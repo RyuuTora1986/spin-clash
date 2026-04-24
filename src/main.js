@@ -9,18 +9,33 @@ function initAudioSafely(){
 }
 
 function startMusic(options){
-  if(runtimeAudioTools) runtimeAudioTools.startMusic(options);
+  if(runtimeAudioTools) runtimeAudioTools.startMusic(enrichMusicContext(options));
 }
 function stopMusic(options){
   if(runtimeAudioTools) runtimeAudioTools.stopMusic(options);
 }
+function enrichMusicContext(options){
+  const settings = Object.assign({}, options || {});
+  if(settings.scene !== 'battle') return settings;
+  settings.round = typeof settings.round === 'number' ? settings.round : round;
+  settings.mode = settings.mode || currentMode;
+  if(currentMode === 'challenge'){
+    const node = getCurrentChallengeNode();
+    settings.challengeNodeIndex = activeChallengeIndex;
+    settings.challengeNodeId = node && node.id ? node.id : null;
+  }else{
+    const arenaConfig = getArenaConfig(currentArena);
+    settings.arenaId = arenaConfig && arenaConfig.id ? arenaConfig.id : null;
+  }
+  return settings;
+}
 function primeBattleMusicForLaunch(){
   initAudioSafely();
   if(runtimeAudioTools && typeof runtimeAudioTools.primeMusicForContext === 'function'){
-    runtimeAudioTools.primeMusicForContext({
+    runtimeAudioTools.primeMusicForContext(enrichMusicContext({
       scene:'battle',
       round:round
-    });
+    }));
   }
 }
 function cancelPrimedBattleMusic(){
@@ -725,23 +740,24 @@ function syncMusicState(){
     startMusic({
       scene:'battle',
       round:round,
-      fadeMs:220
+      mode:currentMode,
+      fadeMs:420
     });
     return;
   }
   if(gameState === 'prepare'){
-    stopMusic({ fadeMs:220 });
+    stopMusic({ fadeMs:360 });
     return;
   }
   if(uiRoute === 'home' || uiRoute === 'quick' || uiRoute === 'path' || uiRoute === 'workshop' || uiRoute === 'settings' || uiRoute === 'info'){
     startMusic({
       scene:'menu',
       route:uiRoute,
-      fadeMs:320
+      fadeMs:520
     });
     return;
   }
-  stopMusic({ fadeMs:220 });
+  stopMusic({ fadeMs:360 });
 }
 let audioGesturePrimed = false;
 function primeAudioFromInteraction(){

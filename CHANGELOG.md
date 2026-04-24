@@ -1,5 +1,35 @@
 # Changelog
 
+## 1.2.6 - 2026-04-24
+
+### Summary
+- Removed heart arenas from Championship Path and smoothed battle music transitions.
+
+### User-visible changes
+- Championship Path no longer sends players into heart-shaped arenas; former heart nodes now use the base round arena.
+- The affected nodes were retuned after the arena swap so they do not turn into new spin-drain or ring-out blockers.
+- Battle music fades now use a smoother curve and longer transitions.
+- Challenge-node battle music is now locked per node, so best-of-3 rounds inside one node no longer rotate to a different track each round.
+
+### Technical changes
+- Added a config gate that fails release checks if any Championship Path node references a heart arena.
+- Added `roundRelief` as a dedicated safety modifier for the round-arena replacement nodes.
+- Kept the required `impact_blitz` encounter in the final node while moving it to the safer round-arena setup.
+- Added a battle-music policy assertion covering node-locked BGM selection.
+- Made the Championship Path probe use `domcontentloaded` plus game-ready checks instead of relying on fragile page network-idle timing.
+- Synced release-facing asset query params and build-version labels to `1.2.6`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run check:config`
+- `npm run check:localization`
+- `npm run check:roundflow`
+- `npm run check:matchflow`
+- `npm run check:battlemusic`
+- `npm run verify:channels`
+- `npm run verify:release`
+- Targeted local path probe: `node-2,node-8,node-10` with `baseline-samples=2`, latest report `output/championship-path-balance-probe-2026-04-24T12-54-15/report.md`
+
 ## 1.2.5 - 2026-04-24
 
 ### Summary

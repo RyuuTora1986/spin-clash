@@ -65,6 +65,54 @@ async function getRuntimeState(page) {
   });
 }
 
+async function assertChallengeNodeMusicPolicy(serverUrl) {
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 720 }
+  });
+  const page = await context.newPage();
+  try {
+    await page.goto(serverUrl, { waitUntil: 'networkidle', timeout: 60000 });
+    await waitForPageReady(page);
+    const policy = await page.evaluate(() => {
+      const audioTools = window.SpinClash.debug.runtimeAudioTools;
+      const sameNode = [1, 2, 3].map((round) => {
+        const track = audioTools.resolveMusicDebugTrack({
+          scene: 'battle',
+          mode: 'challenge',
+          challengeNodeIndex: 7,
+          challengeNodeId: 'node-8',
+          round
+        });
+        return track ? track.id : null;
+      });
+      const nextNode = audioTools.resolveMusicDebugTrack({
+        scene: 'battle',
+        mode: 'challenge',
+        challengeNodeIndex: 8,
+        challengeNodeId: 'node-9',
+        round: 1
+      });
+      const quick = audioTools.resolveMusicDebugTrack({
+        scene: 'battle',
+        mode: 'quick',
+        round: 3
+      });
+      return {
+        sameNode,
+        nextNode: nextNode ? nextNode.id : null,
+        quick: quick ? quick.id : null
+      };
+    });
+    assert.strictEqual(new Set(policy.sameNode).size, 1, `Expected one challenge node to keep one battle track, got ${JSON.stringify(policy)}`);
+    assert.notStrictEqual(policy.sameNode[0], policy.nextNode, `Expected adjacent challenge nodes to be allowed different tracks, got ${JSON.stringify(policy)}`);
+    assert.strictEqual(policy.quick, 'battle_a', `Expected quick battle default track to remain battle_a, got ${JSON.stringify(policy)}`);
+  } finally {
+    await context.close();
+    await browser.close();
+  }
+}
+
 function assertBattleMusicStarted(payload, label) {
   assert(payload.state.mode === 'active', `${label}: expected active battle state, got ${payload.state.mode}.`);
   const music = payload.music;
@@ -129,6 +177,8 @@ async function main() {
       blocked.music.proceduralActive === true,
       `Expected blocked external playback to fall back to procedural battle music, got ${JSON.stringify(blocked.music)}`
     );
+
+    await assertChallengeNodeMusicPolicy(server.debugUrl);
   } finally {
     await server.close();
   }

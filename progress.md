@@ -3099,3 +3099,43 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical assessment:
   - this is a core gameplay/UI improvement and has already propagated through the channel build verification path
   - automated screenshots here are useful debugging evidence, but final visual acceptance should still be based on the user-visible browser window if polish concerns remain
+
+2026-04-24 Championship Path heart-arena removal and node-locked music pass
+- Context:
+  - the user decided that heart-shaped arenas still create too much structured-progression risk and asked to remove them from Championship Path instead of continuing to tune them
+  - the user also reported battle music crossfades as too abrupt and specifically required that a single Championship Path node must not rotate battle tracks across its best-of-3 rounds
+- Main files changed:
+  - `src/config-challenge-road.js`
+  - `src/config-modifiers.js`
+  - `src/runtime-audio-tools.js`
+  - `src/main.js`
+  - `src/round-flow-tools.js`
+  - `scripts/check-config.js`
+  - `scripts/check-battle-music-start.js`
+  - `scripts/probe-championship-path-balance.js`
+  - `docs/championship-path-macro-balance-audit-2026-04-24.md`
+- Main outcomes:
+  - former Championship Path heart nodes now use `circle_bowl`
+  - `check-config` now fails if any Championship Path node references a heart arena
+  - added `roundRelief` as a dedicated safety modifier for the round-arena replacement nodes
+  - final replacement-node setup:
+    - `node-2`: `circle_bowl` / `armor_bastion` / `roundRelief`
+    - `node-8`: `circle_bowl` / `impact_standard` / `roundRelief`
+    - `node-10`: `circle_bowl` / `impact_blitz` / `roundRelief`
+  - battle BGM selection no longer depends on round number for Challenge Path; it is deterministic per challenge node
+  - external BGM fades now use a smoother eased fade curve and longer transition windows
+  - the path probe no longer waits on fragile browser `networkidle`; it now uses DOM load plus game-ready checks
+- Verification:
+  - `npm run check:config`
+  - `npm run check:localization`
+  - `npm run check:roundflow`
+  - `npm run check:matchflow`
+  - `npm run check:battlemusic`
+  - targeted local path probe:
+    - `output/championship-path-balance-probe-2026-04-24T12-54-15/report.md`
+    - tested `node-2`, `node-8`, `node-10` with `baseline-samples=2`
+    - all three reported `circle_bowl`
+    - `node-2` and `node-8` classified `stable`; `node-10` classified `acceptable_boss_pressure` with 50% center win rate
+- Practical assessment:
+  - this is now a deliberate progression-path policy, not a one-off config edit
+  - heart arenas can remain available elsewhere, but they should not return to Championship Path until a separate arena redesign/playtest pass proves they are safe

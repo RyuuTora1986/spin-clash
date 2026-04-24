@@ -186,6 +186,10 @@
       audio.__fadeToken = (audio.__fadeToken || 0) + 1;
     }
 
+    function easeMusicFade(t){
+      return 0.5 - Math.cos(Math.PI * Math.max(0, Math.min(1, t))) / 2;
+    }
+
     function fadeMusicVolume(audio,targetVolume,durationMs,onDone){
       if(!audio){
         if(onDone) onDone();
@@ -206,7 +210,8 @@
         if(audio.__fadeToken !== fadeToken) return;
         const elapsed = getNowMs() - startedAt;
         const t = Math.max(0, Math.min(1, elapsed / fadeDuration));
-        audio.volume = fromVolume + (toVolume - fromVolume) * t;
+        const eased = easeMusicFade(t);
+        audio.volume = fromVolume + (toVolume - fromVolume) * eased;
         if(t >= 1){
           audio.volume = toVolume;
           if(onDone) onDone();
@@ -265,10 +270,41 @@
       }
     }
 
-    function resolveBattleTrack(roundNumber){
-      const safeRound = Math.max(1, parseInt(roundNumber, 10) || 1);
-      const trackIndex = Math.max(0, Math.min(MUSIC_TRACKS.battle.length - 1, safeRound - 1));
-      return MUSIC_TRACKS.battle[trackIndex] || null;
+    function normalizeTrackIndex(index){
+      const trackCount = MUSIC_TRACKS.battle.length;
+      if(trackCount <= 0) return 0;
+      const rawIndex = parseInt(index, 10);
+      if(!Number.isFinite(rawIndex)) return 0;
+      return ((rawIndex % trackCount) + trackCount) % trackCount;
+    }
+
+    function hashText(value){
+      const text = String(value || '');
+      let hash = 0;
+      for(let index = 0; index < text.length; index += 1){
+        hash = ((hash << 5) - hash + text.charCodeAt(index)) | 0;
+      }
+      return Math.abs(hash);
+    }
+
+    function findBattleTrackById(trackId){
+      if(!trackId) return null;
+      return MUSIC_TRACKS.battle.find(function(track){
+        return track && track.id === trackId;
+      }) || null;
+    }
+
+    function resolveBattleTrack(context){
+      const settings = context && typeof context === 'object' ? context : {};
+      const explicitTrack = findBattleTrackById(settings.battleTrackId || settings.trackId);
+      if(explicitTrack) return explicitTrack;
+      if(settings.mode === 'challenge' || settings.challengeNodeId || settings.challengeNodeIndex != null){
+        if(settings.challengeNodeIndex != null){
+          return MUSIC_TRACKS.battle[normalizeTrackIndex(settings.challengeNodeIndex)] || null;
+        }
+        return MUSIC_TRACKS.battle[normalizeTrackIndex(hashText(settings.challengeNodeId))] || null;
+      }
+      return MUSIC_TRACKS.battle[0] || null;
     }
 
     function resolveExternalTrack(context){
@@ -277,14 +313,14 @@
         return MUSIC_TRACKS.menu;
       }
       if(settings.scene === 'battle'){
-        return resolveBattleTrack(settings.round);
+        return resolveBattleTrack(settings);
       }
       return null;
     }
 
     function clearExternalMusic(options){
       const stopOptions = options || {};
-      const fadeMs = typeof stopOptions.fadeMs === 'number' ? stopOptions.fadeMs : 220;
+      const fadeMs = typeof stopOptions.fadeMs === 'number' ? stopOptions.fadeMs : 420;
       const immediate = !!stopOptions.immediate;
       if(!_currentMusicEl){
         _currentMusicKey = '';
@@ -337,7 +373,7 @@
         return false;
       }
       const settings = options || {};
-      const fadeMs = typeof settings.fadeMs === 'number' ? settings.fadeMs : 320;
+      const fadeMs = typeof settings.fadeMs === 'number' ? settings.fadeMs : 520;
       const restart = !!settings.restart;
       const targetVolume = Math.max(0, Math.min(1, settings.volume != null ? settings.volume : (track.volume || 0.18)));
       stopProceduralMusic();
@@ -372,6 +408,17 @@
         });
       }
       return true;
+    }
+
+    function resolveMusicDebugTrack(context){
+      const track = resolveExternalTrack(context || {});
+      return track
+        ? {
+          id:track.id,
+          src:track.src,
+          volume:track.volume
+        }
+        : null;
     }
 
     function getMusicDebugState(){
@@ -903,6 +950,7 @@
       resolveSignatureAudioStyle,
       primeMusicForContext,
       clearPrimedMusic,
+      resolveMusicDebugTrack,
       startMusic,
       stopMusic,
       sfxCollide,

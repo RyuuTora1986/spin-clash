@@ -599,7 +599,7 @@ async function main() {
   });
 
   try {
-    await page.goto(args.url, { waitUntil: 'networkidle', timeout: 60000 });
+    await page.goto(args.url, { waitUntil: 'domcontentloaded', timeout: 60000 });
     await waitFor(
       () => page.evaluate(() => ({
         hasUI: !!window.__spinClashUI,
@@ -616,7 +616,7 @@ async function main() {
         sessionStorage.clear();
       } catch (error) {}
     });
-    await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 60000 });
 
     await waitFor(
       () => page.evaluate(() => ({

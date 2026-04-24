@@ -412,8 +412,8 @@
         scene:'battle',
         round:getRound(),
         mode:getCurrentMode(),
-        restart:true,
-        fadeMs:getRound() > 1 ? 180 : 240
+        restart:getRound() === 1,
+        fadeMs:getRound() > 1 ? 420 : 520
       });
       const actSwap = document.getElementById('act-swap');
       if(actSwap) actSwap.classList.remove('visible');

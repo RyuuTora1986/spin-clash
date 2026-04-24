@@ -18,18 +18,18 @@
     },
     {
       id:'node-2',
-      name:'Heart Cut',
+      name:'Center Entry',
       chapterId:'qualifier',
       chapterLabel:'QUALIFIER',
       tier:'normal',
-      arenaIndex:6,
-      enemyPresetId:'armor_standard',
-      modifierId:'standard',
+      arenaIndex:0,
+      enemyPresetId:'armor_bastion',
+      modifierId:'roundRelief',
       reward:18,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'HEART ENTRY',
-      previewDesc:'Use the wider heart entry to stay away from the outer curve and return toward center.'
+      previewLabel:'CENTER ENTRY',
+      previewDesc:'Use the round ring to learn a safer launch: aim back toward center before the first hit.'
     },
     {
       id:'node-3',
@@ -112,14 +112,14 @@
       chapterId:'rival_series',
       chapterLabel:'RIVAL SERIES',
       tier:'normal',
-      arenaIndex:1,
-      enemyPresetId:'trick_duelist',
-      modifierId:'suddenDeath',
+      arenaIndex:0,
+      enemyPresetId:'impact_standard',
+      modifierId:'roundRelief',
       reward:48,
       firstClearBonus:0,
       checkpointOnClear:false,
-      previewLabel:'KNIFE EDGE',
-      previewDesc:'Sudden death. Aim the first launch carefully because one bad edge hit can end the round.'
+      previewLabel:'BREAK LINE',
+      previewDesc:'Late round-ring duel. Keep away from the edge and use Burst after a stable hit.'
     },
     {
       id:'node-9',
@@ -142,14 +142,14 @@
       chapterId:'championship',
       chapterLabel:'CHAMPIONSHIP',
       tier:'final',
-      arenaIndex:1,
+      arenaIndex:0,
       enemyPresetId:'impact_blitz',
-      modifierId:'overclock',
+      modifierId:'roundRelief',
       reward:66,
       firstClearBonus:14,
       checkpointOnClear:false,
       previewLabel:'FINAL',
-      previewDesc:'Final match. The rival is fast; stay out of the edge lane and use Burst only after contact.'
+      previewDesc:'Final match in the round ring. The rival is fast; stay off the edge lane and use Burst only after contact.'
     }
   ];
 })();

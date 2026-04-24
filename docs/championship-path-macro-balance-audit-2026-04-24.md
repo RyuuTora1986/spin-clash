@@ -23,6 +23,41 @@ Target runtime:
 - Main probe top: starter `impact / Crimson Edge`
 - Probe harness: `scripts/probe-championship-path-balance.js`
 
+## 2026-04-24 Heart Arena Removal Update
+
+This update supersedes the earlier heart-variant recommendation for Championship Path.
+
+Current decision:
+- Championship Path should not use any `heart` arena until the heart arena family has a separate, human-validated design pass.
+- Former heart nodes now use the base round arena `circle_bowl`:
+  - `node-2` moved from `heart_bowl_intro` to `circle_bowl`
+  - `node-8` moved from `heart_bowl` to `circle_bowl`
+  - `node-10` moved from `heart_bowl` to `circle_bowl`
+- `scripts/check-config.js` now fails if any Championship Path node references a heart arena, so this rule is enforced during release verification.
+
+Follow-up tuning after the arena swap:
+- `node-2` now uses `armor_bastion` plus `roundRelief`.
+- `node-8` now uses `impact_standard` plus `roundRelief`.
+- `node-10` now uses the required final-boss `impact_blitz` plus `roundRelief`.
+- `roundRelief` is a player-facing safety modifier for round-arena replacements: it gives the player slightly more spin/burst room and lowers enemy attrition pressure.
+
+Latest local replacement-node probe:
+- Report: `output/championship-path-balance-probe-2026-04-24T12-54-15/report.md`
+- Tested nodes: `node-2`, `node-8`, `node-10`
+- Baseline samples: `2`
+- Runtime arenas: all three reported `circle_bowl`
+- Classification:
+  - `node-2`: `stable`
+  - `node-8`: `stable`
+  - `node-10`: `acceptable_boss_pressure`
+    - center win rate: `50%`
+    - main loss reason: `ringout:1`
+
+Reason:
+- The issue is player experience risk, not only numeric balance.
+- Repeated heart-arena fixes were consuming iteration time while still leaving an opener-fragility concern.
+- For the current launch goal, the cheaper and more reliable solution is to remove heart arenas from the structured progression path and keep them out until the arena itself is redesigned.
+
 ## 2026-04-24 Local Rebalance Update
 
 This update supersedes the raw "current path" findings below for the local workspace.

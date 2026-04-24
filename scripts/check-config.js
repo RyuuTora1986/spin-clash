@@ -203,6 +203,10 @@ function main() {
     if (typeof node.arenaIndex !== 'number' || !arenas[node.arenaIndex]) {
       fail(`challengeRoad node ${index} has invalid arenaIndex: ${node.arenaIndex}`);
     }
+    const nodeArena = arenas[node.arenaIndex] || null;
+    if (nodeArena && nodeArena.type === 'heart') {
+      fail(`challengeRoad node ${index} (${node.id || 'unknown'}) must not use heart arena ${nodeArena.id}`);
+    }
     if ('enemyTopId' in node) {
       fail(`challengeRoad node ${index} still uses legacy enemyTopId: ${node.enemyTopId}`);
     }
