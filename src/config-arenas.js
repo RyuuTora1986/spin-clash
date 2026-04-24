@@ -42,6 +42,10 @@
         scaleZ:1,
         pinch:0
       },
+      launchSlots:{
+        player:{ x:-2.55, z:0.62 },
+        enemy:{ x:2.55, z:0.62 }
+      },
       geometry:{
         bowlHeight:0.58,
         scratchBowlHeight:0.78,
@@ -141,6 +145,10 @@
         scaleX:1.08,
         scaleZ:0.92,
         pinch:0.22
+      },
+      launchSlots:{
+        player:{ x:-2.35, z:0.58 },
+        enemy:{ x:2.35, z:0.58 }
       },
       geometry:{
         bowlHeight:0.66,

@@ -1,5 +1,47 @@
 # Changelog
 
+## 1.2.7 - 2026-04-24
+
+### Summary
+- Fixed Road Rank progression, mobile home/quick layout issues, locked-top purchase entry, and heart-arena spawn safety.
+
+### User-visible changes
+- Rank II and Rank III now start from node 1 after unlock instead of inheriting Rank I node-10 progress.
+- Championship Path node dots are now clickable for replaying any unlocked node.
+- Locked showcase tops can be tapped: affordable shop tops open a confirm purchase flow, and shortfall/road-locked tops guide players to Championship Path.
+- Home's main CTA now consistently reads Championship Path / 冠军之路.
+- Quick Battle hides the old bottom top-card strip, removing the clipped card issue on phones.
+- The mobile home layout uses a shorter title/showcase composition so the first screen fits better on iPhone-class browsers.
+- Home top left/right controls are brighter and read as switch controls.
+- The footer copyright now uses `HAKUROKUDO K.K.`.
+- Heart quick-battle arenas now use explicit safe launch slots so enemies do not start outside the playable shape.
+
+### Technical changes
+- Added per-rank challenge progress via `challenge.rankProgress`, while preserving legacy Rank I fields for compatibility.
+- Updated reward, first-clear, node-selection, route-entry, shared-backend, and startup hydration logic to read the selected rank's progress.
+- Added regression coverage for rank unlock freshness, clickable route nodes, duplicate quick-top copy suppression, hidden quick top-card strip, legacy rank-progress migration, and heart spawn safety.
+- Synced release-facing asset query params and build-version labels to `1.2.7`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run check:storage`
+- `npm run check:roadrank`
+- `npm run check:shellpresentation`
+- `npm run check:arenas`
+- `npm run check:syntax`
+- `npm run check:loadout`
+- `npm run check:routes`
+- `npm run check:routeflow`
+- `npm run check:sharedbackend`
+- `npm run check:roundflow`
+- `npm run check:matchflow`
+- `npm run check:ui`
+- `npm run check:battleui`
+- `npm run check:battlemusic`
+- Mobile visual smoke at `output/visual-check-1.2.7/home-mobile-430x740-v2.png`
+- `npm run verify:release`
+- `npm run verify:channels`
+
 ## 1.2.6 - 2026-04-24
 
 ### Summary

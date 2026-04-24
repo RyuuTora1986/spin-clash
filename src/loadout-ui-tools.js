@@ -33,6 +33,7 @@
     const getMusicEnabled = typeof options.getMusicEnabled === 'function' ? options.getMusicEnabled : function(){ return true; };
     const getSfxEnabled = typeof options.getSfxEnabled === 'function' ? options.getSfxEnabled : function(){ return true; };
     const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
+    const setActiveChallengeIndex = typeof options.setActiveChallengeIndex === 'function' ? options.setActiveChallengeIndex : function(){};
     const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
     const setSelectedArenaIndex = typeof options.setSelectedArenaIndex === 'function' ? options.setSelectedArenaIndex : function(index){ return index; };
     const getPlayerTopId = typeof options.getPlayerTopId === 'function' ? options.getPlayerTopId : function(){ return 0; };
@@ -49,6 +50,24 @@
     const setSelectedRoadRankIndex = typeof options.setSelectedRoadRankIndex === 'function'
       ? options.setSelectedRoadRankIndex
       : function(index){ return index; };
+    const getRoadRankProgress = typeof options.getRoadRankProgress === 'function'
+      ? options.getRoadRankProgress
+      : function(){
+        const save = getSave();
+        const challenge = save.challenge || {};
+        return {
+          unlockedNodeIndex:challenge.unlockedNodeIndex || 0,
+          checkpointNodeIndex:challenge.checkpointNodeIndex || 0,
+          completedNodes:Array.isArray(challenge.completedNodes) ? challenge.completedNodes : [],
+          lastNodeIndex:typeof challenge.lastNodeIndex === 'number' ? challenge.lastNodeIndex : null
+        };
+      };
+    const getRoadRankProgressIndex = typeof options.getRoadRankProgressIndex === 'function'
+      ? options.getRoadRankProgressIndex
+      : function(index){
+        const progress = getRoadRankProgress(index);
+        return progress.unlockedNodeIndex || 0;
+      };
     const getInfoPage = typeof options.getInfoPage === 'function'
       ? options.getInfoPage
       : function(){ return 'about'; };
@@ -1083,9 +1102,15 @@
       const topActionState = getQuickTopActionState(state.top, topLocked);
       const topSourceLabel = getTopSourceLabel(state.top) || '';
       const topRequirement = getQuickTopRequirement(state.top, topLocked);
-      const topMetaLine = normalizeCompareText(topRequirement) === normalizeCompareText(topSourceLabel)
+      const topStatusText = topSourceLabel || (topLocked ? (uiText.lockedTop || 'LOCKED') : (uiText.quickTopReady || 'READY'));
+      const topMetaLine = normalizeCompareText(topRequirement) === normalizeCompareText(topStatusText)
         ? ''
         : topRequirement;
+      const topRequirementLine = [topStatusText, topMetaLine].some(function(value){
+        return normalizeCompareText(value) && normalizeCompareText(value) === normalizeCompareText(topLocked ? state.hint : topRequirement);
+      })
+        ? ''
+        : (topLocked ? state.hint : topRequirement);
       const prevButton = document.getElementById('btn-quick-arena-prev');
       const nextButton = document.getElementById('btn-quick-arena-next');
       const fightButton = document.getElementById('btn-fight');
@@ -1110,15 +1135,15 @@
 
       setText('quick-selected-top-kicker', uiText.quickTopTitle || 'DEPLOYED TOP');
       setEntityLabelHtml('quick-selected-top-name', state.top, 'TOP');
-      setText('quick-selected-top-status', topSourceLabel || (topLocked ? (uiText.lockedTop || 'LOCKED') : (uiText.quickTopReady || 'READY')));
+      setText('quick-selected-top-status', topStatusText);
       setText('quick-selected-top-source', topMetaLine);
-      setText('quick-selected-top-requirement', topLocked ? state.hint : topRequirement);
+      setText('quick-selected-top-requirement', topRequirementLine);
       setText('quick-selected-top-wallet', getQuickTopWalletText(state.top, topLocked));
       setText('quick-start-hint', state.hint);
       setText('btn-fight', state.buttonLabel);
       if(topActionButton){
         topActionButton.textContent = topActionState.label;
-        topActionButton.classList.toggle('hide', !topActionState.visible);
+        topActionButton.classList.toggle('hide', true);
         topActionButton.classList.toggle('is-path', topActionState.kind === 'path');
         topActionButton.classList.toggle('is-purchase', topActionState.kind === 'purchase');
       }
@@ -1184,6 +1209,9 @@
       if(stageShellEl){
         stageShellEl.classList.toggle('locked-preview', locked);
         stageShellEl.dataset.lockLabel = locked ? (uiText.homeTopLocked || uiText.lockedTop || 'LOCKED') : '';
+        stageShellEl.title = locked
+          ? getHomeTopLockHint(top)
+          : (uiText.homeTopUnlocked || 'UNLOCKED');
       }
       if(typeEl){
         typeEl.classList.toggle('is-hidden', hideDuplicateType);
@@ -1225,6 +1253,16 @@
       return getRoadRank(getSelectedRoadRankIndex()) || getRoadRank(0) || null;
     }
 
+    function getSelectedRankProgress(){
+      const progress = getRoadRankProgress(getSelectedRoadRankIndex()) || {};
+      return {
+        unlockedNodeIndex:Math.max(0, Math.min(progress.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1))),
+        checkpointNodeIndex:Math.max(0, Math.min(progress.checkpointNodeIndex || 0, Math.max(0, challengeRoad.length - 1))),
+        completedNodes:Array.isArray(progress.completedNodes) ? progress.completedNodes : [],
+        lastNodeIndex:typeof progress.lastNodeIndex === 'number' ? progress.lastNodeIndex : null
+      };
+    }
+
     function getSettingsToggleLabel(kind, enabled){
       return enabled
         ? (uiText.settingsToggleOn || 'ON')
@@ -1258,29 +1296,33 @@
     function updateChallengeRouteUI(){
       const container = document.getElementById('challenge-route-strip');
       if(!container) return;
-      const save = getSave();
-      const completedNodes = save.challenge && Array.isArray(save.challenge.completedNodes)
-        ? save.challenge.completedNodes
-        : [];
-      const unlockedNodeIndex = save.challenge ? save.challenge.unlockedNodeIndex || 0 : 0;
+      const rankProgress = getSelectedRankProgress();
+      const completedNodes = rankProgress.completedNodes;
+      const unlockedNodeIndex = rankProgress.unlockedNodeIndex;
       const activeIndex = getActiveChallengeIndex();
       container.innerHTML = challengeRoad.map(function(node, index){
         const classes = ['route-node'];
+        const locked = index > unlockedNodeIndex;
         if(index === activeIndex) classes.push('current');
         if(completedNodes.includes(index)) classes.push('cleared');
-        if(index > unlockedNodeIndex) classes.push('locked');
+        if(locked) classes.push('locked');
         if(node && node.tier === 'boss') classes.push('boss');
         if(node && node.tier === 'final') classes.push('final');
         if(node && node.checkpointOnClear) classes.push('checkpoint');
-        return '<span class="'+classes.join(' ')+'">'+escapeHtml(index + 1)+'</span>';
+        return [
+          '<button type="button" class="'+classes.join(' ')+'"',
+          ' onclick="return window.__spinClashInvoke(\'selectChallengeNode\','+index+')"',
+          locked ? ' disabled aria-disabled="true"' : '',
+          ' aria-label="'+escapeHtml(formatNodeLabel(index + 1))+'">',
+          escapeHtml(index + 1),
+          '</button>'
+        ].join('');
       }).join('');
     }
 
     function getTitleProgressText(){
-      const save = getSave();
-      const challenge = save.challenge || {};
       const rank = getSelectedRoadRank();
-      const nextNodeIndex = Math.min(challenge.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1));
+      const nextNodeIndex = Math.min(getRoadRankProgressIndex(getSelectedRoadRankIndex()) || 0, Math.max(0, challengeRoad.length - 1));
       const targetNode = challengeRoad[nextNodeIndex] || null;
       return [
         uiText.challengeMode || 'CHAMPIONSHIP PATH',
@@ -1375,7 +1417,7 @@
       if(quickBattlePanel) quickBattlePanel.classList.toggle('hide', !isQuickRoute);
       if(featuredPanel) featuredPanel.style.display = 'none';
       if(arenaPanel) arenaPanel.style.display = 'none';
-      if(cardsPanel) cardsPanel.style.display = isQuickRoute ? '' : 'none';
+      if(cardsPanel) cardsPanel.style.display = 'none';
       if(fightButton) fightButton.style.display = isQuickRoute ? '' : 'none';
       if(pathFightButton) pathFightButton.style.display = isPathRoute ? '' : 'none';
       if(settingsPanel) settingsPanel.classList.toggle('hide', !isSettingsRoute);
@@ -1705,6 +1747,7 @@
             || 'CHAMPIONSHIP PATH',
           1.2
         );
+        goPathRoute();
         refresh();
         return Promise.resolve(false);
       }
@@ -1801,6 +1844,7 @@
       const previousRank = getRoadRank(previousIndex);
       const nextIndex = setSelectedRoadRankIndex(index);
       const nextRank = getRoadRank(nextIndex);
+      setActiveChallengeIndex(getRoadRankProgressIndex(nextIndex));
       if(
         analyticsService
         && previousIndex !== nextIndex

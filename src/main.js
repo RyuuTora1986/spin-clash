@@ -695,6 +695,20 @@ const buyResearchLevel = progressionTools ? progressionTools.buyResearchLevel : 
 const getUnlockedRoadRankIndex = progressionTools ? progressionTools.getUnlockedRoadRankIndex : function(){ return 0; };
 const getSelectedRoadRankIndex = progressionTools ? progressionTools.getSelectedRoadRankIndex : function(){ return 0; };
 const setSelectedRoadRankIndex = progressionTools ? progressionTools.setSelectedRoadRankIndex : function(index){ return index; };
+const getRoadRankProgress = progressionTools ? progressionTools.getRoadRankProgress : function(){
+  const save = getSave();
+  const challenge = save.challenge || {};
+  return {
+    unlockedNodeIndex:challenge.unlockedNodeIndex || 0,
+    checkpointNodeIndex:challenge.checkpointNodeIndex || 0,
+    completedNodes:Array.isArray(challenge.completedNodes) ? challenge.completedNodes : [],
+    lastNodeIndex:typeof challenge.lastNodeIndex === 'number' ? challenge.lastNodeIndex : null
+  };
+};
+const getRoadRankProgressIndex = progressionTools ? progressionTools.getRoadRankProgressIndex : function(){
+  const progress = getRoadRankProgress();
+  return progress.unlockedNodeIndex || 0;
+};
 function getCurrentSettings(){
   const save = getSave();
   const settings = save && save.settings ? save.settings : {};
@@ -829,8 +843,11 @@ loadoutUiTools = createLoadoutUiTools ? createLoadoutUiTools({
   getUnlockedRoadRankIndex,
   getSelectedRoadRankIndex,
   setSelectedRoadRankIndex,
+  getRoadRankProgress,
+  getRoadRankProgressIndex,
+  setActiveChallengeIndex:(next)=>{ activeChallengeIndex = next; },
   setCurrentArena:(index)=>{ currentArena = index; },
-  goPathRoute:()=>{ if(uiEntryTools) uiEntryTools.goPath(); },
+  goPathRoute:()=>{ if(uiEntryTools) (uiEntryTools.goPathFromLockedPreview || uiEntryTools.goPath)(); },
   rewardService,
   isRewardPlacementAvailable,
   showMsg,
@@ -955,6 +972,8 @@ uiEntryTools = createUiEntryTools ? createUiEntryTools({
   setCurrentMode:(next)=>{ currentMode = next; },
   getActiveChallengeIndex:()=>activeChallengeIndex,
   setActiveChallengeIndex:(next)=>{ activeChallengeIndex = next; },
+  getSelectedRoadRankIndex,
+  getRoadRankProgressIndex,
   getCurrentArena:()=>currentArena,
   setCurrentArena:(next)=>{ currentArena = next; },
   getSelectedArenaIndex:()=>selectedArenaIndex,
@@ -1555,6 +1574,7 @@ startupTools = createStartupTools ? createStartupTools({
   uiText:UI_TEXT,
   getSave,
   saveProgress,
+  getInitialChallengeIndex:()=>getRoadRankProgressIndex(getSelectedRoadRankIndex()),
   getCurrentMode:()=>currentMode,
   getCurrentArena:()=>currentArena,
   getRenderGameToText:()=>renderGameToText,
@@ -1611,7 +1631,13 @@ function applyHydratedSharedBackendState(payload){
     currentArena = selectedArenaIndex;
   }
   if(save.challenge && typeof save.challenge.unlockedNodeIndex === 'number' && isFinite(save.challenge.unlockedNodeIndex)){
-    activeChallengeIndex = Math.max(0, Math.min(CHALLENGE_ROAD.length - 1, Math.floor(save.challenge.unlockedNodeIndex)));
+    const selectedRankIndex = typeof save.challenge.selectedRankIndex === 'number' && isFinite(save.challenge.selectedRankIndex)
+      ? Math.floor(save.challenge.selectedRankIndex)
+      : getSelectedRoadRankIndex();
+    const rankProgress = save.challenge.rankProgress && save.challenge.rankProgress[String(selectedRankIndex)]
+      ? save.challenge.rankProgress[String(selectedRankIndex)]
+      : save.challenge;
+    activeChallengeIndex = Math.max(0, Math.min(CHALLENGE_ROAD.length - 1, Math.floor(rankProgress.unlockedNodeIndex || 0)));
   }
   if(save.settings && typeof save.settings.locale === 'string' && save.settings.locale){
     if(localizationTools && typeof localizationTools.setLocale === 'function'){

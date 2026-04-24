@@ -110,6 +110,11 @@ function checkIndexHtml() {
       && html.includes("__spinClashInvoke('setRoadRank',2)"),
     'Expected index.html to expose clickable Road Rank controls.'
   );
+  assert(
+    html.includes("__spinClashInvoke('selectChallengeNode'")
+      || fs.readFileSync(path.join(repoRoot, 'src', 'loadout-ui-tools.js'), 'utf8').includes("selectChallengeNode"),
+    'Expected challenge route node markers to expose a selectChallengeNode action.'
+  );
 }
 
 function checkUiEntryToolsAction() {
@@ -179,7 +184,17 @@ function checkLoadoutUiTools() {
       return {
         currency: 0,
         unlocks: { arenas: [], tops: [] },
-        challenge: { unlockedNodeIndex: 0, checkpointNodeIndex: 0, unlockedRankIndex: 1, selectedRankIndex: 1 }
+        challenge: {
+          unlockedNodeIndex: 9,
+          checkpointNodeIndex: 5,
+          completedNodes: [0, 1, 2, 3, 4, 5, 6, 7, 8],
+          unlockedRankIndex: 1,
+          selectedRankIndex: 1,
+          rankProgress: {
+            0: { unlockedNodeIndex: 9, checkpointNodeIndex: 5, completedNodes: [0, 1, 2, 3, 4, 5, 6, 7, 8], lastNodeIndex: 8 },
+            1: { unlockedNodeIndex: 0, checkpointNodeIndex: 0, completedNodes: [], lastNodeIndex: null }
+          }
+        }
       };
     },
     saveProgress(mutator) {
@@ -211,6 +226,20 @@ function checkLoadoutUiTools() {
     getSelectedRoadRankIndex() {
       return state.selectedRoadRankIndex;
     },
+    getRoadRankProgress(index) {
+      const progress = {
+        0: { unlockedNodeIndex: 9, checkpointNodeIndex: 5, completedNodes: [0, 1, 2, 3, 4, 5, 6, 7, 8], lastNodeIndex: 8 },
+        1: { unlockedNodeIndex: 0, checkpointNodeIndex: 0, completedNodes: [], lastNodeIndex: null }
+      };
+      return progress[index] || { unlockedNodeIndex: 0, checkpointNodeIndex: 0, completedNodes: [] };
+    },
+    getRoadRankProgressIndex(index) {
+      const progress = {
+        0: { unlockedNodeIndex: 9 },
+        1: { unlockedNodeIndex: 0 }
+      };
+      return progress[index] ? progress[index].unlockedNodeIndex : 0;
+    },
     setSelectedRoadRankIndex(index) {
       state.selectedRoadRankIndex = index;
       return index;
@@ -236,6 +265,14 @@ function checkLoadoutUiTools() {
   assert(rank2.disabled === true, 'Expected Rank III button to stay disabled while locked.');
   assert(note.textContent.indexOf('RANK II') >= 0, 'Expected rank note to describe the selected rank.');
   assert(progress.textContent.indexOf('RANK II') >= 0, 'Expected challenge progress line to surface the selected rank.');
+  assert(
+    context.document.getElementById('challenge-route-strip').innerHTML.indexOf('<button') >= 0,
+    'Expected road route nodes to render as buttons so unlocked nodes can be replayed.'
+  );
+  assert(
+    context.document.getElementById('challenge-route-strip').innerHTML.indexOf('class="route-node current"') >= 0,
+    'Expected selected Rank II to display node 1 as current instead of inheriting Rank I final-node progress.'
+  );
 
   tools.selectRoadRank(0);
   assert(state.selectedRoadRankIndex === 0, 'Expected selectRoadRank to delegate rank selection.');

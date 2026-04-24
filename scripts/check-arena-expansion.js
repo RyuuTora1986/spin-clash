@@ -53,13 +53,22 @@ function main() {
   assert(Math.abs(octagon[0].x - 7.1) > 0.001, 'Expected polygon rotation to affect the first point.');
 
   const roseArena = arenas.find((arena) => arena.id === 'rose_bowl');
+  const heartArena = arenas.find((arena) => arena.id === 'heart_bowl');
   const octaArena = arenas.find((arena) => arena.id === 'octa_bowl');
+  const heartProfile = tools.getArenaProfile(heartArena);
   const roseProfile = tools.getArenaProfile(roseArena);
   const octaProfile = tools.getArenaProfile(octaArena);
 
   assert(roseProfile.type === 'heart', 'Expected rose_bowl profile to stay in the heart family.');
   assert(Array.isArray(roseProfile.heartPoints) && roseProfile.heartPoints.length === tools.HEART_PTS.length, 'Expected rose_bowl profile to expose heart points.');
   assert(roseProfile.hazardScale < 1, 'Expected rose_bowl profile to define a narrower heart hazard band.');
+  ['player', 'enemy'].forEach((slotName) => {
+    const slot = heartArena.launchSlots && heartArena.launchSlots[slotName];
+    assert(slot && typeof slot.x === 'number' && typeof slot.z === 'number', `Expected heart_bowl to define a ${slotName} launch slot.`);
+    assert(tools.heartContains(slot.x, slot.z, heartProfile.heartPoints), `Expected heart_bowl ${slotName} launch slot to begin inside the heart arena.`);
+    assert(!tools.heartNearWall(slot.x, slot.z, heartProfile), `Expected heart_bowl ${slotName} launch slot to avoid the near-wall band.`);
+    assert(!tools.heartRingOut(slot.x, slot.z, heartProfile), `Expected heart_bowl ${slotName} launch slot not to start ringed out.`);
+  });
   assert(Array.isArray(octaProfile.polygonPoints) && octaProfile.polygonPoints.length === 8, 'Expected octa_bowl profile to expose an octagon polygon.');
   assert(octaProfile.outerScale > 1, 'Expected octa_bowl profile to define an outer polygon used for ring-out detection.');
 

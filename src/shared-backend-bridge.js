@@ -100,6 +100,23 @@
     return normalized;
   }
 
+  function normalizeRankProgress(progress){
+    const source = progress && typeof progress === 'object' ? progress : {};
+    const normalized = {};
+    Object.keys(source).forEach(function(key){
+      const rankIndex = pickNonNegativeInteger(Number(key), null);
+      const entry = source[key];
+      if(rankIndex == null || !entry || typeof entry !== 'object') return;
+      normalized[rankIndex] = {
+        unlockedNodeIndex: pickNonNegativeInteger(entry.unlockedNodeIndex, 0),
+        checkpointNodeIndex: pickNonNegativeInteger(entry.checkpointNodeIndex, 0),
+        completedNodes: normalizeIntegerList(entry.completedNodes),
+        lastNodeIndex: pickNonNegativeInteger(entry.lastNodeIndex, null)
+      };
+    });
+    return normalized;
+  }
+
   function buildProgressionFromSave(save){
     const source = save || {};
     const challenge = source.challenge || {};
@@ -121,7 +138,8 @@
           completedNodes: completedNodes,
           lastNodeIndex: pickNonNegativeInteger(challenge.lastNodeIndex, null),
           unlockedRankIndex: pickNonNegativeInteger(challenge.unlockedRankIndex, 0),
-          selectedRankIndex: pickNonNegativeInteger(challenge.selectedRankIndex, 0)
+          selectedRankIndex: pickNonNegativeInteger(challenge.selectedRankIndex, 0),
+          rankProgress: normalizeRankProgress(challenge.rankProgress)
         },
         unlocks: {
           arenas: normalizeStringList(unlocks.arenas),
@@ -168,7 +186,8 @@
       completedNodes: normalizeIntegerList(challenge.completedNodes),
       lastNodeIndex: pickNonNegativeInteger(challenge.lastNodeIndex, null),
       unlockedRankIndex: pickNonNegativeInteger(challenge.unlockedRankIndex, 0),
-      selectedRankIndex: pickNonNegativeInteger(challenge.selectedRankIndex, 0)
+      selectedRankIndex: pickNonNegativeInteger(challenge.selectedRankIndex, 0),
+      rankProgress: normalizeRankProgress(challenge.rankProgress)
     };
     base.unlocks = {
       arenas: normalizeStringList(unlocks.arenas),

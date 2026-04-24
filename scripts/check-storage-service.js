@@ -118,6 +118,13 @@ function testLegacyMigrationAndNormalization() {
   assert(save.challenge.unlockedRankIndex === 0, 'Expected legacy save to gain default unlockedRankIndex 0.');
   assert(save.challenge.selectedRankIndex === 0, 'Expected legacy save to gain default selectedRankIndex 0.');
   assert(
+    save.challenge.rankProgress
+      && save.challenge.rankProgress[0]
+      && save.challenge.rankProgress[0].unlockedNodeIndex === 3
+      && save.challenge.rankProgress[0].completedNodes.join(',') === '0,1',
+    'Expected legacy Rank I challenge progress to migrate into rankProgress[0].'
+  );
+  assert(
     Array.isArray(save.unlocks.arenas)
       && save.unlocks.arenas.join(',') === 'circle_bowl,heart_bowl,hex_bowl',
     'Expected arena unlocks to preserve defaults, migrate legacy arrays, and remove invalid entries.'

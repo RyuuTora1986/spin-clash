@@ -12,6 +12,12 @@
       const snapshot = getSave() || {};
       return typeof mutator === 'function' ? (mutator(snapshot) || snapshot) : snapshot;
     };
+    const getInitialChallengeIndex = typeof options.getInitialChallengeIndex === 'function'
+      ? options.getInitialChallengeIndex
+      : function(){
+        const save = getSave() || {};
+        return save.challenge ? save.challenge.unlockedNodeIndex || 0 : 0;
+      };
     const getCurrentMode = typeof options.getCurrentMode === 'function' ? options.getCurrentMode : function(){ return 'quick'; };
     const getCurrentArena = typeof options.getCurrentArena === 'function' ? options.getCurrentArena : function(){ return 0; };
     const getRenderGameToText = typeof options.getRenderGameToText === 'function' ? options.getRenderGameToText : function(){ return function(){ return '{}'; }; };
@@ -112,7 +118,7 @@
       const startingSessions = initialSave && typeof initialSave.sessions === 'number'
         ? initialSave.sessions
         : 0;
-      const unlockedNodeIndex = initialSave.challenge ? initialSave.challenge.unlockedNodeIndex || 0 : 0;
+      const unlockedNodeIndex = getInitialChallengeIndex();
       saveProgress(function(save){
         save.sessions = (save.sessions || 0) + 1;
         return save;

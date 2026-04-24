@@ -187,6 +187,8 @@ function checkIndexHtml() {
       && html.includes("__spinClashInvoke('goQuick')")
       && html.includes("__spinClashInvoke('goWorkshop')")
       && html.includes("__spinClashInvoke('goSettings')")
+      && html.includes("__spinClashInvoke('homeTopAction')")
+      && html.includes("__spinClashInvoke('quickTopAction')")
       && html.includes("__spinClashInvoke('prevHomeTop')")
       && html.includes("__spinClashInvoke('nextHomeTop')")
       && html.includes("__spinClashInvoke('prevQuickArena')")
@@ -633,6 +635,8 @@ function checkQuickBattlePresentation() {
           hex_bowl: 'Hex bowl with harsher rebounds and tighter escape lanes.'
         },
         quickTopTitle: 'DEPLOYED TOP',
+        topSourceStarter: 'STARTER',
+        quickTopOwnedStarterHint: 'Ready from start',
         quickTopLockedHint: 'Locked tops cannot enter quick battle.',
         quickStartBlockedHint: 'You cannot enter battle with a locked top.',
         quickStartBlockedButton: 'TOP LOCKED',
@@ -652,7 +656,7 @@ function checkQuickBattlePresentation() {
         homeTopEmpty: 'Choose an unlocked top to preview its strengths.'
       },
       tops: [
-        { id: 'impact', name: 'Impact', unlockCost: 0, family: 'impact' },
+        { id: 'impact', name: 'Impact', unlockCost: 0, family: 'impact', unlockSource: 'starter' },
         { id: 'trick', name: 'Trick', unlockCost: 90, family: 'trick' }
       ],
       arenas: [
@@ -769,6 +773,25 @@ function checkQuickBattlePresentation() {
   assert(
     blockedDocument.getElementById('btn-fight').disabled === true,
     'Expected quick battle start to be disabled when the deployed top is locked.'
+  );
+  assert(
+    blockedDocument.querySelector('.cards').style.display === 'none',
+    'Expected Quick Battle to hide the old bottom top-card strip so it cannot be clipped on phones.'
+  );
+
+  const starterDocument = renderQuickBattleScenario({
+    currency: 0,
+    arenaIndex: 0,
+    topIndex: 0
+  });
+  const starterLines = [
+    starterDocument.getElementById('quick-selected-top-status').textContent,
+    starterDocument.getElementById('quick-selected-top-source').textContent,
+    starterDocument.getElementById('quick-selected-top-requirement').textContent
+  ].map((value) => value.trim().toLowerCase()).filter(Boolean);
+  assert(
+    new Set(starterLines).size === starterLines.length,
+    'Expected Quick Battle selected-top panel to suppress duplicated status/source/requirement copy.'
   );
 
   const unlockDocument = renderQuickBattleScenario({

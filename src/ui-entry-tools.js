@@ -17,6 +17,13 @@
     const setBattleReturnRoute = typeof options.setBattleReturnRoute === 'function' ? options.setBattleReturnRoute : function(){};
     const getActiveChallengeIndex = typeof options.getActiveChallengeIndex === 'function' ? options.getActiveChallengeIndex : function(){ return 0; };
     const setActiveChallengeIndex = typeof options.setActiveChallengeIndex === 'function' ? options.setActiveChallengeIndex : function(){};
+    const getSelectedRoadRankIndex = typeof options.getSelectedRoadRankIndex === 'function' ? options.getSelectedRoadRankIndex : function(){ return 0; };
+    const getRoadRankProgressIndex = typeof options.getRoadRankProgressIndex === 'function'
+      ? options.getRoadRankProgressIndex
+      : function(){
+        const save = getSave();
+        return save.challenge ? save.challenge.unlockedNodeIndex || 0 : 0;
+      };
     const getCurrentArena = typeof options.getCurrentArena === 'function' ? options.getCurrentArena : function(){ return 0; };
     const setCurrentArena = typeof options.setCurrentArena === 'function' ? options.setCurrentArena : function(){};
     const getSelectedArenaIndex = typeof options.getSelectedArenaIndex === 'function' ? options.getSelectedArenaIndex : function(){ return 0; };
@@ -95,7 +102,7 @@
       const currentMode = mode === 'challenge' ? 'challenge' : 'quick';
       setCurrentMode(currentMode);
       if(currentMode === 'challenge'){
-        setActiveChallengeIndex(getSave().challenge ? getSave().challenge.unlockedNodeIndex || 0 : 0);
+        setActiveChallengeIndex(getRoadRankProgressIndex(getSelectedRoadRankIndex()));
       }else{
         setSelectedArenaIndex(normalizeQuickArenaIndex(getCurrentArena()));
       }
@@ -195,6 +202,12 @@
       return false;
     }
 
+    function normalizeHomePreviewToPlayableTop(){
+      const playableTopIndex = normalizeSelectedTopToUnlocked();
+      setHomePreviewTopId(playableTopIndex);
+      return playableTopIndex;
+    }
+
     function handleEnterBattle(){
       if(!canLeaveHomeForBattleRoute()) return;
       applyRoute('path', { origin:'home' });
@@ -254,6 +267,12 @@
     function goPath(){
       if(!canLeaveHomeForBattleRoute()) return;
       applyRoute('path', { origin:'home' });
+    }
+
+    function goPathFromLockedPreview(){
+      normalizeHomePreviewToPlayableTop();
+      applyRoute('path', { origin:'home' });
+      return true;
     }
 
     function goQuick(){
@@ -321,6 +340,19 @@
       return cycleHomeTop(1);
     }
 
+    function homeTopAction(){
+      const previewTopIndex = Math.max(0, Math.min(tops.length - 1, parseInt(getHomePreviewTopId(), 10) || 0));
+      attemptTopAccess(previewTopIndex).then(function(granted){
+        if(!granted) return;
+        setPlayerTopId(previewTopIndex);
+        setHomePreviewTopId(previewTopIndex);
+        updateModeUI();
+        updateSkillIcon();
+        syncDebugPanel();
+      });
+      return true;
+    }
+
     function cycleQuickArena(step){
       if(arenas.length <= 1){
         updateModeUI();
@@ -347,8 +379,7 @@
     function startFight(){
       setBattleReturnRoute(getUiRoute());
       if(getCurrentMode() === 'challenge'){
-        const save = getSave();
-        if(getActiveChallengeIndex() > (save.challenge ? save.challenge.unlockedNodeIndex : 0)){
+        if(getActiveChallengeIndex() > getRoadRankProgressIndex(getSelectedRoadRankIndex())){
           showMsg(uiText.nodeLocked || 'Node locked.', 1);
           return;
         }
@@ -389,6 +420,23 @@
         updateModeUI();
         syncDebugPanel();
       });
+      return true;
+    }
+
+    function selectChallengeNode(index){
+      const target = Math.max(0, parseInt(index, 10) || 0);
+      const unlockedNodeIndex = getRoadRankProgressIndex(getSelectedRoadRankIndex());
+      if(target > unlockedNodeIndex){
+        showMsg(uiText.nodeLocked || 'Node locked.', 1);
+        updateModeUI();
+        syncDebugPanel();
+        return false;
+      }
+      setActiveChallengeIndex(target);
+      setChallengeContinueUsed(false);
+      resetScoreRound();
+      updateModeUI();
+      syncDebugPanel();
       return true;
     }
 
@@ -472,6 +520,7 @@
       const actionBindings = {
         goHome,
         goPath,
+        goPathFromLockedPreview,
         goQuick,
         goWorkshop,
         goSettings,
@@ -480,6 +529,7 @@
         closeInfo,
         prevHomeTop,
         nextHomeTop,
+        homeTopAction,
         prevQuickArena,
         nextQuickArena,
         enterBattle:handleEnterBattle,
@@ -488,6 +538,7 @@
         enterSettings,
         selectTop:selectPlayerTopById,
         quickTopAction,
+        selectChallengeNode,
         startFight,
         replay:handleResultReturn,
         swapRematch:handleSwapRematch,
@@ -543,16 +594,19 @@
       closeInfo,
       goHome,
       goPath,
+      goPathFromLockedPreview,
       goQuick,
       goWorkshop,
       goSettings,
       goBack,
       prevHomeTop,
       nextHomeTop,
+      homeTopAction,
       prevQuickArena,
       nextQuickArena,
       selectPlayerTopById,
       quickTopAction,
+      selectChallengeNode,
       startFight,
       handleSwapRematch,
       setMode,

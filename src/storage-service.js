@@ -25,7 +25,15 @@
       completedNodes:[],
       lastNodeIndex:null,
       unlockedRankIndex:0,
-      selectedRankIndex:0
+      selectedRankIndex:0,
+      rankProgress:{
+        0:{
+          unlockedNodeIndex:0,
+          checkpointNodeIndex:0,
+          completedNodes:[],
+          lastNodeIndex:null
+        }
+      }
     },
     unlocks:{
       arenas:['circle_bowl','heart_bowl'],
@@ -91,6 +99,45 @@
     return normalized;
   }
 
+  function normalizeRankProgressEntry(source, fallback){
+    const sourceEntry = isPlainObject(source) ? source : {};
+    const fallbackEntry = fallback || {};
+    return {
+      unlockedNodeIndex:pickFirstNonNegativeInteger(
+        [sourceEntry.unlockedNodeIndex],
+        pickFirstNonNegativeInteger([fallbackEntry.unlockedNodeIndex], 0)
+      ),
+      checkpointNodeIndex:pickFirstNonNegativeInteger(
+        [sourceEntry.checkpointNodeIndex],
+        pickFirstNonNegativeInteger([fallbackEntry.checkpointNodeIndex], 0)
+      ),
+      completedNodes:normalizeIntegerList(
+        Array.isArray(sourceEntry.completedNodes) ? sourceEntry.completedNodes : fallbackEntry.completedNodes
+      ),
+      lastNodeIndex:pickFirstNonNegativeInteger(
+        [sourceEntry.lastNodeIndex],
+        pickFirstNonNegativeInteger([fallbackEntry.lastNodeIndex], null)
+      )
+    };
+  }
+
+  function normalizeRankProgress(sourceChallenge, legacyProgress){
+    const normalized = {};
+    const sourceRankProgress = isPlainObject(sourceChallenge.rankProgress) ? sourceChallenge.rankProgress : {};
+    Object.keys(sourceRankProgress).forEach(function(rawKey){
+      const rankIndex = toNonNegativeInteger(Number(rawKey));
+      if(rankIndex == null || rankIndex > 2) return;
+      normalized[rankIndex] = normalizeRankProgressEntry(
+        sourceRankProgress[rawKey],
+        rankIndex === 0 ? legacyProgress : null
+      );
+    });
+    if(!normalized[0]){
+      normalized[0] = normalizeRankProgressEntry(null, legacyProgress);
+    }
+    return normalized;
+  }
+
   function normalizeAnalytics(events){
     if(!Array.isArray(events)) return [];
     return events.filter(function(entry){
@@ -117,7 +164,7 @@
 
   function normalizeChallenge(source, baseChallenge){
     const sourceChallenge = isPlainObject(source.challenge) ? source.challenge : {};
-    return {
+    const legacyProgress = {
       unlockedNodeIndex:pickFirstNonNegativeInteger(
         [sourceChallenge.unlockedNodeIndex, source.challengeUnlockedNodeIndex],
         baseChallenge.unlockedNodeIndex
@@ -127,10 +174,23 @@
         baseChallenge.checkpointNodeIndex
       ),
       completedNodes:normalizeIntegerList(sourceChallenge.completedNodes),
-      lastNodeIndex:pickFirstNonNegativeInteger([sourceChallenge.lastNodeIndex], null),
-      unlockedRankIndex:pickFirstNonNegativeInteger([sourceChallenge.unlockedRankIndex], baseChallenge.unlockedRankIndex),
-      selectedRankIndex:0
+      lastNodeIndex:pickFirstNonNegativeInteger([sourceChallenge.lastNodeIndex], null)
     };
+    const normalized = {
+      unlockedNodeIndex:legacyProgress.unlockedNodeIndex,
+      checkpointNodeIndex:legacyProgress.checkpointNodeIndex,
+      completedNodes:legacyProgress.completedNodes.slice(),
+      lastNodeIndex:legacyProgress.lastNodeIndex,
+      unlockedRankIndex:pickFirstNonNegativeInteger([sourceChallenge.unlockedRankIndex], baseChallenge.unlockedRankIndex),
+      selectedRankIndex:0,
+      rankProgress:normalizeRankProgress(sourceChallenge, legacyProgress)
+    };
+    const rankI = normalized.rankProgress[0] || legacyProgress;
+    normalized.unlockedNodeIndex = rankI.unlockedNodeIndex;
+    normalized.checkpointNodeIndex = rankI.checkpointNodeIndex;
+    normalized.completedNodes = rankI.completedNodes.slice();
+    normalized.lastNodeIndex = rankI.lastNodeIndex;
+    return normalized;
   }
 
   function normalizeUnlocks(source, baseUnlocks){

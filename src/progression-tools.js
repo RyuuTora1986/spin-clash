@@ -41,19 +41,116 @@
       return checkpointNodeIndex;
     }
 
+    function normalizeRoadRankIndex(index){
+      const maxRankIndex = Math.max(0, roadRanks.length - 1);
+      const parsed = parseInt(index, 10);
+      if(!isFinite(parsed)) return 0;
+      return Math.max(0, Math.min(parsed, maxRankIndex));
+    }
+
+    function createEmptyRankProgress(){
+      return {
+        unlockedNodeIndex:0,
+        checkpointNodeIndex:0,
+        completedNodes:[],
+        lastNodeIndex:null
+      };
+    }
+
+    function normalizeProgressEntry(entry, fallback){
+      const source = entry || {};
+      const fallbackEntry = fallback || createEmptyRankProgress();
+      return {
+        unlockedNodeIndex:typeof source.unlockedNodeIndex === 'number' && isFinite(source.unlockedNodeIndex)
+          ? Math.max(0, Math.min(Math.floor(source.unlockedNodeIndex), Math.max(0, challengeRoad.length - 1)))
+          : Math.max(0, Math.min(fallbackEntry.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1))),
+        checkpointNodeIndex:typeof source.checkpointNodeIndex === 'number' && isFinite(source.checkpointNodeIndex)
+          ? Math.max(0, Math.min(Math.floor(source.checkpointNodeIndex), Math.max(0, challengeRoad.length - 1)))
+          : Math.max(0, Math.min(fallbackEntry.checkpointNodeIndex || 0, Math.max(0, challengeRoad.length - 1))),
+        completedNodes:Array.isArray(source.completedNodes)
+          ? source.completedNodes.filter(function(value, index, list){
+              const nodeIndex = typeof value === 'number' && isFinite(value) ? Math.floor(value) : -1;
+              return nodeIndex >= 0 && nodeIndex < challengeRoad.length && list.indexOf(value) === index;
+            }).map(function(value){ return Math.floor(value); })
+          : (Array.isArray(fallbackEntry.completedNodes) ? fallbackEntry.completedNodes.slice() : []),
+        lastNodeIndex:typeof source.lastNodeIndex === 'number' && isFinite(source.lastNodeIndex)
+          ? Math.max(0, Math.min(Math.floor(source.lastNodeIndex), Math.max(0, challengeRoad.length - 1)))
+          : null
+      };
+    }
+
+    function getLegacyChallengeProgress(challenge){
+      return normalizeProgressEntry({
+        unlockedNodeIndex:challenge && typeof challenge.unlockedNodeIndex === 'number' ? challenge.unlockedNodeIndex : 0,
+        checkpointNodeIndex:challenge && typeof challenge.checkpointNodeIndex === 'number' ? challenge.checkpointNodeIndex : 0,
+        completedNodes:challenge && Array.isArray(challenge.completedNodes) ? challenge.completedNodes : [],
+        lastNodeIndex:challenge && typeof challenge.lastNodeIndex === 'number' ? challenge.lastNodeIndex : null
+      });
+    }
+
+    function ensureRankProgress(save, rankIndex){
+      const targetRankIndex = normalizeRoadRankIndex(rankIndex);
+      save.challenge = save.challenge || { unlockedNodeIndex:0, checkpointNodeIndex:0, completedNodes:[], lastNodeIndex:null, unlockedRankIndex:0, selectedRankIndex:0 };
+      save.challenge.rankProgress = save.challenge.rankProgress || {};
+      const key = String(targetRankIndex);
+      if(!save.challenge.rankProgress[key]){
+        save.challenge.rankProgress[key] = targetRankIndex === 0
+          ? getLegacyChallengeProgress(save.challenge)
+          : createEmptyRankProgress();
+      }
+      save.challenge.rankProgress[key] = normalizeProgressEntry(
+        save.challenge.rankProgress[key],
+        targetRankIndex === 0 ? getLegacyChallengeProgress(save.challenge) : null
+      );
+      return save.challenge.rankProgress[key];
+    }
+
+    function mirrorRankProgressToLegacy(challenge, progress){
+      if(!challenge || !progress) return;
+      challenge.unlockedNodeIndex = progress.unlockedNodeIndex || 0;
+      challenge.checkpointNodeIndex = progress.checkpointNodeIndex || 0;
+      challenge.completedNodes = Array.isArray(progress.completedNodes) ? progress.completedNodes.slice() : [];
+      challenge.lastNodeIndex = typeof progress.lastNodeIndex === 'number' ? progress.lastNodeIndex : null;
+    }
+
+    function getRoadRankProgress(index){
+      const save = getSave();
+      const challenge = save.challenge || {};
+      const targetRankIndex = normalizeRoadRankIndex(index);
+      const rankProgress = challenge.rankProgress || {};
+      const entry = rankProgress[String(targetRankIndex)];
+      return normalizeProgressEntry(
+        entry,
+        targetRankIndex === 0 ? getLegacyChallengeProgress(challenge) : null
+      );
+    }
+
+    function getRoadRankProgressIndex(index){
+      const progress = getRoadRankProgress(index);
+      return Math.max(0, Math.min(progress.unlockedNodeIndex || 0, Math.max(0, challengeRoad.length - 1)));
+    }
+
+    function getSelectedRoadRankProgress(){
+      return getRoadRankProgress(getSelectedRoadRankIndex());
+    }
+
     function setChallengeProgress(unlockedNodeIndex){
       const target = Math.max(0, Math.min(unlockedNodeIndex, challengeRoad.length - 1));
       const checkpointNodeIndex = getCheckpointResumeIndex(target);
+      const selectedRankIndex = getSelectedRoadRankIndex();
       saveProgress((save)=>{
-        save.challenge = save.challenge || { unlockedNodeIndex:0, checkpointNodeIndex:0, completedNodes:[], lastNodeIndex:null };
-        save.challenge.unlockedNodeIndex = target;
-        save.challenge.checkpointNodeIndex = checkpointNodeIndex;
-        save.challenge.lastNodeIndex = target;
-        save.challenge.completedNodes = Array.isArray(save.challenge.completedNodes) ? save.challenge.completedNodes : [];
+        const progress = ensureRankProgress(save, selectedRankIndex);
+        progress.unlockedNodeIndex = target;
+        progress.checkpointNodeIndex = checkpointNodeIndex;
+        progress.lastNodeIndex = target;
+        progress.completedNodes = Array.isArray(progress.completedNodes) ? progress.completedNodes : [];
         for(let i=0;i<target;i++){
-          if(!save.challenge.completedNodes.includes(i)){
-            save.challenge.completedNodes.push(i);
+          if(!progress.completedNodes.includes(i)){
+            progress.completedNodes.push(i);
           }
+        }
+        if(selectedRankIndex === 0){
+          mirrorRankProgressToLegacy(save.challenge, progress);
         }
         return save;
       });
@@ -179,7 +276,7 @@
       const unlocked = typeof challenge.unlockedRankIndex === 'number' && isFinite(challenge.unlockedRankIndex)
         ? Math.floor(challenge.unlockedRankIndex)
         : 0;
-      return Math.max(0, Math.min(unlocked, Math.max(0, roadRanks.length - 1)));
+      return normalizeRoadRankIndex(unlocked);
     }
 
     function getSelectedRoadRankIndex(){
@@ -192,15 +289,17 @@
     }
 
     function setSelectedRoadRankIndex(index){
-      const target = Math.max(0, Math.min(parseInt(index,10) || 0, getUnlockedRoadRankIndex()));
+      const target = Math.max(0, Math.min(normalizeRoadRankIndex(index), getUnlockedRoadRankIndex()));
       saveProgress((save)=>{
         save.challenge = save.challenge || { unlockedNodeIndex:0, checkpointNodeIndex:0, completedNodes:[], lastNodeIndex:null, unlockedRankIndex:0, selectedRankIndex:0 };
         save.challenge.unlockedRankIndex = typeof save.challenge.unlockedRankIndex === 'number'
           ? save.challenge.unlockedRankIndex
           : 0;
         save.challenge.selectedRankIndex = Math.min(target, save.challenge.unlockedRankIndex);
+        ensureRankProgress(save, save.challenge.selectedRankIndex);
         return save;
       });
+      setActiveChallengeIndex(getRoadRankProgressIndex(target));
       refresh();
       return target;
     }
@@ -256,6 +355,9 @@
       getUnlockedRoadRankIndex,
       getSelectedRoadRankIndex,
       setSelectedRoadRankIndex,
+      getRoadRankProgress,
+      getRoadRankProgressIndex,
+      getSelectedRoadRankProgress,
       unlockArenaById,
       unlockTopById,
       resetDebugProgress

@@ -3139,3 +3139,59 @@ Original prompt: Convert the prepared single-file browser game prototype in C:\U
 - Practical assessment:
   - this is now a deliberate progression-path policy, not a one-off config edit
   - heart arenas can remain available elsewhere, but they should not return to Championship Path until a separate arena redesign/playtest pass proves they are safe
+
+2026-04-24 Road Rank progression and mobile shell polish pass
+- Context:
+  - the user reported Rank II/III unlocking directly at node 10, duplicate same-panel copy, non-clickable node dots, locked top purchase dead clicks, mobile home height overflow, clipped Quick Battle top cards, weak top-switch affordance, copyright naming, and heart-arena enemy spawn issues
+- Main files changed:
+  - `src/storage-service.js`
+  - `src/progression-tools.js`
+  - `src/match-flow-tools.js`
+  - `src/loadout-ui-tools.js`
+  - `src/ui-entry-tools.js`
+  - `src/startup-tools.js`
+  - `src/shared-backend-bridge.js`
+  - `src/config-text.js`
+  - `src/config-arenas.js`
+  - `css/game.css`
+  - `index.html`
+  - `scripts/check-road-rank-flow.js`
+  - `scripts/check-road-rank-ui.js`
+  - `scripts/check-shell-presentation.js`
+  - `scripts/check-storage-service.js`
+  - `scripts/check-arena-expansion.js`
+- Main outcomes:
+  - challenge progress is now stored per Road Rank in `challenge.rankProgress`
+  - legacy Rank I progress fields are still mirrored for compatibility
+  - unlocking Rank II/III creates fresh node-1 progress entries instead of inheriting Rank I node-10 state
+  - unlocked route dots can be clicked to replay previous nodes
+  - locked home showcase tops now have a working tap action: purchase confirm when affordable, or Championship Path guidance when unaffordable/road-locked
+  - Quick Battle hides the old bottom top-card strip and suppresses duplicate selected-top copy
+  - mobile home title/showcase spacing is compressed for iPhone-class browser viewports
+  - home top arrows have brighter outlines and glow
+  - copyright label is now `HAKUROKUDO K.K.`
+  - heart quick-battle arenas now define explicit safe launch slots
+- Verification:
+  - `npm run sync:staticversion`
+  - `npm run check:storage`
+  - `npm run check:roadrank`
+  - `npm run check:shellpresentation`
+  - `npm run check:arenas`
+  - `npm run check:syntax`
+  - `npm run check:loadout`
+  - `npm run check:routes`
+  - `npm run check:routeflow`
+  - `npm run check:sharedbackend`
+  - `npm run check:roundflow`
+  - `npm run check:matchflow`
+  - `npm run check:ui`
+  - `npm run check:battleui`
+  - `npm run check:battlemusic`
+  - mobile visual smoke:
+    - `output/visual-check-1.2.7/home-mobile-430x740-v2.png`
+    - 430x740 viewport reported `titleOverflow: 0`
+  - `npm run verify:release`
+  - `npm run verify:channels`
+- Practical assessment:
+  - RANK2/RANK3 default node10 was a structural shared-progress bug, not intended design
+  - per-rank progress has a small economy pacing impact because higher ranks now need to be cleared from the start, but this is the safer and more coherent long-term route structure
