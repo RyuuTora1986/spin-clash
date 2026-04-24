@@ -52,9 +52,9 @@ CrazyGames 官方当前公开说明：
 
 对应项目证据：
 
-- [distribution/channel-registry.json](C:/Users/29940/spin-clash/distribution/channel-registry.json)
-- [src/loadout-ui-tools.js](C:/Users/29940/spin-clash/src/loadout-ui-tools.js)
-- [src/match-flow-tools.js](C:/Users/29940/spin-clash/src/match-flow-tools.js)
+- [distribution/channel-registry.json](../distribution/channel-registry.json)
+- [src/loadout-ui-tools.js](../src/loadout-ui-tools.js)
+- [src/match-flow-tools.js](../src/match-flow-tools.js)
 
 ### 2. 这 3 个入口原本承担的是 3 种不同的用户价值
 
@@ -91,8 +91,8 @@ CrazyGames 官方当前公开说明：
 
 对应文件：
 
-- [src/config-economy.js](C:/Users/29940/spin-clash/src/config-economy.js)
-- [src/config-arenas.js](C:/Users/29940/spin-clash/src/config-arenas.js)
+- [src/config-economy.js](../src/config-economy.js)
+- [src/config-arenas.js](../src/config-arenas.js)
 
 #### 前三关 Path 的实际回报
 
@@ -112,9 +112,9 @@ CrazyGames 官方当前公开说明：
 
 对应文件：
 
-- [src/config-challenge-road.js](C:/Users/29940/spin-clash/src/config-challenge-road.js)
-- [src/config-road-ranks.js](C:/Users/29940/spin-clash/src/config-road-ranks.js)
-- [src/match-flow-tools.js](C:/Users/29940/spin-clash/src/match-flow-tools.js)
+- [src/config-challenge-road.js](../src/config-challenge-road.js)
+- [src/config-road-ranks.js](../src/config-road-ranks.js)
+- [src/match-flow-tools.js](../src/match-flow-tools.js)
 
 这说明：
 
