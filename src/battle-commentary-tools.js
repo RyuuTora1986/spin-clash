@@ -119,6 +119,9 @@
       const accentDrift = laneDrift + Math.round((Math.random() * 8) - 4);
       const finalRise = entry.tone === 'finish' ? -18 : entry.tone === 'alert' ? -16 : -14;
       item.className = 'battle-commentary-item tone-' + (entry.tone || 'normal');
+      if(window.innerWidth <= 540){
+        item.classList.add(lane.laneIndex % 2 === 0 ? 'lane-left' : 'lane-right');
+      }
       item.style.setProperty('--commentary-drift', accentDrift + 'px');
       item.style.setProperty('--commentary-rise', finalRise + 'px');
       item.style.setProperty('--commentary-duration', (durationMs / 1000).toFixed(2) + 's');

@@ -14,7 +14,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'OPENING SEED',
-      previewDesc:'Baseline duel to re-center the player on stable ring control.'
+      previewDesc:'Start in the standard arena. Learn how your top turns, hits, and stays in bounds.'
     },
     {
       id:'node-2',
@@ -29,7 +29,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'HEART ENTRY',
-      previewDesc:'A protected heart-entry arena teaches the lane first, while a steadier armor rival keeps the lesson readable.'
+      previewDesc:'Use the wider heart entry to stay away from the outer curve and return toward center.'
     },
     {
       id:'node-3',
@@ -44,7 +44,7 @@
       firstClearBonus:6,
       checkpointOnClear:true,
       previewLabel:'CHAPTER BOSS',
-      previewDesc:'First checkpoint duel. The player starts closer to signature tempo while the rival still applies direct collision pressure.'
+      previewDesc:'First checkpoint. Use Burst after contact, not from the edge.'
     },
     {
       id:'node-4',
@@ -59,7 +59,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'HEX UNLOCK',
-      previewDesc:'A protected hex-entry duel introduces the new wall rhythm before later nodes ask for speed or burst routing.'
+      previewDesc:'Enter the hex arena and learn the wall bounce before the pace rises.'
     },
     {
       id:'node-5',
@@ -74,7 +74,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'HEX DRIFT',
-      previewDesc:'A drifting trick preset and lower spin reserves punish sloppy wall exits.'
+      previewDesc:'Low spin makes bad wall exits costly. Return to center before the next hit.'
     },
     {
       id:'node-6',
@@ -89,7 +89,7 @@
       firstClearBonus:8,
       checkpointOnClear:true,
       previewLabel:'CHECKPOINT BOSS',
-      previewDesc:'Second checkpoint duel. Faster burst pressure turns the hex bowl into a sprint fight.'
+      previewDesc:'Second checkpoint. The rival attacks faster, so guard before you get trapped on a wall.'
     },
     {
       id:'node-7',
@@ -104,7 +104,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'CENTER LOCK',
-      previewDesc:'A heavier armor ram finally asks for committed center control after the player has cleared two checkpoints.'
+      previewDesc:'A heavier rival contests the middle. Stay near center before spending Burst.'
     },
     {
       id:'node-8',
@@ -119,7 +119,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'KNIFE EDGE',
-      previewDesc:'A sudden-death rematch versus an all-in trick duelist leaves almost no room for a bad launch.'
+      previewDesc:'Sudden death. Aim the first launch carefully because one bad edge hit can end the round.'
     },
     {
       id:'node-9',
@@ -134,7 +134,7 @@
       firstClearBonus:0,
       checkpointOnClear:false,
       previewLabel:'SEMIFINAL',
-      previewDesc:'The semifinal shifts into a brutal impact chase where every grounded mistake turns into a punish route.'
+      previewDesc:'Semifinal. The rival chases hard; avoid edge contact and save Burst for a close hit.'
     },
     {
       id:'node-10',
@@ -149,7 +149,7 @@
       firstClearBonus:14,
       checkpointOnClear:false,
       previewLabel:'FINAL',
-      previewDesc:'Final championship duel. Fast tempo, unstable routes, and no safe margin.'
+      previewDesc:'Final match. The rival is fast; stay out of the edge lane and use Burst only after contact.'
     }
   ];
 })();

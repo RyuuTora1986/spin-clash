@@ -14,6 +14,20 @@ function startMusic(options){
 function stopMusic(options){
   if(runtimeAudioTools) runtimeAudioTools.stopMusic(options);
 }
+function primeBattleMusicForLaunch(){
+  initAudioSafely();
+  if(runtimeAudioTools && typeof runtimeAudioTools.primeMusicForContext === 'function'){
+    runtimeAudioTools.primeMusicForContext({
+      scene:'battle',
+      round:round
+    });
+  }
+}
+function cancelPrimedBattleMusic(){
+  if(runtimeAudioTools && typeof runtimeAudioTools.clearPrimedMusic === 'function'){
+    runtimeAudioTools.clearPrimedMusic();
+  }
+}
 function getMusicDebugState(){
   return runtimeAudioTools ? runtimeAudioTools.getMusicDebugState() : null;
 }
@@ -263,6 +277,10 @@ runtimeAudioTools = createRuntimeAudioTools ? createRuntimeAudioTools({
   storageService,
   signatureSkills:SIGNATURE_SKILLS
 }) : null;
+if(runtimeAudioTools && debugService && debugService.enabled){
+  root.debug = root.debug || {};
+  root.debug.runtimeAudioTools = runtimeAudioTools;
+}
 if(runtimeAudioTools) runtimeAudioTools.installRuntimeGuards();
 arenaMathTools = createArenaMathTools ? createArenaMathTools() : null;
 
@@ -1157,6 +1175,7 @@ function onDragStart(cx,cy){
   if(gameState!=='prepare')return;
   const p=xyToArena(cx,cy);if(!p)return;
   drag.on=true;drag.sx=p.x;drag.sz=p.z;drag.mx=p.x;drag.mz=p.z;
+  primeBattleMusicForLaunch();
   if(aimLineTools) aimLineTools.showAimLine();
 }
 function onDragMove(cx,cy){
@@ -1168,11 +1187,19 @@ function onDragMove(cx,cy){
   if(aimLineTools) aimLineTools.setAimLine(tp.x,tp.z,tp.x+dx/d*sc*5,tp.z+dz/d*sc*5);
 }
 function onDragEnd(){
-  if(!drag.on||gameState!=='prepare'){drag.on=false;return;}
+  if(!drag.on||gameState!=='prepare'){
+    drag.on=false;
+    cancelPrimedBattleMusic();
+    return;
+  }
   drag.on=false;
   if(aimLineTools) aimLineTools.hideAimLine();
   const dx=drag.mx-drag.sx,dz=drag.mz-drag.sz,d=Math.sqrt(dx*dx+dz*dz);
-  if(d<.3)return;
+  if(d<.3){
+    cancelPrimedBattleMusic();
+    syncMusicState();
+    return;
+  }
   const spd=Math.min(d/4,1)*tp.template.spd;
   tp.vx=dx/d*spd;tp.vz=dz/d*spd;
   launch();

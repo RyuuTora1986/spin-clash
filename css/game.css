@@ -2616,15 +2616,33 @@ body.round-result-takeover #msg-txt{
   }
   .battle-commentary{
     top:max(188px,calc(env(safe-area-inset-top,0px) + 178px));
-    width:min(calc(100vw - 20px),560px);
-    height:92px;
-    gap:8px;
+    left:0;
+    right:0;
+    transform:none;
+    width:100vw;
+    height:120px;
+    gap:7px;
+    align-items:stretch;
+    padding:0 max(10px,env(safe-area-inset-right,10px)) 0 max(10px,env(safe-area-inset-left,10px));
+    box-sizing:border-box;
+    overflow:visible;
+  }
+  .battle-commentary.hide{
+    transform:translateY(-6px);
   }
   .battle-commentary-item{
-    max-width:min(82vw,328px);
-    min-height:40px;
+    max-width:min(43vw,172px);
+    min-height:38px;
     padding:8px 12px 8px 9px;
     gap:8px;
+    white-space:normal;
+    border-radius:18px;
+  }
+  .battle-commentary-item.lane-left{
+    align-self:flex-start;
+  }
+  .battle-commentary-item.lane-right{
+    align-self:flex-end;
   }
   .battle-commentary-badge{
     padding:4px 7px;

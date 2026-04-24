@@ -54,7 +54,7 @@
     topPurchaseConfirmButton:'BUY NOW',
     topPurchaseCancelButton:'NOT YET',
     topPurchaseCloseButton:'GOT IT',
-    titleBuildVersion:'Version 1.2.3',
+    titleBuildVersion:'Version 1.2.4',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'Structured run with node rewards and rank pressure.',
     homeQuickNote:'Jump into one fast duel with your current top and arena pick.',
@@ -283,13 +283,13 @@
       zh:'中文',
       ja:'日本語'
     },
-    hintAim:'Drag to aim for the first clean hit, then release to launch.',
-    hintActive:'Fight for the first clean line | SPACE to press in | E to guard bad angles | Q when burst is full.',
+    hintAim:'Drag to set your launch direction. Release when the angle points back toward the arena.',
+    hintActive:'Stay in the arena | SPACE to close distance | E to guard | Q when Burst is ready.',
     hintSkillReady:'Q READY',
-    battleIntroKicker:'OPENING PLAN',
-    battleIntroBriefTitle:'FIRST MOVE',
-    battleIntroBriefPrimary:'Open with a clean line toward center before you spend burst.',
-    battleIntroBriefSecondary:'If the entry looks weak, guard first and re-enter on the next angle.',
+    battleIntroKicker:'STARTING TIP',
+    battleIntroBriefTitle:'SET THE ANGLE',
+    battleIntroBriefPrimary:'Aim your launch back toward the middle of the arena.',
+    battleIntroBriefSecondary:'Near the edge, guard first. Attack again after you return toward center.',
     roundLabel:'ROUND',
     roundWinPlayer:'YOU WIN!',
     roundWinEnemy:'ENEMY WINS',
@@ -298,21 +298,21 @@
     roundReasonSpinOut:'Spin Out',
     roundReasonHpBreak:'HP Break',
     roundReasonTimeUp:'Time Up - HP Check',
-    roundResultCauseDraw:'Both tops stalled into the same finish state. The next round will come down to a cleaner first contact.',
-    roundResultCauseRingoutWin:'You won the edge fight and pushed the rival cleanly out of the bowl.',
-    roundResultCauseRingoutLose:'You lost the edge fight and were forced out before recovering your lane.',
-    roundResultCauseSpinoutWin:'The rival ran out of spin first after losing the sustained contact battle.',
-    roundResultCauseSpinoutLose:'Your spin drained first, so the round slipped away before the final clash.',
-    roundResultCauseHpWin:'Your pressure held longer, so the rival frame broke first under repeated collisions.',
-    roundResultCauseHpLose:'You absorbed too much collision damage and your frame broke first this round.',
-    roundResultCauseTimeWin:'Time expired with your top in the healthier state, so the decision went your way.',
-    roundResultCauseTimeLose:'Time expired while your top was in the weaker state, so the decision went against you.',
-    roundResultAdjustWinRingout:'Keep the center longer and look for the same outward angle before spending burst again.',
-    roundResultAdjustWinTime:'You are ahead on attrition. Stay clean and do not rush the next exchange.',
-    roundResultAdjustWin:'Your opener worked. Repeat the clean entry first, then spend burst only when the lane is stable.',
-    roundResultAdjustLoseRingout:'Next round, protect the outer lane first. Guard the bad angle, then re-enter toward center.',
-    roundResultAdjustLoseTime:'You fell behind on endurance. Stay in cleaner contact and avoid wasting burst from a weak angle.',
-    roundResultAdjustLose:'Next round, fight for the first clean angle before committing to burst. If the entry is messy, guard and reset.',
+    roundResultCauseDraw:'Both tops stopped at the same time. The next round starts from a clean launch.',
+    roundResultCauseRingoutWin:'The opponent crossed the arena edge. You win the round.',
+    roundResultCauseRingoutLose:'Your top crossed the arena edge. The opponent wins the round.',
+    roundResultCauseSpinoutWin:'The opponent ran out of spin first.',
+    roundResultCauseSpinoutLose:'Your top ran out of spin first.',
+    roundResultCauseHpWin:'The opponent lost all HP after repeated hits.',
+    roundResultCauseHpLose:'Your top lost all HP after repeated hits.',
+    roundResultCauseTimeWin:'Time ran out while your top had more HP.',
+    roundResultCauseTimeLose:'Time ran out while the opponent had more HP.',
+    roundResultAdjustWinRingout:'Next round, launch toward center again and push only after contact is stable.',
+    roundResultAdjustWinTime:'Keep the contact steady. Do not spend Burst from the edge.',
+    roundResultAdjustWin:'Repeat the same launch angle. Use Burst after both tops are in range.',
+    roundResultAdjustLoseRingout:'Next round, aim back toward center. Guard if you drift near the edge.',
+    roundResultAdjustLoseTime:'Stay away from weak edge contact and save Burst for a closer hit.',
+    roundResultAdjustLose:'Aim toward the arena middle first. If the angle is bad, guard and reset.',
     fightCallout:'FIGHT!',
     nodeLocked:'Node locked.',
     checkpointLabel:'CHECKPOINT',
@@ -347,53 +347,53 @@
     messageSuperImpact:'Super Impact!!',
     messagePlayerRingOut:'You were knocked out of the arena!',
     messageEnemyRingOut:'The opponent flew out of the arena!',
-    battleCommentaryLabel:'LIVE',
+    battleCommentaryLabel:'BATTLE',
     battleCommentaryPlayer:'You',
     battleCommentaryEnemy:'Opponent',
     battleCommentary:{
       openingClaim:[
-        '{leader} takes first contact.',
-        '{leader} opens clean.'
+        '{leader} lands first.',
+        '{leader} connects.'
       ],
       centerClaim:[
-        '{leader} locks center.',
-        '{leader} owns the middle.'
+        '{leader} holds center.',
+        '{leader} returns to mid.'
       ],
       edgePressure:[
-        '{target} is getting driven wide.',
-        '{leader} is forcing the rim.'
+        '{target} is near the edge.',
+        '{leader} pushes outward.'
       ],
       ringThreat:[
-        '{target} is right on the line.',
-        '{target} is one hit from ring-out.'
+        '{target} is on the line.',
+        '{target} may ring out.'
       ],
       heavyClash:[
-        'Heavy clash up front.',
-        'That contact landed hard.'
+        'Heavy hit.',
+        'Clean collision.'
       ],
       superImpact:[
-        'Massive hit. The duel swings.',
-        'That shot could decide it.'
+        'Big hit.',
+        'Momentum changes.'
       ],
       burstReady:[
-        '{top} has burst online.',
-        '{top} is loaded to finish.'
+        '{top} has Burst ready.',
+        '{top} can use Q.'
       ],
       comeback:[
-        '{top} is still alive.',
-        '{top} keeps the comeback line.'
+        '{top} is still in.',
+        '{top} survives.'
       ],
       ringOutFinish:[
-        '{winner} sends it flying!',
-        '{winner} closes with ring-out!'
+        '{winner} wins by ring-out!',
+        '{winner} pushes it out!'
       ],
       spinFinish:[
-        '{winner} wins the spin war.',
-        '{winner} outlasts the rival.'
+        '{winner} keeps spinning.',
+        '{winner} lasts longer.'
       ],
       hpBreak:[
-        '{winner} cracks it open.',
-        '{winner} breaks straight through.'
+        '{winner} breaks HP.',
+        '{winner} wins the damage race.'
       ]
     },
     copyShareText:'Copy share text',
@@ -570,7 +570,7 @@
     topPurchaseConfirmButton:'现在就买',
     topPurchaseCancelButton:'再看看',
     topPurchaseCloseButton:'知道了',
-    titleBuildVersion:'版本 1.2.3',
+    titleBuildVersion:'版本 1.2.4',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'逐节点推进，适合认真打一段并拿路线上奖励。',
     homeQuickNote:'直接开一局，适合短时间快速对战。',
@@ -639,8 +639,8 @@
     rewardContinueDeclined:'这次没能继续当前挑战。想回到这一场，再点一次就行。',
     rewardContinueError:'这次没能继续当前挑战，这一场会在这里结束。奖励照常发放，下次挑战还能再试一次。',
     resultGuidanceChallengeContinue:'如果你想立刻再冲一次当前节点，先用继续挑战；如果不急，先回去调配置会更稳。',
-    resultGuidanceChallengeRetry:'这次就到这里。先回去调整出战配置，再用更干净的开局重新打这个节点。',
-    resultGuidanceChallengeAdvance:'下一节点已经就绪。先收下这次结算，再顺着当前节奏继续往前推。',
+    resultGuidanceChallengeRetry:'这次就到这里。先回去调整出战配置，再重新挑战这个节点。',
+    resultGuidanceChallengeAdvance:'下一节点已经就绪。先收下这次结算，再继续挑战。',
     resultGuidanceRoadClear:'这条路已经打通。先拿下本次结算，再决定要不要为了更稳的通关表现继续重打。',
     resultGuidanceQuickWin:'这一局已经拿下。先收奖励，再决定是立刻再开一局，还是先换配置。',
     resultGuidanceQuickLoss:'基础奖励照常拿到。现在更适合先调配置，或者直接再开一局短战。',
@@ -799,13 +799,13 @@
       zh:'中文',
       ja:'日本語'
     },
-    hintAim:'先拖拽抢第一撞，瞄到干净角度后再松手发射。',
-    hintActive:'先争第一撞 | SPACE 压进 | E 防坏角度 | BURST 满了再按 Q。',
+    hintAim:'拖动选择发射方向。方向朝回场地中部后松手。',
+    hintActive:'留在场内 | SPACE 贴近 | E 防守 | BURST 满了按 Q。',
     hintSkillReady:'Q 已就绪',
-    battleIntroKicker:'开局思路',
-    battleIntroBriefTitle:'第一步先做什么',
-    battleIntroBriefPrimary:'先抢一条干净的进场线，占住中心，再考虑交爆发。',
-    battleIntroBriefSecondary:'如果角度不干净，就先防一下，等下一次回到中线再压进。',
+    battleIntroKicker:'开局提示',
+    battleIntroBriefTitle:'先调方向',
+    battleIntroBriefPrimary:'把发射方向拉回场地中部，再松手。',
+    battleIntroBriefSecondary:'靠近边线时先防守，回到中部后再出手。',
     roundLabel:'回合',
     roundWinPlayer:'你获胜！',
     roundWinEnemy:'对手获胜',
@@ -814,21 +814,21 @@
     roundReasonSpinOut:'转力耗尽',
     roundReasonHpBreak:'耐久崩解',
     roundReasonTimeUp:'时间到 - 按耐久判定',
-    roundResultCauseDraw:'双方都在同一类终结状态里一起停住了，下一回合更看谁先拿到干净碰撞。',
-    roundResultCauseRingoutWin:'你赢下了边线拉扯，把对手干净地挤出了场地。',
-    roundResultCauseRingoutLose:'你在边线拉扯里先失位了，还没回正就被挤出了场地。',
-    roundResultCauseSpinoutWin:'持续接触里对手先耗尽了转力，所以这一回合归你。',
-    roundResultCauseSpinoutLose:'你先把转力耗空了，所以还没等到最后一撞就丢了这一回合。',
-    roundResultCauseHpWin:'你的压制撑得更久，对手在连续碰撞里先把耐久打空了。',
-    roundResultCauseHpLose:'这回合你吃到的碰撞伤害太多，耐久先一步崩掉了。',
-    roundResultCauseTimeWin:'时间到时你的状态更健康，所以判定站在你这边。',
-    roundResultCauseTimeLose:'时间到时你的状态更差，所以判定落到了对手那边。',
-    roundResultAdjustWinRingout:'下一回合继续先占中心，再找同样的外推角度，不用急着先交爆发。',
-    roundResultAdjustWinTime:'你目前在消耗战上占优，下一回合先保持干净接触，不要急着抢。',
-    roundResultAdjustWin:'你这次开局思路是对的。先把干净进场复现出来，再在稳定线路上交爆发。',
-    roundResultAdjustLoseRingout:'下一回合先保住外圈站位。坏角度先防一下，再往中心重新进场。',
-    roundResultAdjustLoseTime:'你是在耐久和转力消耗上落后了。下一回合先把接触做干净，别在差角度上空交爆发。',
-    roundResultAdjustLose:'下一回合先把第一条干净进场线抢下来。如果开局不顺，就先防一下再重来。',
+    roundResultCauseDraw:'双方同时停住。本局没有分出胜负。',
+    roundResultCauseRingoutWin:'对手出了边界，你拿下本回合。',
+    roundResultCauseRingoutLose:'你出了边界，对手拿下本回合。',
+    roundResultCauseSpinoutWin:'对手先耗尽转力。',
+    roundResultCauseSpinoutLose:'你的转力先耗尽。',
+    roundResultCauseHpWin:'对手耐久归零。',
+    roundResultCauseHpLose:'你的耐久归零。',
+    roundResultCauseTimeWin:'时间到时，你的耐久更高。',
+    roundResultCauseTimeLose:'时间到时，对手的耐久更高。',
+    roundResultAdjustWinRingout:'下一回合继续往中部发射，接触稳定后再往外推。',
+    roundResultAdjustWinTime:'保持稳定接触。贴边时不要急着放技能。',
+    roundResultAdjustWin:'复用这次发射方向。双方贴近后再放技能。',
+    roundResultAdjustLoseRingout:'下一回合先把方向拉回中部。靠近边线就按 E 防守。',
+    roundResultAdjustLoseTime:'少在边线硬撞，把技能留给更近的一次碰撞。',
+    roundResultAdjustLose:'先把方向拉向场地中部。角度不好就防守重整。',
     fightCallout:'开战！',
     nodeLocked:'节点尚未解锁。',
     checkpointLabel:'检查点',
@@ -851,9 +851,9 @@
         'Phantom':'幻袭！'
       },
       enemy:{
-        'Fly Charge':'敌方使出了飞冲！',
-        'Fortress Pulse':'敌方使出了堡垒脉冲！',
-        'Phantom':'敌方使出了幻袭！'
+        'Fly Charge':'对手使用飞冲！',
+        'Fortress Pulse':'对手使用堡垒脉冲！',
+        'Phantom':'对手使用幻袭！'
       }
     },
     messageDash:'冲刺！',
@@ -861,55 +861,55 @@
     messageBurstOrb:'+55 BURST',
     messageHeavyCollision:'重击碰撞！',
     messageSuperImpact:'超强冲击！',
-    messagePlayerRingOut:'你被撞出了场地！',
-    messageEnemyRingOut:'对手被撞飞出场！',
-    battleCommentaryLabel:'热评',
+    messagePlayerRingOut:'你被推出场外！',
+    messageEnemyRingOut:'对手被推出场外！',
+    battleCommentaryLabel:'战况',
     battleCommentaryPlayer:'你',
     battleCommentaryEnemy:'对手',
     battleCommentary:{
       openingClaim:[
-        '{leader}先抢第一撞。',
-        '{leader}起手很干净。'
+        '{leader}先撞上。',
+        '{leader}开局命中。'
       ],
       centerClaim:[
-        '{leader}卡住中圈。',
-        '{leader}把中圈拿稳了。'
+        '{leader}站住中圈。',
+        '{leader}回到中部。'
       ],
       edgePressure:[
-        '{target}被压到外圈。',
-        '{leader}开始赶人出边。'
+        '{target}被推到边上。',
+        '{leader}往外推。'
       ],
       ringThreat:[
-        '{target}出界线危险。',
-        '{target}这下再吃就飞。'
+        '{target}贴着边线。',
+        '{target}快出界了。'
       ],
       heavyClash:[
-        '正面重撞！',
-        '这一下撞得很结实。'
+        '重重撞上。',
+        '正面碰撞。'
       ],
       superImpact:[
-        '超重一撞，局势翻了。',
-        '这一下就是胜负手。'
+        '一记重击。',
+        '局势变了。'
       ],
       burstReady:[
-        '{top}爆发点亮。',
-        '{top}终结手上线。'
+        '{top}技能好了。',
+        '{top}可以按 Q。'
       ],
       comeback:[
-        '{top}还没死。',
-        '{top}还留着反打线。'
+        '{top}还在场内。',
+        '{top}撑住了。'
       ],
       ringOutFinish:[
-        '{winner}直接轰飞！',
-        '{winner}场外收掉！'
+        '{winner}推出场外！',
+        '{winner}拿下场外胜！'
       ],
       spinFinish:[
-        '{winner}拖赢转力战。',
-        '{winner}把转力熬到底了。'
+        '{winner}转到最后。',
+        '{winner}撑赢了。'
       ],
       hpBreak:[
-        '{winner}直接打穿了。',
-        '{winner}硬生生撞碎了。'
+        '{winner}打空耐久。',
+        '{winner}破坏对手。'
       ]
     },
     copyShareText:'复制分享文本',
@@ -927,7 +927,7 @@
         type:'强攻型',
         stats:'HP 85<br>SPIN 95<br>SPEED 14<br>MASS 1.2',
         skill:'⚔ 飞冲 · 沿直线猛扑目标。',
-        pitch:'强势先手型陀螺，只要抓到第一道干净角度，就能顺势滚起节奏。',
+        pitch:'强攻型陀螺。发射方向稳定时，第一次碰撞伤害更高。',
         traits:['前段伤害高','擅长惩罚松散发射','逼住中圈时最强']
       },
       {
@@ -975,7 +975,7 @@
         type:'强攻型',
         stats:'HP 74<br>SPIN 102<br>SPEED 17<br>MASS 0.9',
         skill:'✺ 飞冲 · 极高速突击，但燃尽窗口很短。',
-        pitch:'玻璃大炮式冲击壳，只要线路够干净，就会在一瞬间完成兑现。',
+        pitch:'高速冲击壳。发射角度正确时，可以很快打出伤害。',
         traits:['冲击起速最快','突击时间最短','非常吃发射角度']
       },
       {
@@ -999,7 +999,7 @@
         type:'守御型',
         stats:'HP 104<br>SPIN 86<br>SPEED 12<br>MASS 1.2',
         skill:'⬡ 堡垒脉冲 · 更利落的反震节奏，回收更快。',
-        pitch:'机动化装甲分支，能把防守顺势接成下一次抢中。',
+        pitch:'机动装甲分支。防守后更容易回到场地中部。',
         traits:['装甲里最均衡','回中速度快','站桩能力较低']
       },
       {
@@ -1086,7 +1086,7 @@
     topPurchaseConfirmButton:'今すぐ買う',
     topPurchaseCancelButton:'まだやめる',
     topPurchaseCloseButton:'了解',
-    titleBuildVersion:'Version 1.2.3',
+    titleBuildVersion:'Version 1.2.4',
     titleCopyright:'© 2026 Hakuro Kudo / Lumos',
     homePathNote:'ノードを順に進める本筋のラン。報酬とランク圧を見ながら進む。',
     homeQuickNote:'今のトップとアリーナで、すぐ一戦だけ始める短いモード。',
@@ -1315,13 +1315,13 @@
       zh:'中文',
       ja:'日本語'
     },
-    hintAim:'最初のきれいな当たりを狙ってドラッグし、角度が見えたら離して発射。',
-    hintActive:'まず最初のきれいな当たりを取る | SPACE で押し込む | E で悪い角度を受ける | BURST が満ちたら Q。',
+    hintAim:'発射方向をドラッグで決める。中央へ戻る角度で離して発射。',
+    hintActive:'場内に残る | SPACE で接近 | E でガード | BURST 満タンで Q。',
     hintSkillReady:'Q 準備完了',
-    battleIntroKicker:'開幕プラン',
-    battleIntroBriefTitle:'最初にやること',
-    battleIntroBriefPrimary:'まずは中心へ向かうきれいな進入線を取り、BURST はまだ温存する。',
-    battleIntroBriefSecondary:'角度が悪いなら先にガードし、次の角度で入り直す。',
+    battleIntroKicker:'開幕ヒント',
+    battleIntroBriefTitle:'角度を決める',
+    battleIntroBriefPrimary:'発射方向をアリーナ中央へ戻してから離す。',
+    battleIntroBriefSecondary:'外周に寄ったら先にガードし、中央へ戻ってから攻める。',
     roundLabel:'ROUND',
     roundWinPlayer:'YOU WIN!',
     roundWinEnemy:'ENEMY WINS',
@@ -1330,21 +1330,21 @@
     roundReasonSpinOut:'スピン切れ',
     roundReasonHpBreak:'HP ブレイク',
     roundReasonTimeUp:'タイムアップ - HP 判定',
-    roundResultCauseDraw:'両者が同系統の終わり方で止まった。次のラウンドは、先にきれいな接触を取れる方が有利になる。',
-    roundResultCauseRingoutWin:'外周の押し合いを制して、相手をきれいに場外へ押し出した。',
-    roundResultCauseRingoutLose:'外周の押し合いで先に崩れ、立て直す前に場外へ押し出された。',
-    roundResultCauseSpinoutWin:'継続接触の中で相手の回転が先に尽き、このラウンドを取った。',
-    roundResultCauseSpinoutLose:'自分の回転が先に尽き、最後の一押しまで持ち込めずにラウンドを落とした。',
-    roundResultCauseHpWin:'圧力を長く維持できたため、連続衝突の中で相手のフレームが先に崩れた。',
-    roundResultCauseHpLose:'被弾が重なり、このラウンドは自分のフレームが先に崩れた。',
-    roundResultCauseTimeWin:'時間切れ時点でこちらの状態がより健全だったため、判定を取れた。',
-    roundResultCauseTimeLose:'時間切れ時点でこちらの状態が不利で、判定を落とした。',
-    roundResultAdjustWinRingout:'次も先に中心を押さえ、同じ外押し角度を狙う。BURST は急がなくてよい。',
-    roundResultAdjustWinTime:'消耗戦ではこちらが優位。次も接触をきれいに保ち、無理に急がない。',
-    roundResultAdjustWin:'初動の作り方は正しい。まず同じ進入を再現し、安定したラインで BURST を切る。',
-    roundResultAdjustLoseRingout:'次はまず外周の立ち位置を守る。悪い角度はガードで受け、中心へ入り直す。',
-    roundResultAdjustLoseTime:'消耗面で遅れている。接触をきれいにし、悪い角度で BURST を空打ちしない。',
-    roundResultAdjustLose:'次は最初のきれいな進入線を優先する。初動が悪ければガードして立て直す。',
+    roundResultCauseDraw:'両者が同時に止まった。このラウンドは引き分け。',
+    roundResultCauseRingoutWin:'相手が場外へ出た。ラウンド獲得。',
+    roundResultCauseRingoutLose:'自分が場外へ出た。相手がラウンド獲得。',
+    roundResultCauseSpinoutWin:'相手の回転が先に尽きた。',
+    roundResultCauseSpinoutLose:'こちらの回転が先に尽きた。',
+    roundResultCauseHpWin:'相手の HP が 0 になった。',
+    roundResultCauseHpLose:'こちらの HP が 0 になった。',
+    roundResultCauseTimeWin:'時間切れ時点でこちらの HP が多い。',
+    roundResultCauseTimeLose:'時間切れ時点で相手の HP が多い。',
+    roundResultAdjustWinRingout:'次も中央へ向けて発射し、接触が安定してから外へ押す。',
+    roundResultAdjustWinTime:'接触を安定させる。外周では急いでスキルを使わない。',
+    roundResultAdjustWin:'同じ発射角度を使う。近距離で Q を使う。',
+    roundResultAdjustLoseRingout:'次は中央へ戻る角度で発射する。外周では E でガード。',
+    roundResultAdjustLoseTime:'外周で無理にぶつからず、近い当たりにスキルを残す。',
+    roundResultAdjustLose:'まず中央へ向ける。角度が悪ければガードして立て直す。',
     fightCallout:'FIGHT!',
     nodeLocked:'ノードはまだ解放されていない。',
     checkpointLabel:'チェックポイント',
@@ -1379,53 +1379,53 @@
     messageSuperImpact:'超高衝撃!!',
     messagePlayerRingOut:'場外へ弾き出された！',
     messageEnemyRingOut:'相手が場外へ吹き飛んだ！',
-    battleCommentaryLabel:'実況',
+    battleCommentaryLabel:'状況',
     battleCommentaryPlayer:'あなた',
     battleCommentaryEnemy:'相手',
     battleCommentary:{
       openingClaim:[
-        '{leader}が先手を取った。',
-        '{leader}の入りがきれいだ。'
+        '{leader}が先に接触。',
+        '{leader}が命中。'
       ],
       centerClaim:[
-        '{leader}が中央を押さえた。',
-        '{leader}がセンターを固める。'
+        '{leader}が中央を取る。',
+        '{leader}が中央へ戻る。'
       ],
       edgePressure:[
-        '{target}が外周へ追い込まれる。',
-        '{leader}が場外線へ押している。'
+        '{target}が外周へ寄る。',
+        '{leader}が外へ押す。'
       ],
       ringThreat:[
-        '{target}は場外寸前だ。',
-        '{target}は次で飛ぶぞ。'
+        '{target}がライン上。',
+        '{target}は場外寸前。'
       ],
       heavyClash:[
-        '真正面の重い激突だ。',
-        '今の一発は重い。'
+        '重い接触。',
+        '正面衝突。'
       ],
       superImpact:[
-        '超重量級の一撃だ。',
-        '今ので流れが変わる。'
+        '大きな一撃。',
+        '流れが変わる。'
       ],
       burstReady:[
-        '{top}のBURSTが点いた。',
-        '{top}が決め手を持った。'
+        '{top}のBURST準備完了。',
+        '{top}は Q を使える。'
       ],
       comeback:[
-        '{top}はまだ死んでいない。',
-        '{top}は返しの線を残す。'
+        '{top}はまだ場内。',
+        '{top}が耐えた。'
       ],
       ringOutFinish:[
-        '{winner}がそのまま吹き飛ばした！',
-        '{winner}がリングアウトで締めた！'
+        '{winner}が場外へ押した！',
+        '{winner}がリングアウト勝ち！'
       ],
       spinFinish:[
-        '{winner}が回転勝負を制した。',
-        '{winner}が最後まで持たせた。'
+        '{winner}が回り切った。',
+        '{winner}が耐え切った。'
       ],
       hpBreak:[
-        '{winner}が装甲を割った。',
-        '{winner}がそのまま打ち抜いた。'
+        '{winner}が HP を削り切った。',
+        '{winner}が相手を壊した。'
       ]
     },
     copyShareText:'共有テキストをコピー',

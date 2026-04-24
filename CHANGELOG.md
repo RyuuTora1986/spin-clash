@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.2.4 - 2026-04-24
+
+### Summary
+- Shipped a mobile battle readability, battle-music startup, and onboarding copy hotfix for the self-hosted web channel.
+
+### User-visible changes
+- Mobile portrait battle commentary now moves into left/right side lanes so live callouts no longer cover the arena center.
+- Battle music is now primed from the launch gesture and forced to start when the top is released, with procedural fallback if the browser blocks external audio.
+- Early tutorial, battle prompt, round-result, commentary, and Challenge Path copy now uses shorter player-action wording instead of vague or AI-like strategy slogans.
+
+### Technical changes
+- Added a dedicated battle-music startup regression check that verifies drag-gesture priming, launch-time playback, and fallback behavior when MP3 playback is blocked.
+- Integrated the local tutorial-text analysis output into the repo documentation so future copy passes can follow reusable onboarding-writing rules.
+- Synced release-facing asset query params and build-version labels to `1.2.4`.
+
+### Verification
+- `npm run sync:staticversion`
+- `npm run check:battleui`
+- `npm run check:battlemusic`
+- `npm run verify:release`
+
 ## 1.2.3 - 2026-04-24
 
 ### Summary
